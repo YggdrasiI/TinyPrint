@@ -1,0 +1,252 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "JsonConfig.h"
+
+
+void JsonConfig::lock(){
+	m_block_all.lock();
+}
+
+void JsonConfig::unlock(){
+	m_block_all.unlock();
+}
+
+int JsonConfig::clearConfig()
+{
+	m_block_all.lock();
+	if( m_pjson_root != NULL){
+		cJSON_Delete(m_pjson_root);
+		m_pjson_root = NULL;
+	}
+	m_block_all.unlock();
+}
+
+int JsonConfig::setConfig(const char* json_str, int changes=NO)
+{
+	cJSON* pNewRoot = cJSON_Parse(json_str);
+	if( pNewRoot == NULL ) return -1;
+	/* Not call setConfig from construtor. update is virtual. Use init() instead.*/
+	update(pNewRoot,m_pjson_root, changes);
+
+	clearConfig();
+	m_block_all.lock();
+	m_pjson_root = pNewRoot;
+	m_block_all.unlock();
+	return 0;
+}
+
+char* JsonConfig::getConfig()//const
+{
+	return cJSON_Print(m_pjson_root);
+	//cJSON html_node = cJSON_GetObjectItem(m_pjson_root,"html");
+	//return cJSON_Print(html_node);
+}
+
+int JsonConfig::loadConfigFile(const char* filename)
+{
+		clearConfig();
+	if( FILE *f=fopen(filename,"rb") ){
+		fseek(f,0,SEEK_END);
+		long len=ftell(f);
+		fseek(f,0,SEEK_SET);
+		char *data=(char*)malloc(len+1);
+		fread(data,1,len,f);
+		fclose(f);
+
+		setConfig(data, CONFIG);
+		free(data);
+	}else{
+		printf("File %s not found. Use default values.\n",filename);
+		m_pjson_root = loadDefaults();
+		update(m_pjson_root,NULL, CONFIG);
+		return 1;
+	}
+	return 0;
+}
+
+int JsonConfig::saveConfigFile(const char* filename)
+{
+	FILE *file;
+	file = fopen(filename,"w");
+	char* conf = getConfig();
+	fprintf(file,"%s", conf );
+	free(conf);
+	fclose(file); 
+	return 0;
+}
+
+cJSON* JsonConfig::loadDefaults()
+{
+cJSON* root = cJSON_CreateObject();	
+cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
+VPRINT("Should not execute.\n");
+return root;
+}
+
+
+int JsonConfig::update(cJSON* new_json, cJSON* old_json, int changes=NO)
+{
+	VPRINT("Error (JsonConfig): Parent update method called.\n");
+	return 0;
+};
+
+const char* JsonConfig::getString(cJSON* r, const char* string) const{
+	cJSON* obj = 	cJSON_GetObjectItem(r,string);
+	if( obj != NULL && obj->type == cJSON_String)
+		return obj->valuestring;
+	else{
+		printf("JsonConfig: Object %s not found.\n",string);
+		static const char* notfound = "not found";
+		return notfound;
+	}
+}; 
+
+double JsonConfig::getNumber(cJSON* r, const char* string) const{
+	cJSON* obj = 	cJSON_GetObjectItem(r,string);
+	if( obj != NULL && obj->type == cJSON_Number)
+		return obj->valuedouble;
+	else{
+		printf("JsonConfig: Object %s not found.\n",string);
+		return -1;
+	}
+};
+
+cJSON* JsonConfig::getArrayEntry(cJSON* arr, const char* string) const{
+	cJSON *tmp, *id;
+	for(int i=0,n=cJSON_GetArraySize(arr);i<n;i++){
+		tmp = 	cJSON_GetArrayItem(arr,i);
+		id = 	cJSON_GetObjectItem(tmp,"id");
+		if(id!=NULL && !strcmp(id->valuestring,string)) return tmp;
+	}
+	return NULL;
+};
+		
+
+/*
+ * json representation of extended html input field.
+ */
+cJSON* JsonConfig::jsonDoubleField(const char* id, double val, double min, double max, double diff){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "doubleField");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", val );
+	cJSON_AddNumberToObject(df, "min", min );
+	cJSON_AddNumberToObject(df, "max", max );
+	cJSON_AddNumberToObject(df, "diff", diff );
+
+	return df;
+}
+
+cJSON* JsonConfig::jsonIntField(const char* id, int val, int min, int max, int diff){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "intField");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", val );
+	cJSON_AddNumberToObject(df, "min", min );
+	cJSON_AddNumberToObject(df, "max", max );
+	cJSON_AddNumberToObject(df, "diff", diff );
+
+	return df;
+}
+
+cJSON* JsonConfig::jsonCheckbox(const char* id, bool checked){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "checkbox2");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", checked?1:0 );
+
+	return df;
+}
+
+cJSON* JsonConfig::jsonArea(int id, float x, float y, float depth){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddNumberToObject(df, "id", id );
+	cJSON_AddNumberToObject(df, "x", x );
+	cJSON_AddNumberToObject(df, "y", y );
+	cJSON_AddNumberToObject(df, "depth", depth );
+	return df;
+}
+void JsonConfig::setString(const char* string, const char* value){
+	m_block_all.lock();
+	setString(m_pjson_root, string, value);
+	m_block_all.unlock();
+	return;
+}
+
+void JsonConfig::setString(cJSON* r,const char* string, const char* value){
+	//cJSON* old = 	cJSON_GetObjectItem(r,string);
+	cJSON_ReplaceItemInObject(r, string, cJSON_CreateString(value) );
+	/*if( old != NULL ){
+		cJSON_Delete(old); //already done in ReplaceItem
+		old = NULL;
+		}*/
+	return;
+}
+
+/* Access to string child nodes of root node.*/
+const char* JsonConfig::getString(const char* string) const{
+	return getString(m_pjson_root, string);
+}
+
+/* Access to number child nodes of root node.*/
+double JsonConfig::getNumber(const char* string) const{
+	return getNumber(m_pjson_root, string);
+}
+
+double JsonConfig::doubleFieldValue(cJSON* ndf, cJSON* odf){
+	return min(max(getNumber(odf,"min"),getNumber(ndf,"val")),getNumber(odf,"max"));
+}
+
+inline int JsonConfig::intFieldValue(cJSON* ndf, cJSON* odf){
+	return (int)doubleFieldValue(ndf,odf);
+}
+
+bool JsonConfig::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val){
+	double tmp = *val;
+	bool ret;
+	ret = update(jsonNew, jsonOld, id, &tmp);
+	*val = (int)tmp;
+	return ret;
+}
+
+bool JsonConfig::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val){
+	cJSON* ntmp = getArrayEntry(jsonNew,id);
+	cJSON* otmp;
+	bool ret(false);
+	VPRINT("update of %s:",id);				
+	double nval=0.0, oval=*val;
+	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
+		oval = getNumber(otmp,"val");//probably redundant.
+		nval = doubleFieldValue(ntmp,otmp);
+		if(oval!=nval) ret=true;
+	}else if( ntmp != NULL){
+		nval = doubleFieldValue(ntmp,ntmp);
+		ret = true;
+	}
+	VPRINT(" %f\n",nval);				
+	/* If input data was manipulated on client side, nval can differ from "ntmp.val"
+	 * nval conside [min_old,max_old] and "ntmp.val" not.
+	 */
+	*val = nval;
+	return ret;
+}
+
+bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, bool* val){
+	cJSON* ntmp = getArrayEntry(jsonNew,id);
+	cJSON* otmp;
+	bool ret(false);
+	VPRINT("update of %s:",id);				
+	double nval=0.0, oval=*val;
+	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
+		oval = getNumber(otmp,"val");
+		nval = getNumber(ntmp,"val");
+		if(oval!=nval) ret=true;
+	}else if( ntmp != NULL){
+		nval = getNumber(ntmp,"val");
+		ret = true;
+	}
+	VPRINT(" %f\n",nval);				
+	*val = nval==1;
+	return ret;
+}
