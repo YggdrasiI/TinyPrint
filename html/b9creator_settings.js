@@ -1,7 +1,7 @@
-var json_b9creator = {{ONION_JSON}};    
+json_b9creator = {{ONION_JSON}};    
 
 $(function(){
-		//Add hidden input field stub and create form
+		/*Add hidden input field stub and create form*/
 		/*
 			 a = deepCopy(json_kinect);
 			 b ={"name":"json","id":"json","type":"text","size":"100","value":JSON.stringify(json_kinect)};
@@ -10,6 +10,5 @@ $(function(){
 		*/
 
 		create_fields(json_b9creator);
-		//update_fields(json_b9creator);
 });
 

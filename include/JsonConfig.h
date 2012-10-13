@@ -68,10 +68,20 @@ class JsonConfig{
 		 /*static*/ cJSON* getArrayEntry(cJSON* arr, const char* string) const;
 		 /*static*/ void setString(cJSON* r,const char* string, const char* value);
 
-		 /*static*/ cJSON* jsonDoubleField(const char* id, double val, double min, double max, double diff);
-		 /*static*/ cJSON* jsonIntField(const char* id, int val, int min, int max, int diff);
-		 /*static*/ cJSON* jsonCheckbox(const char* id, bool checked);
-		 /*static*/ cJSON* jsonArea(int id, float x, float y, float depth);
+		 cJSON* jsonDoubleField(const char* id,
+				 double val, double min,
+				 double max, double diff,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonIntField(const char* id,
+				 int val, int min,
+				 int max, int diff,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonCheckbox(const char* id,
+				 bool checked,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonStateField(const char* id,
+				 double val,
+				 const char* format="" , const char* parse="" );
 
 		/*
 		 * Member based variants of helper functions.

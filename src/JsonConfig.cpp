@@ -125,8 +125,17 @@ cJSON* JsonConfig::getArrayEntry(cJSON* arr, const char* string) const{
 
 /*
  * json representation of extended html input field.
+ * 
+ * diff - deprached value. Controlls value change on click on "+","-"
+ * readonly - Flag to set value readonly.
+ * format - Set name of javascript function to format display style of val.
+ * parse - Parse string to value (inverse operation to format)
  */
-cJSON* JsonConfig::jsonDoubleField(const char* id, double val, double min, double max, double diff){
+cJSON* JsonConfig::jsonDoubleField(const char* id,
+		double val, double min,
+		double max, double diff,
+		bool readonly, const char* format , const char* parse 
+		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "doubleField");
 	cJSON_AddStringToObject(df, "id", id);
@@ -134,11 +143,18 @@ cJSON* JsonConfig::jsonDoubleField(const char* id, double val, double min, doubl
 	cJSON_AddNumberToObject(df, "min", min );
 	cJSON_AddNumberToObject(df, "max", max );
 	cJSON_AddNumberToObject(df, "diff", diff );
+	cJSON_AddNumberToObject(df, "readonly", readonly?1:0 );
+	cJSON_AddStringToObject(df, "format", format);
+	cJSON_AddStringToObject(df, "parse", parse);
 
 	return df;
 }
 
-cJSON* JsonConfig::jsonIntField(const char* id, int val, int min, int max, int diff){
+cJSON* JsonConfig::jsonIntField(const char* id,
+		int val, int min,
+		int max, int diff,
+		bool readonly, const char* format , const char* parse 
+		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "intField");
 	cJSON_AddStringToObject(df, "id", id);
@@ -146,27 +162,43 @@ cJSON* JsonConfig::jsonIntField(const char* id, int val, int min, int max, int d
 	cJSON_AddNumberToObject(df, "min", min );
 	cJSON_AddNumberToObject(df, "max", max );
 	cJSON_AddNumberToObject(df, "diff", diff );
+	cJSON_AddNumberToObject(df, "readonly", readonly?1:0 );
+	cJSON_AddStringToObject(df, "format", format);
+	cJSON_AddStringToObject(df, "parse", parse);
 
 	return df;
 }
 
-cJSON* JsonConfig::jsonCheckbox(const char* id, bool checked){
+cJSON* JsonConfig::jsonCheckbox(const char* id,
+		bool checked,
+		bool readonly, const char* format , const char* parse 
+		){
 	cJSON* df = cJSON_CreateObject();
-	cJSON_AddStringToObject(df, "type", "checkbox2");
+	cJSON_AddStringToObject(df, "type", "checkboxField");
 	cJSON_AddStringToObject(df, "id", id);
 	cJSON_AddNumberToObject(df, "val", checked?1:0 );
+	cJSON_AddNumberToObject(df, "readonly", readonly?1:0 );
+	cJSON_AddStringToObject(df, "format", format);
+	cJSON_AddStringToObject(df, "parse", parse);
 
 	return df;
 }
 
-cJSON* JsonConfig::jsonArea(int id, float x, float y, float depth){
+/* Similar to jsonIntField, but for formatted values. */
+cJSON* JsonConfig::jsonStateField(const char* id,
+		double val,
+		const char* format , const char* parse 
+		){
 	cJSON* df = cJSON_CreateObject();
-	cJSON_AddNumberToObject(df, "id", id );
-	cJSON_AddNumberToObject(df, "x", x );
-	cJSON_AddNumberToObject(df, "y", y );
-	cJSON_AddNumberToObject(df, "depth", depth );
+	cJSON_AddStringToObject(df, "type", "stateField");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", val );
+	cJSON_AddStringToObject(df, "format", format);
+	cJSON_AddStringToObject(df, "parse", parse);
+
 	return df;
 }
+
 void JsonConfig::setString(const char* string, const char* value){
 	m_block_all.lock();
 	setString(m_pjson_root, string, value);
@@ -247,6 +279,6 @@ bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, b
 		ret = true;
 	}
 	VPRINT(" %f\n",nval);				
-	*val = nval==1;
+	*val = nval!=0.0;
 	return ret;
 }

@@ -16,6 +16,12 @@ class B9CreatorSettings: public JsonConfig{
 		int m_tpi;
 		int m_PU;
 
+		int m_currentLayer;
+		int m_vatOpen; //in percent
+		int m_projectorStatus;
+		int m_printerStatus;
+		double m_zHeight;
+
 	public:
 		const char* m_host;
 		const char* m_port;
@@ -28,7 +34,10 @@ class B9CreatorSettings: public JsonConfig{
 	public:
 		B9CreatorSettings() : 	JsonConfig(),
 		m_spr(200), m_tpi(20),
-		m_breathTime(-1.0), m_gridShow(true)
+		m_breathTime(-1.0), m_gridShow(true),
+		m_currentLayer(1), m_vatOpen(-100),
+		m_projectorStatus(0), m_printerStatus(0),
+		m_zHeight(-1.0)
 		{
 			m_PU = 1000 * 254 / (m_spr * m_tpi) ;
 		};
@@ -36,6 +45,10 @@ class B9CreatorSettings: public JsonConfig{
 	
 		cJSON* loadDefaults();
 		int update(cJSON* root, cJSON* update, int changes);
+
+	private:
+		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
+		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val);
 
 };
 

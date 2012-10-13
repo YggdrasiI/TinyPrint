@@ -70,8 +70,12 @@ int checkFormularValues(void *p, onion_request *req, onion_response *res){
 		onion_response_set_length(res, 6);
 		onion_response_write(res, "reload", 6); 
 	}else{
-		onion_response_set_length(res, 2);
-		onion_response_write(res, "Ok", 2); 
+		//onion_response_set_length(res, 2);
+		//onion_response_write(res, "Ok", 2); 
+		const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig();
+		size_t len = strlen( b9Creator );
+		onion_response_set_length(res, (int) len);
+		onion_response_write(res, b9Creator, (int) len); 
 	}
 	return OCS_PROCESSED;
 }
@@ -183,7 +187,7 @@ int OnionServer::stop_server()
 
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
-	printf("Actionid: %i \n", actionid);
+	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
 		case 2:{
 						 const char* filename = onion_request_get_post(req,"filename");
@@ -203,7 +207,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 			break;
 		case 1:{
 						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Load new b9CreatorSettings: %s\n",filename);
+						 VPRINT("Load new b9CreatorSettings: %s\n",filename);
 						 if( check_filename(filename ) == 1){
 							 m_b9CreatorSettings.loadConfigFile(filename);
 						 }else{
@@ -214,8 +218,8 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 			break;
 		case 0:
 		default:{
-							printf("update printSetting values\n");
-							const char* json_str = onion_request_get_post(req,"printSetting");
+							VPRINT("update printSetting values\n");
+							const char* json_str = onion_request_get_post(req,"b9CreatorSetting");
 							if( json_str != NULL){
 								//printf("Get new printSetting: %s\n",json_str);
 								m_b9CreatorSettings.setConfig(json_str, NO);

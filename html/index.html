@@ -2,14 +2,26 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>KinectGrid Settings</title>
+<title>B9Creator</title>
 <style>
-	#settingKinectForm { }
-	#settingKinectForm * span.propName { margin-right:1em; width:200px; text-align:right;color:blue;display:inline-block;}
+	div { border: 1px solid green; }
+
+	div.prop {
+		margin-right:1em;
+		width:22em;
+		text-align:right;
+		color:black;
+		font-weight:bold;
+		/*display:inline-block;*/
+	}
+	div.prop span { }
 	#settingKinectForm input { text-align:center;}
 	#settingKinectForm input[type="button"] { width:3em; }
 
-	.containerL {float:left; max-width:44em; }
+	.containerL {float:left; width:25em; }
+	.red * input { background-color:red; }
+	.readonly * input { background-color:#AAAAAA; }
+	.json_input { color:green; width:7em; display:inline-block; padding-right:1em; };
 </style>
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
@@ -24,12 +36,48 @@
 			<input id="configFilename" type="text" size="10" value="{{LAST_SETTING_FILENAME}}" />
 			<input type="button" value="Save Config" onclick="saveConfig()"/>
 		</div>	
-		<h1>View</h1>
-		<input type="button" onclick="setView(1)" value="Raw depth image" />
+
+		<h1>Printer Status and Messages</h1>
+		<div class="prop" id="printerStatus">Printer status: </div>
+		<div class="prop" id="projectorStatus">Projector status: </div>
+		<div class="prop" id="vatOpen">VAT % Open: </div>
+		<div class="prop" id="zHeight">Z Height: </div>
+
 		<h1>End program</h1>
 		<input type="button" onclick="quit()" value="Quit" />
 	</div>
 	<div class="containerL">
-		<div id="steps_per_revolution">X</div>
+		<h1>B9Creator Settings</h1>
+		<div class="prop" id="stepsPerRevolution">Steps per revolution: </div>
+		<div class="prop" id="threadPerInch">Threads per inch: </div>
+		<div class="prop" id="breathTime">Breath time: </div>
+		<h1>File browser</h1>
+		<span class="prop" id="filebrowserList">Files: </span>
+		<input type="button" onclick="alert('ToDo')" value="Open" />
+	</div>
+	<div class="containerL">
+		<h1>Display Window Controls</h1>
+		<input type="button" onclick="alert('ToDo')" value="Show Display" />
+		<div class="prop" id="currentLayer">Current Layer: </div>
+		<div class="prop" id="gridShow">Show grid: </div>
+	</div>
+	<div class="containerL">
+		<h1>Manual Printer Communication</h1>
+		<div style="float:left">
+			<input type="button" onclick="alert('ToDo')" value="VAT Open" /><br />
+			<input type="button" onclick="alert('ToDo')" value="VAT Close" />
+		</div>
+		<div style="float:right">
+			<input type="button" onclick="alert('ToDo')" value="Projector On " /><br />
+			<input type="button" onclick="alert('ToDo')" value="Projector Off" />
+		</div>
+		<div style="clear:both">
+			<input type="button" onclick="alert('ToDo')" value="Go To Fill Level" /><br />
+			<input type="button" onclick="alert('ToDo')" value="Reset Printer" />
+		</div>
+		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Print" />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Abort" /><br />
+	</div>
+	<div class="containerL">
 	</div>
 </body>
