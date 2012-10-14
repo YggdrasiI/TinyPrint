@@ -14,12 +14,12 @@ void JsonConfig::unlock(){
 
 int JsonConfig::clearConfig()
 {
-	m_block_all.lock();
+	m_json_mutex.lock();
 	if( m_pjson_root != NULL){
 		cJSON_Delete(m_pjson_root);
 		m_pjson_root = NULL;
 	}
-	m_block_all.unlock();
+	m_json_mutex.unlock();
 }
 
 int JsonConfig::setConfig(const char* json_str, int changes=NO)
@@ -30,9 +30,9 @@ int JsonConfig::setConfig(const char* json_str, int changes=NO)
 	update(pNewRoot,m_pjson_root, changes);
 
 	clearConfig();
-	m_block_all.lock();
+	m_json_mutex.lock();
 	m_pjson_root = pNewRoot;
-	m_block_all.unlock();
+	m_json_mutex.unlock();
 	return 0;
 }
 
@@ -200,9 +200,9 @@ cJSON* JsonConfig::jsonStateField(const char* id,
 }
 
 void JsonConfig::setString(const char* string, const char* value){
-	m_block_all.lock();
+	m_json_mutex.lock();
 	setString(m_pjson_root, string, value);
-	m_block_all.unlock();
+	m_json_mutex.unlock();
 	return;
 }
 

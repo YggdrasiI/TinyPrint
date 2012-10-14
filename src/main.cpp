@@ -16,6 +16,7 @@
 #include "JsonConfig.h"
 #include "B9CreatorSettings.h"
 //#include "PrinterSettings.h"
+#include "SerialManager.h"
 #include "OnionServer.h"
 
 #include <locale.h>
@@ -41,12 +42,29 @@ int main(int argc, char **argv) {
 	//init onion server thread
 	OnionServer* ponion = new OnionServer(b9CreatorSettings); 
 	ponion->start_server();
+	
+	SerialManager serialManager(b9CreatorSettings);
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
 
+	/* Main Thread Loop */
 	while( !die ){
+
+		//block setting object
+		b9CreatorSettings.lock();
+		//send serial messages
+
+		//read&handle serial messages
+
+		//update image
+
+		//unblock setting object
+		b9CreatorSettings.unlock();
+
+		//give other threads some time to react.
+		usleep(100);
 
 		//char k = cvWaitKey(10);
 		k = 0; usleep(100);
@@ -55,6 +73,7 @@ int main(int argc, char **argv) {
 			die = true;
 			break;
 		}
+		if( b9CreatorSettings.m_die ) die = true;
 	}
 
 	/* Clean up objects */

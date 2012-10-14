@@ -189,6 +189,13 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
+		case 3:{ /* Quit */
+						 printf("Quitting...\n");
+						m_b9CreatorSettings.lock();
+						m_b9CreatorSettings.m_die = true;
+						m_b9CreatorSettings.unlock();
+					 }
+					 break;
 		case 2:{
 						 const char* filename = onion_request_get_post(req,"filename");
 						 printf("Save new b9CreatorSettings: %s\n",filename);
