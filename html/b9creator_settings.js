@@ -1,5 +1,21 @@
 json_b9creator = {{ONION_JSON}};    
 
+json_messages = {
+	"kind" : "B9CreatorMessages",
+	"html" : [{
+		"type" : "messagesField",
+		"id" : "serialMessages",
+		"messages" : [{
+			"line" : 1,
+			"text" : "First message"
+		},{
+			"line" : 2,
+			"text" : "Second message"
+		}]
+	}]
+};
+
+
 $(function(){
 		/*Add hidden input field stub and create form*/
 		/*
@@ -10,5 +26,17 @@ $(function(){
 		*/
 
 		create_fields(json_b9creator);
+		create_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
+		update_fields(json_messages);
 });
 

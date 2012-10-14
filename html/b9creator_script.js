@@ -12,8 +12,8 @@ TOKENS = {
  * positions on the page. Raw values
  * will wrapped by some dynamic html stuff.
 */
-function create_fields(json_b9creator){
-	cu_fields(json_b9creator,"create");
+function create_fields(json){
+	cu_fields(json,"create");
 	//TODO handle com messages
 	//if( b9creator.messages !== null ) alert("Todo");
 }
@@ -21,12 +21,11 @@ function create_fields(json_b9creator){
 /* Take content of json file
  * to update values on the page.
  */
-function update_fields(json_b9creator){
-	cu_fields(json_b9creator,"update");
+function update_fields(json){
+	cu_fields(json,"update");
 }
 
 function cu_fields(obj,prefix){
-
 	//convert input arg to object, if string representation given.
 	//var obj = (typeof json_obj === "string"?JSON.parse(json_obj):json_obj);
 
@@ -217,7 +216,6 @@ function create_checkboxField(obj, pnode){
 		inputfield.change( function(event){
 			var o = pnode.prop("json"); 
 			o.val = ( $(this).prop("checked")!=false?1:0 );
-			json_b9creator.html[0].val ++;
 			refresh();
 		});
 
@@ -227,6 +225,55 @@ function create_checkboxField(obj, pnode){
 
 function update_checkboxField(obj){
 	$("#"+obj.id+"_").prop("checked", obj.val!=0 );
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+function create_messagesField(obj, pnode){
+		var description = "Messages field. Refresh every second. Id: "+obj.id;
+		var ret = $("<span title='"+description+"' alt='"+description+"'>");
+		ret.addClass("json_input");
+
+		var field = $('<textarea id="'+obj.id+'_" rows="10" cols="20" >');
+		field.prop("readonly",true);
+		field.addClass("readonly");
+
+		var messarr = new Array();
+		field.prop("messarr",messarr);
+
+		//insert messages
+		$.each(obj.messages, function(index, value){
+			//field.val(field.val()+value.line+" "+value.text+"\n");
+			messarr.push( value.line+" "+value.text );
+		});
+		field.val( messarr.join("\n") );
+
+		//scroll to bottom
+		field.scrollTop(field.scrollHeight);
+
+		ret.append( field ); 
+		pnode.append( ret );
+}
+
+function update_messagesField(obj){
+	var field = $("#"+obj.id+"_");
+	
+	var messarr = field.prop("messarr");
+
+	$.each(obj.messages, function(index, value){
+			//field.val(field.val()+value.line+" "+value.text+"\n");
+			messarr.push( value.line+" "+value.text );
+		});
+
+	//remove old enties
+	while( messarr.length > 15 ){
+		messarr.shift(); //remove first entry
+	}
+
+	field.val( messarr.join("\n") );
+	field.prop("messarr",messarr);
+	//scroll to bottom
+	field.scrollTop(field[0].scrollHeight);
 }
 
 
@@ -294,6 +341,11 @@ function send(url,val, handler){
 	});
 
 	return true;
+}
+
+
+function quitServerApp(){
+	send("json?actionid=3","",null);
 }
 
 function setView(i){

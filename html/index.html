@@ -15,13 +15,14 @@
 		/*display:inline-block;*/
 	}
 	div.prop span { }
-	#settingKinectForm input { text-align:center;}
-	#settingKinectForm input[type="button"] { width:3em; }
 
 	.containerL {float:left; width:25em; }
+	.containerL input { text-align:center;}
+	.containerL input[type="button"] { width:10em; }
+
 	.red * input { background-color:red; }
 	.readonly * input { background-color:#AAAAAA; }
-	.json_input { color:green; width:7em; display:inline-block; padding-right:1em; };
+	.json_input { color:green; width:7em; /*display:inline-block;*/ padding-right:1em; };
 </style>
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
@@ -44,7 +45,7 @@
 		<div class="prop" id="zHeight">Z Height: </div>
 
 		<h1>End program</h1>
-		<input type="button" onclick="quit()" value="Quit" />
+		<input type="button" onclick="quitServerApp()" value="Quit" />
 	</div>
 	<div class="containerL">
 		<h1>B9Creator Settings</h1>
@@ -79,5 +80,7 @@
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Abort" /><br />
 	</div>
 	<div class="containerL">
+		<h1>Raw Messages</h1>
+		<div class="prop" id="serialMessages"></div>
 	</div>
 </body>

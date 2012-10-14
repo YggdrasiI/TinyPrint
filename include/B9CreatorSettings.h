@@ -30,6 +30,7 @@ class B9CreatorSettings: public JsonConfig{
 		double m_breathTime;//?
 		bool m_gridShow; //show grid
 		int m_gridColor[3]; //rgb value
+		bool m_die; // flag indicate end of main loop
 
 	public:
 		B9CreatorSettings() : 	JsonConfig(),
@@ -37,7 +38,8 @@ class B9CreatorSettings: public JsonConfig{
 		m_breathTime(-1.0), m_gridShow(true),
 		m_currentLayer(1), m_vatOpen(-100),
 		m_projectorStatus(0), m_printerStatus(0),
-		m_zHeight(-1.0)
+		m_zHeight(-1.0),
+		m_die(false)
 		{
 			m_PU = 1000 * 254 / (m_spr * m_tpi) ;
 		};

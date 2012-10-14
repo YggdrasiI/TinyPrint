@@ -24,14 +24,15 @@ class JsonConfig{
 		int clearConfig();
 	protected:
 		cJSON* m_pjson_root;
-		//Mutex m_json_mutex;
-		Mutex m_block_all;
+		Mutex m_json_mutex; // mutex for internal usage
+		Mutex m_block_all; // mutex for external usage
 
 	public:
 		void lock();
 		void unlock();
 		JsonConfig():
 			m_pjson_root(NULL),
+			m_json_mutex(),	
 			m_block_all()
 		{
 		};
