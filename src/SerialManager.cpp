@@ -1,80 +1,50 @@
 #include "SerialManager.h"
 
+using namespace std ;
+using namespace boost;
+
 void SerialManager::run(){
-	std::string file( m_b9CreatorSettings.getString("comPort") ); 
-
-	// Open the serial port for communication.
-	m_serialStream.Open( file );
-
-	if ( ! m_serialStream.IsOpen() )
-	{
-		std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-			<< "Error: Could not open serial port "
-			<< "'" << file << "'."
-			<< std::endl ;
-		exit(1) ;
-	}
-
-	m_serialStream.SetBaudRate( SerialStreamBuf::BAUD_115200 );
-	if ( ! m_serialStream.IsOpen() ) std::cerr << "SetBaudRate failed\n" ;
-
-	// Use 8 bit wide chars
-	m_serialStream.SetCharSize( SerialStreamBuf::CHAR_SIZE_8 ) ;
-	if ( ! m_serialStream.IsOpen() ) std::cerr << "SetCharSize failed\n" ;
-	// Use odd parity during serial communication. 
-	m_serialStream.SetParity( SerialStreamBuf::PARITY_NONE ) ;
-	if ( ! m_serialStream.IsOpen() ) std::cerr << "SetParity failed\n" ;
-	// Use one stop bit. 
-	m_serialStream.SetNumOfStopBits(1) ;
-	if ( ! m_serialStream.IsOpen() ) std::cerr << "SetNumOfStopBits failed\n" ;
-	// Use hardware flow-control. 
-	m_serialStream.SetFlowControl( SerialStreamBuf::FLOW_CONTROL_HARD ) ;
-	if ( ! m_serialStream.IsOpen() ) std::cerr << "SetFlowControl failed\n" ;
-
-	if ( ! m_serialStream.IsOpen() )
-	{
-		std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-			<< "Error: Could not set serial port properties."
-			<< std::endl ;
-		exit(1) ;
-	}
-
-	/* Do not ignore white space chars */
-    // Do not skip whitespace characters while reading from the
-    // serial port.
-    //
-    // serial_port.unsetf( std::ios_base::skipws ) ;
-	m_serialStream >> std::noskipws;
 
 	while( !m_die  ){
-		//sendLines()
-		readLine();
-		usleep(1000000);
+		try{
+			writeLineFromQueue(); //send single command. 
+			readLineToQueue();
+		} catch(boost::system::system_error& e)
+		{
+			cout<<"Error: "<<e.what()<<endl;
+			m_die = true;
+		}
+
+		usleep(100000);//wait 100ms
 	}
 
-	m_serialStream.Close();
 
 }
 
-void SerialManager::readLine(){
-	//string str;
-	m_serialStream << 'I';
-	usleep(1000);
-	//m_serialStream >> str;
-
-	char str[160];
-	for(int i=0;i<159;i++) str[i] = ' ';
-	str[0] = 'H'; str[1]='e'; str[2]='l'; str[3]='l'; str[4]='o';
-	str[159] = '\0';
-
-	m_serialStream >> str;
- //   sscanf(str,"%d",&res);
-	
+void SerialManager::readLineToQueue(){
+	string str = readLine();
 
 	m_messageMutex.lock();
 	//m_messageQueue.push(str);
 	m_messageMutex.unlock();
 
+#ifdef VERBOSE
 	std::cout << str << std::endl;
+#endif
+}
+
+void SerialManager::writeLineFromQueue(){
+	if( m_commandQueue.size() < 1 ) return;
+
+	m_commandMutex.lock();
+	string cmd = m_commandQueue.front();
+	m_commandQueue.pop();
+	m_commandMutex.unlock();
+
+#ifdef VERBOSE
+	std::cout << "Send " << cmd << std::endl;
+#endif
+	
+	writeString(cmd);
 }
 //auslesen mit .front() und .pop()

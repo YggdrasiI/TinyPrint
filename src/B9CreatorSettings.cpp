@@ -14,6 +14,7 @@ cJSON* B9CreatorSettings::loadDefaults()
 	cJSON_AddItemToObject(root, "port", cJSON_CreateString("9090"));
 	cJSON_AddItemToObject(root, "jobDir", cJSON_CreateString("job_files"));
 	cJSON_AddItemToObject(root, "comPort", cJSON_CreateString("/dev/ttyACM0"));
+	cJSON_AddItemToObject(root, "comBaudrate", cJSON_CreateNumber(115200));
 	cJSON_AddItemToObject(root, "gridColor", cJSON_CreateString("A00000"));//hex string
 
 	/* sub node. This values will transmitted to web interface */
