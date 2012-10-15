@@ -39,7 +39,7 @@
 		</div>	
 
 		<h1>Printer Status and Messages</h1>
-		<div class="prop" id="printerStatus">Printer status: </div>
+		<div class="prop" id="resetStatus">Reset status: </div>
 		<div class="prop" id="projectorStatus">Projector status: </div>
 		<div class="prop" id="vatOpen">VAT % Open: </div>
 		<div class="prop" id="zHeight">Z Height: </div>
@@ -65,16 +65,17 @@
 	<div class="containerL">
 		<h1>Manual Printer Communication</h1>
 		<div style="float:left">
-			<input type="button" onclick="alert('ToDo')" value="VAT Open" /><br />
-			<input type="button" onclick="alert('ToDo')" value="VAT Close" />
+			<input type="button" onclick="sendCmd('V100')" value="VAT Open" /><br />
+			<input type="button" onclick="sendCmd('V50')" value="VAT Halve" /><br />
+			<input type="button" onclick="sendCmd('V0')" value="VAT Close" />
 		</div>
 		<div style="float:right">
-			<input type="button" onclick="alert('ToDo')" value="Projector On " /><br />
-			<input type="button" onclick="alert('ToDo')" value="Projector Off" />
+			<input type="button" onclick="sendCmd('P1')" value="Projector On " /><br />
+			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
 		</div>
 		<div style="clear:both">
 			<input type="button" onclick="alert('ToDo')" value="Go To Fill Level" /><br />
-			<input type="button" onclick="alert('ToDo')" value="Reset Printer" />
+			<input type="button" onclick="sendCmd('R')" value="Reset Printer" />
 		</div>
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Print" />
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Abort" /><br />
@@ -82,5 +83,7 @@
 	<div class="containerL">
 		<h1>Raw Messages</h1>
 		<div class="prop" id="serialMessages"></div>
+		<input type="input" id="cmdInput" value="r" size="6" />
+		<input type="button" onclick="sendCmd($('#cmdInput').val()); $('#cmdInput').val('')" value="Send" />
 	</div>
 </body>

@@ -3,15 +3,16 @@
  * Code adapted from http://www.webalice.it/fede.tft/serial_port/serial_port.html
  *
  * */
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <iostream>
-#include <string.h>
+#include <string>
 #include <queue>
 #include <pthread.h>
 #include <boost/asio.hpp>
 #include "Mutex.h"
 #include "B9CreatorSettings.h"
+#include "JsonMessage.h"
 
 #ifndef SERIALMANAGER_H
 #define SERIALMANAGER_H
@@ -22,10 +23,7 @@ static void* serialThread(void* arg);
 class SerialManager {
 	public: 
 		bool m_die;
-		std::queue<std::string> m_messageQueue;
-		std::queue<std::string> m_commandQueue;
-		Mutex m_messageMutex;
-		Mutex m_commandMutex;
+		bool m_open;
 	private:
 		B9CreatorSettings &m_b9CreatorSettings;
     boost::asio::io_service m_io;
@@ -35,38 +33,38 @@ class SerialManager {
 		SerialManager(B9CreatorSettings &b9CreatorSettings ) :
 			m_b9CreatorSettings(b9CreatorSettings),
 			m_die(false),
-			m_messageQueue(),
-			m_messageMutex(),
-			m_commandQueue(),
-			m_commandMutex(),
+			m_open(false),
 			m_io(),
-			m_serialStream(m_io,m_b9CreatorSettings.getString("comPort"))
+			m_serialStream(m_io)
 	{
-				int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
-				// Open the serial port for communication.
-				try {
-					m_serialStream.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-				} catch(boost::system::system_error& e)
-				{
-					std::cout<<"Error: "<<e.what()<<std::endl;
-					exit(1) ;
-				}
+		std::string file( m_b9CreatorSettings.getString("comPort") );
+		int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
+		// Open the serial port for communication.
+		try {
+			m_serialStream.open( file );
+			m_serialStream.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
+			m_open = true;
+		} catch(boost::system::system_error& e)
+		{
+			std::cout<<"Error: "<<e.what()<<std::endl;
+			//exit(1) ;
+		}
 
-				/* Do not ignore white space chars */
-				// Do not skip whitespace characters while reading from the
-				// serial port.
-				//
-				// serial_port.unsetf( std::ios_base::skipws ) ;
-				//m_serialStream >> std::noskipws;
+		/* Do not ignore white space chars */
+		// Do not skip whitespace characters while reading from the
+		// serial port.
+		//
+		// serial_port.unsetf( std::ios_base::skipws ) ;
+		//m_serialStream >> std::noskipws;
 
-				if( pthread_create( &m_pthread, NULL, &serialThread, this) ){
-					std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-						<< "Error: Could not create thread for serial communication."
-						<< std::endl ;
-					exit(1) ;
-				}
+		if( pthread_create( &m_pthread, NULL, &serialThread, this) ){
+			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
+				<< "Error: Could not create thread for serial communication."
+				<< std::endl ;
+			exit(1) ;
+		}
 
-			}
+	}
 
 		~SerialManager(){
 			// kill loop in other thread
@@ -77,6 +75,11 @@ class SerialManager {
 		}
 
 		void run();
+
+/* Update state =>
+ *	 Analyse serial message and alter m_b9CreatorSettings.
+ */
+		void update(std::string);
 
 	private:
 		/* Buffer serial input */
@@ -93,22 +96,21 @@ class SerialManager {
     std::string readLine()
     {
         //Reading data char by char, code is optimized for simplicity, not speed
-        using namespace boost;
         char c;
         std::string result;
         for(;;)
-        {
-            asio::read(m_serialStream,asio::buffer(&c,1));
-            switch(c)
-            {
-                case '\r':
-                    break;
-                case '\n':
-                    return result;
-                default:
-                    result+=c;
-            }
-        }
+				{
+					boost::asio::read(m_serialStream,boost::asio::buffer(&c,1));
+					switch(c)
+					{
+						case '\r':
+							break;
+						case '\n':
+							return result;
+						default:
+							result+=c;
+					}
+				}
 				return "Error in __FILE__ in __LINE__ \n";
     }
     /**

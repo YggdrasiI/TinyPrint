@@ -6,9 +6,9 @@
 #ifndef JSONCONFIG_H
 #define JSONCONFIG_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include "string.h"
+#include <cstdlib>
+#include <cstdio>
+#include <string>
 #include "cJSON.h"
 #include "Mutex.h"
 #include "constants.h"
@@ -48,7 +48,8 @@ class JsonConfig{
 		/* 
 		 * Create minimal json element.
 		 */
-		virtual cJSON* loadDefaults();
+		virtual void loadDefaults();
+		virtual cJSON* genJson();
 		virtual int update(cJSON* new_json, cJSON* old_json, int changes);
 		cJSON* getJSON() {return m_pjson_root;};
 

@@ -5,13 +5,7 @@ json_messages = {
 	"html" : [{
 		"type" : "messagesField",
 		"id" : "serialMessages",
-		"messages" : [{
-			"line" : 1,
-			"text" : "First message"
-		},{
-			"line" : 2,
-			"text" : "Second message"
-		}]
+		"messages" : []
 	}]
 };
 
@@ -27,16 +21,7 @@ $(function(){
 
 		create_fields(json_b9creator);
 		create_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
-		update_fields(json_messages);
+
+		refreshIntervall = window.setInterval("refresh()", 5000);
 });
 

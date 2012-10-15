@@ -4,18 +4,21 @@
  * */
 TOKENS = {
 	"projectorStatus" : {0 : "Off" , 1 : "On" },
-	"printerStatus" : {0 : "Not ready" , 1 : "Ready", 2 : "Error" },
+	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
 }
+
+/* maximal number of lines in the messages 
+ * textarea.
+ * */
+TEXTAREA_MAX_LINES = 300;
 
 
 /* Fill in json values on desired
  * positions on the page. Raw values
  * will wrapped by some dynamic html stuff.
-*/
+ */
 function create_fields(json){
 	cu_fields(json,"create");
-	//TODO handle com messages
-	//if( b9creator.messages !== null ) alert("Todo");
 }
 
 /* Take content of json file
@@ -43,67 +46,75 @@ function cu_fields(obj,prefix){
 					 *	Reparsing of json string creates new objects!
 					 */
 					pnode = $("#"+o.id);
+
+
 					pnode.prop("json", o);
 					(window[prefix+"_"+o.type])(o, pnode );
-			}else{
-				alert("Can not "+prefix+" field "+o.id+".");
-			}
+				}else{
+					alert("Can not "+prefix+" field "+o.id+".");
+				}
 		}
 }
 
 
 function create_intField(obj, pnode){
-		var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
-		var ret = $("<span title='"+description+"' alt='"+description+"'>");
-		ret.addClass("json_input");
+	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
 
-		//format value
-		var val = format(obj,obj.val);
+	//format value
+	var val = format(obj,obj.val);
 
-		var inputfield = $('<input id="'+obj.id+'_" value="'+val
-				+(obj.readonly==0?'" ':'" readonly="readonly"')
-				+'" size="6" />');
+	var inputfield = $('<input id="'+obj.id+'_" value="'+val
+			+(obj.readonly==0?'" ':'" readonly="readonly"')
+			+'" size="6" />');
 
-		if( obj.readonly!=0 ) $("#"+obj.id).addClass("readonly");
+	if( obj.readonly!=0 ) $("#"+obj.id).addClass("readonly");
 
-		// prevvalue property: backup of value to compare on changements.
-		inputfield.attr("prevvalue", val);
-		
-		/* jQuery: .change fires if element lost focus. .input fires on every change. */
-		inputfield.bind('input', 
-				function(event){
-					if(check_intField(pnode.prop("json"), this.value)){
-						//unset red property	
-						pnode.removeClass("red");
-					}else{
-						//mark element red
-						pnode.addClass("red");
-					}
-				});
-		//add event for element leave....
-		inputfield.change( function(event){
-					var o = pnode.prop("json"); 
-					if(check_intField(o, this.value)){
-						inputfield.attr("prevvalue", this.value);
-						o.val = parse(o,this.value);
-						refresh();
-					}else{
-						//reset value.
-						this.value = inputfield.attr("prevvalue");
-						pnode.removeClass("red");
-					}
-				});
+	// prevvalue property: backup of value to compare on changements.
+	inputfield.prop("prevvalue", val);
 
-		ret.append( inputfield ); 
-		pnode.append( ret );
+	/* jQuery: .change fires if element lost focus. .input fires on every change. */
+	inputfield.bind('input', 
+			function(event){
+				if(check_intField(pnode.prop("json"), this.value)){
+					//unset red property	
+					pnode.removeClass("red");
+				}else{
+					//mark element red
+					pnode.addClass("red");
+				}
+			});
+	//add event for element leave....
+	inputfield.change( function(event){
+		var o = pnode.prop("json"); 
+		if(check_intField(o, this.value)){
+			inputfield.prop("prevvalue", this.value);
+			o.val = parse(o,this.value);
+			send_setting();
+		}else{
+			//reset value.
+			this.value = inputfield.prop("prevvalue");
+			pnode.removeClass("red");
+		}
+	});
+
+	ret.append( inputfield ); 
+	pnode.append( ret );
 }
 
 function update_intField(obj){
 	var val = format(obj,obj.val);
 	var inputfield = $("#"+obj.id+"_"); 
-	inputfield.val(val);
-	inputfield.attr("prevvalue", val);
-//	inputfield.trigger('input');
+	var prev = inputfield.prop("prevvalue");
+	/* This check omit the automaticly change of field
+	 * which currently changed by the user.
+	 */
+	if( val != prev && prev == inputfield.val() ){
+		inputfield.val(val);
+		inputfield.prop("prevvalue", val);
+		//	inputfield.trigger('input');
+	}
 }
 
 /* o is subelement of json obj
@@ -122,44 +133,44 @@ function check_intField(o, val){
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 function create_doubleField(obj, pnode){
-		var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
-		var ret = $("<span title='"+description+"' alt='"+description+"'>");
-		ret.addClass("json_input");
+	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
 
-		//format value
-		var val = format(obj,obj.val);
+	//format value
+	var val = format(obj,obj.val);
 
-		var inputfield = $('<input id="'+obj.id+'_" value="'+val+'" size="6" />');
-		// prevvalue property: backup of value to compare on changements.
-		inputfield.attr("prevvalue", val);
-		
-		/* jQuery: .change fires if element lost focus. .input fires on every change. */
-		inputfield.bind('input', 
-				function(event){
-					if(check_doubleField(pnode.prop("json"), this.value)){
-						//unset red property	
-						pnode.removeClass("red");
-					}else{
-						//mark element red
-						pnode.addClass("red");
-					}
-				});
-		//add event for element leave....
-		inputfield.change( function(event){
-					var o = pnode.prop("json"); 
-					if(check_doubleField(o, this.value)){
-						inputfield.attr("prevvalue", this.value);
-						o.val = parse(o,this.value);
-						refresh();
-					}else{
-						//reset value.
-						this.value = inputfield.attr("prevvalue");
-						pnode.removeClass("red");
-					}
-				});
+	var inputfield = $('<input id="'+obj.id+'_" value="'+val+'" size="6" />');
+	// prevvalue property: backup of value to compare on changements.
+	inputfield.prop("prevvalue", val);
 
-		ret.append( inputfield ); 
-		pnode.append( ret );
+	/* jQuery: .change fires if element lost focus. .input fires on every change. */
+	inputfield.bind('input', 
+			function(event){
+				if(check_doubleField(pnode.prop("json"), this.value)){
+					//unset red property	
+					pnode.removeClass("red");
+				}else{
+					//mark element red
+					pnode.addClass("red");
+				}
+			});
+	//add event for element leave....
+	inputfield.change( function(event){
+		var o = pnode.prop("json"); 
+		if(check_doubleField(o, this.value)){
+			inputfield.prop("prevvalue", this.value);
+			o.val = parse(o,this.value);
+			send_setting();
+		}else{
+			//reset value.
+			this.value = inputfield.prop("prevvalue");
+			pnode.removeClass("red");
+		}
+	});
+
+	ret.append( inputfield ); 
+	pnode.append( ret );
 
 }
 
@@ -181,17 +192,17 @@ function check_doubleField(o, val){
 
 /* Simple label field */
 function create_stateField(obj, pnode){
-		var description = "Id: "+obj.id+" Val: "+obj.val;
-		var ret = $("<span title='"+description+"' alt='"+description+"'>");
-		ret.addClass("json_input");
+	var description = "Id: "+obj.id+" Val: "+obj.val;
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
 
-		//format value
-		var val = format(obj,obj.val);
+	//format value
+	var val = format(obj,obj.val);
 
-		var statefield = $('<span id="'+obj.id+'_">'+val+'</span>');
-		
-		ret.append( statefield ); 
-		pnode.append( ret );
+	var statefield = $('<span id="'+obj.id+'_">'+val+'</span>');
+
+	ret.append( statefield ); 
+	pnode.append( ret );
 }
 
 function update_stateField(obj){
@@ -205,68 +216,75 @@ function update_stateField(obj){
 
 
 function create_checkboxField(obj, pnode){
-		var description = "Id: "+obj.id;
-		var ret = $("<span title='"+description+"' alt='"+description+"'>");
-		ret.addClass("json_input");
+	var description = "Id: "+obj.id;
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
 
-		var inputfield = $('<input type="checkbox" id="'+obj.id+'_" value="yes" />');
-		inputfield.prop("checked",obj.val!=0);
-		
-		//add toggle event
-		inputfield.change( function(event){
-			var o = pnode.prop("json"); 
-			o.val = ( $(this).prop("checked")!=false?1:0 );
-			refresh();
-		});
+	var inputfield = $('<input type="checkbox" id="'+obj.id+'_" value="yes" />');
+	inputfield.prop("checked",obj.val!=0);
+	inputfield.prop("prevvalue", obj.val!=0 );
 
-		ret.append( inputfield ); 
-		pnode.append( ret );
+	//add toggle event
+	inputfield.change( function(event){
+		var o = pnode.prop("json"); 
+		o.val = ( $(this).prop("checked")!=false?1:0 );
+		send_setting();
+	});
+
+	ret.append( inputfield ); 
+	pnode.append( ret );
 }
 
 function update_checkboxField(obj){
-	$("#"+obj.id+"_").prop("checked", obj.val!=0 );
+	var val = obj.val!=0;
+	var checkbox = $("#"+obj.id+"_"); 
+	var prev = checkbox.prop("prevvalue");
+	if( val != prev && prev == checkbox.prop("checked") ){
+		checkbox.prop("checked", obj.val!=0 );
+		checkbox.prop("prevvalue", obj.val);
+	}
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 function create_messagesField(obj, pnode){
-		var description = "Messages field. Refresh every second. Id: "+obj.id;
-		var ret = $("<span title='"+description+"' alt='"+description+"'>");
-		ret.addClass("json_input");
+	var description = "Messages field. Refresh every second. Id: "+obj.id;
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
 
-		var field = $('<textarea id="'+obj.id+'_" rows="10" cols="20" >');
-		field.prop("readonly",true);
-		field.addClass("readonly");
+	var field = $('<textarea id="'+obj.id+'_" rows="10" cols="35" >');
+	field.prop("readonly",true);
+	field.addClass("readonly");
 
-		var messarr = new Array();
-		field.prop("messarr",messarr);
+	var messarr = new Array();
+	field.prop("messarr",messarr);
 
-		//insert messages
-		$.each(obj.messages, function(index, value){
-			//field.val(field.val()+value.line+" "+value.text+"\n");
-			messarr.push( value.line+" "+value.text );
-		});
-		field.val( messarr.join("\n") );
+	//insert messages
+	$.each(obj.messages, function(index, value){
+		//field.val(field.val()+value.line+" "+value.text+"\n");
+		messarr.push( value.line+" "+value.text );
+	});
+	field.val( messarr.join("\n") );
 
-		//scroll to bottom
-		field.scrollTop(field.scrollHeight);
+	//scroll to bottom
+	field.scrollTop(field.scrollHeight);
 
-		ret.append( field ); 
-		pnode.append( ret );
+	ret.append( field ); 
+	pnode.append( ret );
 }
 
 function update_messagesField(obj){
 	var field = $("#"+obj.id+"_");
-	
+
 	var messarr = field.prop("messarr");
 
 	$.each(obj.messages, function(index, value){
-			//field.val(field.val()+value.line+" "+value.text+"\n");
-			messarr.push( value.line+" "+value.text );
-		});
+		//field.val(field.val()+value.line+" "+value.text+"\n");
+		messarr.push( value.line+" "+value.text );
+	});
 
 	//remove old enties
-	while( messarr.length > 15 ){
+	while( messarr.length > TEXTAREA_MAX_LINES ){
 		messarr.shift(); //remove first entry
 	}
 
@@ -315,24 +333,46 @@ function parse_mm(s){
 	return parseFloat(s)/1000;
 }
 
-/* Send current json struct to server,
- * get response and refresh displayed 
- * values */
+/* Send current json struct to server and refresh displayed values.
+*/
+function send_setting(){
+	send("update?actionid=0","b9CreatorSetting="+JSON.stringify(json_b9creator), null);
+
+	if(false)
+		send("json","",
+				function(data){
+					json_b9creator = JSON.parse(data);//change global var
+					update_fields(json_b9creator);
+				}
+				);
+}
+
+/*
+ * refresh raw message window */
 function refresh(){
-	send("json?actionid=0","b9CreatorSetting="+JSON.stringify(json_b9creator),
+	send("json","",
 			function(data){
 				json_b9creator = JSON.parse(data);//change global var
 				update_fields(json_b9creator);
 			}
 			);
+
+	send("messages","",
+			function(data){
+				json_messages = JSON.parse(data);//change global var
+				update_fields(json_messages);
+			}
+			);
+
 }
 
 //send complete json struct
 function send(url,val, handler){
-	$.post(url, val , function(data){
+	//Add space to avoid empty second arg!
+	$.post(url, val+" ", function(data){
 		//alert("Get reply\n"+data);
 		if( data == "reload" ){
-			//alert("Reload Page");
+			alert("Reload Page");
 			window.location.reload();
 		}else{
 			//reparse data
@@ -345,23 +385,24 @@ function send(url,val, handler){
 
 
 function quitServerApp(){
-	send("json?actionid=3","",null);
+	send("update?actionid=3","",null);
 }
 
-function setView(i){
-	send("json?actionid=5","view="+i);
+/* Send serial command */
+function sendCmd(str){
+	send("update?actionid=4","cmd="+str,null);
 }
 
 function format(o,val){
-if( typeof window["format_"+o.format] === "function" )
-			return (window["format_"+o.format])(o,val);
-return val;
+	if( typeof window["format_"+o.format] === "function" )
+		return (window["format_"+o.format])(o,val);
+	return val;
 }
 
 function parse(o,s){
-if( typeof window["parse_"+o.parse] === "function" )
-			return (window["parse_"+o.parse])(o,s);
-return s;
+	if( typeof window["parse_"+o.parse] === "function" )
+		return (window["parse_"+o.parse])(o,s);
+	return s;
 }
 
 
@@ -371,7 +412,7 @@ return s;
 function modifyJson(id,val){
 	$.each(	json_b9creator.html, function(index,v){
 		if(v.id==id){ v.val=val; }
-		});
+	});
 }
 
 
@@ -384,4 +425,4 @@ function deepCopy(p,c) {
 	}
 	return c;
 } 
-		
+

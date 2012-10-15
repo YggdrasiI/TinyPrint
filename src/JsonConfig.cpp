@@ -33,6 +33,14 @@ int JsonConfig::setConfig(const char* json_str, int changes=NO)
 	m_json_mutex.lock();
 	m_pjson_root = pNewRoot;
 	m_json_mutex.unlock();
+	if( changes & PARSE_AGAIN ){
+		clearConfig();//delete m_pjson_root
+		//pNewRoot can not be used if other threads changed a variable.
+		m_json_mutex.lock();
+		m_pjson_root = genJson(); 
+		m_json_mutex.unlock();
+	}
+
 	return 0;
 }
 
@@ -58,7 +66,9 @@ int JsonConfig::loadConfigFile(const char* filename)
 		free(data);
 	}else{
 		printf("File %s not found. Use default values.\n",filename);
-		m_pjson_root = loadDefaults();
+		loadDefaults();
+		if( m_pjson_root != NULL ) cJSON_Delete(m_pjson_root);
+		m_pjson_root = genJson();
 		update(m_pjson_root,NULL, CONFIG);
 		return 1;
 	}
@@ -76,11 +86,15 @@ int JsonConfig::saveConfigFile(const char* filename)
 	return 0;
 }
 
-cJSON* JsonConfig::loadDefaults()
+void JsonConfig::loadDefaults(){
+	VPRINT("Should not execute __FILE__ , __LINE__ .\n");
+}
+
+cJSON* JsonConfig::genJson()
 {
 cJSON* root = cJSON_CreateObject();	
 cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
-VPRINT("Should not execute.\n");
+VPRINT("Should not execute __FILE__ , __LINE__ .\n");
 return root;
 }
 
@@ -246,21 +260,27 @@ bool JsonConfig::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* v
 	cJSON* ntmp = getArrayEntry(jsonNew,id);
 	cJSON* otmp;
 	bool ret(false);
-	VPRINT("update of %s:",id);				
+	//VPRINT("update of %s:",id);				
 	double nval=0.0, oval=*val;
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");//probably redundant.
 		nval = doubleFieldValue(ntmp,otmp);
-		if(oval!=nval) ret=true;
+		if(oval!=nval){
+			/* Attention. The case 'oval!=*val' indicates changes of this property
+			 * by an other thread/operation. nval OVERWRITE *val. This could
+			 * be problematic in some special cases. */
+			*val = nval;
+			ret=true;
+		}
 	}else if( ntmp != NULL){
 		nval = doubleFieldValue(ntmp,ntmp);
-		ret = true;
+		if(*val != nval){
+			*val = nval;
+			ret = true;
+		}
 	}
-	VPRINT(" %f\n",nval);				
-	/* If input data was manipulated on client side, nval can differ from "ntmp.val"
-	 * nval conside [min_old,max_old] and "ntmp.val" not.
-	 */
-	*val = nval;
+	//VPRINT(" %f\n",nval);				
+	
 	return ret;
 }
 
@@ -268,7 +288,7 @@ bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, b
 	cJSON* ntmp = getArrayEntry(jsonNew,id);
 	cJSON* otmp;
 	bool ret(false);
-	VPRINT("update of %s:",id);				
+	//VPRINT("update of %s:",id);				
 	double nval=0.0, oval=*val;
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");

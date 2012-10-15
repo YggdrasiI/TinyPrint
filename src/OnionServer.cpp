@@ -16,12 +16,13 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	*/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <assert.h>
 #include <sys/types.h>
 #include <regex.h>
+#include "JsonMessage.h"
 #include "OnionServer.h"
 
 
@@ -60,23 +61,55 @@ int b9creator_script_js_template(void *p, onion_request *req, onion_response *re
 int b9creator_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
+
 /*
- Check post values and then return template of index.html.
- (Or use *p for other callbacks (not implemented))
-*/
-int checkFormularValues(void *p, onion_request *req, onion_response *res){
+ * Parse data from client. Use actionid-arg to distinct different
+ * cases.
+ */
+int update_data(void *p, onion_request *req, onion_response *res){
 	int ok = ((OnionServer*)p)->updateSetting(req,res);
 	if( ok != 0){
 		onion_response_set_length(res, 6);
 		onion_response_write(res, "reload", 6); 
-	}else{
-		//onion_response_set_length(res, 2);
-		//onion_response_write(res, "Ok", 2); 
-		const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig();
-		size_t len = strlen( b9Creator );
-		onion_response_set_length(res, (int) len);
-		onion_response_write(res, b9Creator, (int) len); 
+	} else{
+		onion_response_set_length(res, 2);
+		onion_response_write(res, "ok", 2); 
 	}
+	return OCS_PROCESSED;
+}
+
+/*
+ Returns json struct of current settings. If
+ argument
+ Check post values and then return template of index.html.
+ (Or use *p for other callbacks (not implemented))
+*/
+int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
+	const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig();
+	size_t len = strlen( b9Creator );
+	onion_response_set_length(res, (int) len);
+	onion_response_write(res, b9Creator, (int) len); 
+	return OCS_PROCESSED;
+}
+
+/*
+ * Convert all enties of message queue into json code and send this file
+ * to the client.
+ */
+int getPrinterMessages(void *p, onion_request *req, onion_response *res){
+
+		Messages &q = ((OnionServer*)p)->m_b9CreatorSettings.m_queues;
+		//VPRINT("Messages: %i\n", q.m_messageQueue.size() );
+		q.m_messageMutex.lock();
+		cJSON* tmp = jsonMessages("serialMessages", q.m_messageQueue);
+		const char* json_serialMessages = cJSON_Print( tmp );
+		if( tmp != NULL ) cJSON_Delete(tmp);
+		q.m_messageMutex.unlock();
+
+		size_t len = strlen( json_serialMessages );
+		onion_response_set_length(res, (int) len);
+		onion_response_write(res, json_serialMessages, (int) len); 
+
 	return OCS_PROCESSED;
 }
 
@@ -163,9 +196,11 @@ int OnionServer::start_server()
 	onion_url_add_with_data(url, "b9creator_settings.js", (void*)insert_json, this, NULL);
 	onion_url_add_with_data(url, "index.html", (void*)index_html, &m_b9CreatorSettings, NULL);
 	onion_url_add_with_data(url, "", (void*)index_html, &m_b9CreatorSettings, NULL);
-	//onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
-	//onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
-	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
+	//onion_url_add_with_data(url, "index.html", (void*)getB9CreatorSettings, this, NULL);
+	//onion_url_add_with_data(url, "", (void*)getB9CreatorSettings, this, NULL);
+	onion_url_add_with_data(url, "update", (void*)update_data, this, NULL); /* <-- Recive data */
+	onion_url_add_with_data(url, "json", (void*)getB9CreatorSettings, this, NULL); /* <-- Send data */
+	onion_url_add_with_data(url, "messages", (void*)getPrinterMessages, this, NULL); /* <-- Send data */
 	onion_url_add(url, "^.*$", (void*)search_file);
 
 	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
@@ -189,52 +224,61 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
-		case 3:{ /* Quit */
-						 printf("Quitting...\n");
-						m_b9CreatorSettings.lock();
-						m_b9CreatorSettings.m_die = true;
-						m_b9CreatorSettings.unlock();
+		case 4:{ /* Command Message */
+						 const char* json_str = onion_request_get_post(req,"cmd");
+						 if( json_str != NULL){
+							 Messages &q = m_b9CreatorSettings.m_queues;
+							 std::string cmd(json_str); 
+							 q.add_command(cmd);	
+						 }
 					 }
 					 break;
-		case 2:{
-						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Save new b9CreatorSettings: %s\n",filename);
-						 if( check_filename(filename ) == 1){
-							 VPRINT("%s","TODO");
-							 break;
-							 m_b9CreatorSettings.saveConfigFile(filename);
-							 m_b9CreatorSettings.setString("lastSetting",filename);
-							 m_b9CreatorSettings.saveConfigFile("b9CreatorSettings.ini");
-						 }else{
-						 	printf("Filename not allowed\n");
-						 }
-						 /* force reload of website */
-						 return 0;
+		case 3:{ /* Quit */
+						 printf("Quitting...\n");
+						 m_b9CreatorSettings.lock();
+						 m_b9CreatorSettings.m_die = true;
+						 m_b9CreatorSettings.unlock();
 					 }
-			break;
-		case 1:{
-						 const char* filename = onion_request_get_post(req,"filename");
-						 VPRINT("Load new b9CreatorSettings: %s\n",filename);
-						 if( check_filename(filename ) == 1){
-							 m_b9CreatorSettings.loadConfigFile(filename);
-						 }else{
-							 printf("Filename not allowed\n");
-						 }
-						 return -1;
-					 }
-			break;
+					 break;
+		case -2:{
+							const char* filename = onion_request_get_post(req,"filename");
+							printf("Save new b9CreatorSettings: %s\n",filename);
+							if( check_filename(filename ) == 1){
+								VPRINT("%s","TODO");
+								break;
+								m_b9CreatorSettings.saveConfigFile(filename);
+								m_b9CreatorSettings.setString("lastSetting",filename);
+								m_b9CreatorSettings.saveConfigFile("b9CreatorSettings.ini");
+							}else{
+								printf("Filename not allowed\n");
+							}
+							/* force reload of website */
+							return -1;
+						}
+						break;
+		case -1:{
+							const char* filename = onion_request_get_post(req,"filename");
+							VPRINT("Load new b9CreatorSettings: %s\n",filename);
+							if( check_filename(filename ) == 1){
+								m_b9CreatorSettings.loadConfigFile(filename);
+							}else{
+								printf("Filename not allowed\n");
+							}
+							return -1;
+						}
+						break;
 		case 0:
 		default:{
 							VPRINT("update printSetting values\n");
 							const char* json_str = onion_request_get_post(req,"b9CreatorSetting");
 							if( json_str != NULL){
 								//printf("Get new printSetting: %s\n",json_str);
-								m_b9CreatorSettings.setConfig(json_str, NO);
+								m_b9CreatorSettings.setConfig(json_str, PARSE_AGAIN);
 							}else{
 								return -1;
 							}
 						}
-			break;
+						break;
 	}
 	return 0; 
 }
