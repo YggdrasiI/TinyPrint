@@ -17,7 +17,7 @@ void SerialManager::run(){
 			{
 				cout<<"Error: "<<e.what()<<endl;
 				//m_die = true;
-				usleep(1000000);
+				usleep(5000000);
 			}
 			usleep(100000);//wait 100ms
 		}else{
@@ -51,6 +51,7 @@ void SerialManager::writeLineFromQueue(){
 	q.m_commandQueue.pop();
 	q.m_commandMutex.unlock();
 
+	cmd.append("\n");
 	writeString(cmd);
 
 #ifdef VERBOSE

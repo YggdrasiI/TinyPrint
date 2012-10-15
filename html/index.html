@@ -31,13 +31,14 @@
 </head>
 <body>
 	<div class="containerL">
+		<!--
 		<h1>Configs</h1>
 		<div id="configs">
 			<input type="button" value="Load Config" onclick="loadConfig()"/>
 			<input id="configFilename" type="text" size="10" value="{{LAST_SETTING_FILENAME}}" />
 			<input type="button" value="Save Config" onclick="saveConfig()"/>
 		</div>	
-
+		-->
 		<h1>Printer Status and Messages</h1>
 		<div class="prop" id="resetStatus">Reset status: </div>
 		<div class="prop" id="projectorStatus">Projector status: </div>
@@ -74,7 +75,7 @@
 			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
 		</div>
 		<div style="clear:both">
-			<input type="button" onclick="alert('ToDo')" value="Go To Fill Level" /><br />
+			<input type="button" onclick="sendCmd('Z630')" value="Go To Fill Level" /><br />
 			<input type="button" onclick="sendCmd('R')" value="Reset Printer" />
 		</div>
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Print" />
