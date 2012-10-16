@@ -15,18 +15,27 @@ class B9CreatorSettings: public JsonConfig{
 		 * m_tpi: thread per inch of z axis screw.
 		 * m_spr: Steps per revolution of z axis motor.
 		 *
-		 * PU = 10000 * 1/m_spr * 1/m_tpi inch / mm (PU is scaled by Metric unit!)
-		 * 1″ = 254 mm */
+		 * Definition of m_PU:
+		 * 1PU	= 1/spr * 1/tpi * inch 
+		 * 			= 1/spr * 1/tpi * 254 mm
+		 * 			= 1/spr * 1/tpi * 254000 nm
+		 * 			=: m_PU nm
+		 * => m_PU is scaled by Metric unit nm!
+		 * 1″ = 254 mm
+		 * */
 		int m_spr; 
 		int m_tpi;
-		int m_PU;
 
 	public:
+		int m_PU;
 		int m_currentLayer;
+		int m_maxLayer; //chaged after file loading
 		int m_vatOpen; //in percent
 		int m_projectorStatus;
 		int m_resetStatus;
-		double m_zHeight;
+		int m_zHeight;// height in PU
+		int m_zHeightLimit;
+		int m_zHome;// height in PU
 
 		std::string m_host;
 		std::string m_port;
@@ -35,6 +44,9 @@ class B9CreatorSettings: public JsonConfig{
 		int m_comBaudrate;
 		double m_breathTime;
 		bool m_gridShow; //show grid
+		bool m_shutterEquipped;
+		bool m_projectorEquipped;
+		int m_lampHours;
 		unsigned char m_gridColor[3]; //rgb value
 		bool m_die; // flag indicate end of main loop
 
@@ -47,14 +59,20 @@ class B9CreatorSettings: public JsonConfig{
 		B9CreatorSettings() : 	JsonConfig(),
 		m_spr(200), m_tpi(20),
 		m_breathTime(-1.0), m_gridShow(true),
-		m_currentLayer(1), m_vatOpen(-100),
-		m_projectorStatus(0), m_resetStatus(1),
-		m_zHeight(-1.0),
+		m_currentLayer(1), m_maxLayer(10),
+		m_vatOpen(-100),
+		m_projectorStatus(2), m_resetStatus(1),
+		m_zHeight(-1),
+		m_zHeightLimit(100000000),
+		m_zHome(-1),
 		m_comBaudrate(115200),
 		m_queues(),
 		m_host(),
 		m_port(),
 		m_comPort(),
+		m_projectorEquipped(false),
+		m_shutterEquipped(false),
+		m_lampHours(-1),
 		m_b9jDir(),
 		m_die(false)
 		{

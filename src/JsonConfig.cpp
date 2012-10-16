@@ -20,6 +20,17 @@ int JsonConfig::clearConfig()
 		m_pjson_root = NULL;
 	}
 	m_json_mutex.unlock();
+	return 0;
+}
+
+
+int JsonConfig::regenerateConfig()
+{
+		clearConfig();
+		m_json_mutex.lock();
+		m_pjson_root = genJson(); 
+		m_json_mutex.unlock();
+		return 0;
 }
 
 int JsonConfig::setConfig(const char* json_str, int changes=NO)
@@ -29,23 +40,23 @@ int JsonConfig::setConfig(const char* json_str, int changes=NO)
 	/* Not call setConfig from construtor. update is virtual. Use init() instead.*/
 	update(pNewRoot,m_pjson_root, changes);
 
-	clearConfig();
-	m_json_mutex.lock();
-	m_pjson_root = pNewRoot;
-	m_json_mutex.unlock();
 	if( changes & PARSE_AGAIN ){
-		clearConfig();//delete m_pjson_root
 		//pNewRoot can not be used if other threads changed a variable.
+		cJSON_Delete( pNewRoot );
+		regenerateConfig();
+	}else{
+		clearConfig();//delete m_pjson_root
 		m_json_mutex.lock();
-		m_pjson_root = genJson(); 
+		m_pjson_root = pNewRoot;
 		m_json_mutex.unlock();
 	}
 
 	return 0;
 }
 
-char* JsonConfig::getConfig()//const
+char* JsonConfig::getConfig(bool regenerate)//const
 {
+	if( regenerate ) regenerateConfig();
 	return cJSON_Print(m_pjson_root);
 	//cJSON html_node = cJSON_GetObjectItem(m_pjson_root,"html");
 	//return cJSON_Print(html_node);
@@ -53,7 +64,7 @@ char* JsonConfig::getConfig()//const
 
 int JsonConfig::loadConfigFile(const char* filename)
 {
-		clearConfig();
+	clearConfig();
 	if( FILE *f=fopen(filename,"rb") ){
 		fseek(f,0,SEEK_END);
 		long len=ftell(f);
@@ -67,9 +78,8 @@ int JsonConfig::loadConfigFile(const char* filename)
 	}else{
 		printf("File %s not found. Use default values.\n",filename);
 		loadDefaults();
-		if( m_pjson_root != NULL ) cJSON_Delete(m_pjson_root);
-		m_pjson_root = genJson();
-		update(m_pjson_root,NULL, CONFIG);
+		regenerateConfig();
+		//update(m_pjson_root,NULL, CONFIG);
 		return 1;
 	}
 	return 0;

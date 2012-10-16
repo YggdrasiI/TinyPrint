@@ -51,50 +51,53 @@ void SerialManager::writeLineFromQueue(){
 	q.m_commandQueue.pop();
 	q.m_commandMutex.unlock();
 
-	cmd.append("\n");
-	writeString(cmd);
-
 #ifdef VERBOSE
 	std::cout << "Send " << cmd << std::endl;
 #endif
 	
+	cmd.append("\n");
 	writeString(cmd);
+
 }
 
 
 void SerialManager::update(string str){
- //[...] analyse
- if( str.size() < 1 ) return;
+	//[...] analyse
+	if( str.size() < 1 ) return;
 	m_b9CreatorSettings.lock();
 	switch( str.at(0) ){
-		case 'R':
+		case 'A':
 			{
-				m_b9CreatorSettings.m_resetStatus = (str.at(1) == '1' );
+				m_b9CreatorSettings.m_projectorEquipped = (str.at(1) == '1' );
 			}
 			break;
-		case 'P':
+		case 'B':
 			{
-				m_b9CreatorSettings.m_projectorStatus = (str.at(1) == '1' );
 			}
 			break;
-		case 'V': //Version
-		case 'C': //Comment. Remove first char.
+		case 'C': //Comment. 
 			{
-				str.erase(0,1);
+				//str.erase(0,1);
 			}
 			break;
-		case 'Z':	// Height of build table
+		case 'D':
 			{
-				int zh(0);
-				sscanf(str.c_str(),"%*c %d ",&zh);
-				m_b9CreatorSettings.m_zHeight = zh;
 			}
 			break;
-		case 'S':	// Slide in %. >0% and >100% are possible
+		case 'E':
 			{
-				int s(0);
-				sscanf(str.c_str(),"%*c %d ",&s);
-				m_b9CreatorSettings.m_vatOpen = s;
+			}
+			break;
+		case 'F':
+			{
+			}
+			break;
+		case 'G':
+			{
+			}
+			break;
+		case 'H':
+			{
 			}
 			break;
 		case 'I':	// PU info. Unit: 1/100 mm
@@ -102,14 +105,106 @@ void SerialManager::update(string str){
 				int pu(0);
 				sscanf(str.c_str(),"%*c %d ",&pu);
 				//hm, should be the same value as m_PU....
+				std::cout << "PU check: " << m_b9CreatorSettings.m_PU << " " << pu << std::endl;
+			}
+			break;
+		case 'J':	// Shutter equipped info.
+			{
+				m_b9CreatorSettings.m_shutterEquipped = (str.at(1) == '1' );
+			}
+			break;
+		case 'K':
+			{
+			}
+			break;
+		case 'L':	// Lamp hours
+			{
+				int l(0);
+				sscanf(str.c_str(),"%*c %d ",&l);
+				m_b9CreatorSettings.m_lampHours = l;
+			}
+			break;
+		case 'M':
+			{
+				int mzh(0);
+				sscanf(str.c_str(),"%*c %d ",&mzh);
+				m_b9CreatorSettings.m_zHeightLimit = mzh;
+			}
+			break;
+		case 'N':
+			{
+			}
+			break;
+		case 'O':
+			{
+			}
+			break;
+		case 'P':
+			{
+				m_b9CreatorSettings.m_projectorStatus = (str.at(1) == '1' );
+			}
+			break;
+		case 'Q':
+			{
+			}
+			break;
+		case 'R':
+			{
+				m_b9CreatorSettings.m_resetStatus = (str.at(1) == '1' );
+			}
+			break;
+		case 'S':	// Slide in %. >0% and >100% are possible
+			{
+				std::cout << "Set silde val" << std::endl;
+				int s(0);
+				sscanf(str.c_str(),"%*c %d ",&s);
+				m_b9CreatorSettings.m_vatOpen = s;
+			}
+			break;
+		case 'T':
+			{
+			}
+			break;
+		case 'U':
+			{
+			}
+			break;
+		case 'V': //Version
+			{
+			}
+			break;
+		case 'W':
+			{
+			}
+			break;
+		case 'X':
+			{
+			}
+			break;
+		case 'Y': // current home position
+			{
+				int home(0);
+				sscanf(str.c_str(),"%*c %d ",&home);
+				m_b9CreatorSettings.m_zHome = home;
+			}
+			break;
+		case 'Z':	// Height of build table in PU
+			{
+				int zh(0);
+				sscanf(str.c_str(),"%*c %d ",&zh);
+				m_b9CreatorSettings.m_zHeight = zh;
 			}
 			break;
 		default:
 			std::cout << "Can not handle" << str << std::endl;
 			break;
-
 	}
-	//regenerate json string here?!
+
+	/* Call of regenerateConfig() is not ness.
+	 * Regeneration of string will forced
+	 * on web page reload.
+	 */
+	//m_b9CreatorSettings.regenerateConfig();
 	m_b9CreatorSettings.unlock();
 
 	Messages &q = m_b9CreatorSettings.m_queues;	

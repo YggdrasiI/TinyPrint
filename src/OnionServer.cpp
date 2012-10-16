@@ -85,7 +85,7 @@ int update_data(void *p, onion_request *req, onion_response *res){
  (Or use *p for other callbacks (not implemented))
 */
 int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
-	const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig();
+	const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig(true);
 	size_t len = strlen( b9Creator );
 	onion_response_set_length(res, (int) len);
 	onion_response_write(res, b9Creator, (int) len); 
@@ -273,7 +273,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 							const char* json_str = onion_request_get_post(req,"b9CreatorSetting");
 							if( json_str != NULL){
 								//printf("Get new printSetting: %s\n",json_str);
-								m_b9CreatorSettings.setConfig(json_str, PARSE_AGAIN);
+								m_b9CreatorSettings.setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
 							}else{
 								return -1;
 							}

@@ -15,9 +15,12 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToObject(root, "jobDir", cJSON_CreateString(m_b9jDir.c_str() ));
 	cJSON_AddItemToObject(root, "comPort", cJSON_CreateString(m_comPort.c_str() ));
 	cJSON_AddItemToObject(root, "comBaudrate", cJSON_CreateNumber(115200));
+//	cJSON_AddItemToObject(root, "shutterEquipped", cJSON_CreateNumber(0));
+//	cJSON_AddItemToObject(root, "lampHours", cJSON_CreateNumber(-1));
 
-	char gcol[6];
+	char gcol[7];
 	sprintf(gcol,"%X%X%X",m_gridColor[0],m_gridColor[1],m_gridColor[2]);
+	gcol[6] = '\0';
 	cJSON_AddItemToObject(root, "gridColor", cJSON_CreateString(gcol));//hex string
 
 	/* sub node. This values will transmitted to web interface */
@@ -26,11 +29,13 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
 	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_breathTime,1,300,10) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
-	cJSON_AddItemToArray(html, jsonStateField("currentLayer",m_currentLayer) );
+//	cJSON_AddItemToArray(html, jsonStateField("currentLayer",m_currentLayer) );
+	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
+				min(m_currentLayer,m_maxLayer),1,m_maxLayer,1) );
 	cJSON_AddItemToArray(html, jsonStateField("vatOpen",m_vatOpen,"percent","percent") );//in Percent
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
-	cJSON_AddItemToArray(html, jsonStateField("zHeight",m_zHeight,"mm","mm") ); // height in mm.
+	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
 
 	cJSON_AddItemToObject(root, "html", html);
 
@@ -45,6 +50,9 @@ void B9CreatorSettings::loadDefaults()
 	m_comPort = "/dev/ttyACM0";
 	m_comBaudrate = 115200;
 	m_gridColor[0] = 200; m_gridColor[1] = 0; m_gridColor[2] = 0;
+	m_shutterEquipped = false;
+	m_projectorEquipped= false;
+	m_lampHours = -1;
 
 	/* sub node. This values will transmitted to web interface */
 	m_spr = 200;
@@ -52,14 +60,18 @@ void B9CreatorSettings::loadDefaults()
 	m_breathTime = 2;
 	m_gridShow = true;
 	m_currentLayer = 1;
-	m_vatOpen = 0;
-	m_projectorStatus = 0;
+	m_vatOpen = -100;
+	m_projectorStatus = 2;
 	m_resetStatus = 1;
-	m_zHeight = 0.0;
+	m_zHeight = -1;
+	m_zHome = -1;
 
 };
 
-
+/*
+ * replaces |=YES with |=XYZ to extend changes flag.
+ * It's could be useful to detect special updates, conflicts...
+ */
 int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 	cJSON* nhtml = cJSON_GetObjectItem(jsonNew,"html");
 	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
@@ -67,24 +79,35 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 	lock();
 	if( nhtml != NULL){
 
-		if( JsonConfig::update(nhtml,ohtml,"stepsPerRevolution",&m_spr) 
-		|| JsonConfig::update(nhtml,ohtml,"threadPerInch",&m_tpi) ){
-			m_PU = 1000 * 254 / (m_spr * m_tpi) ;
-			changes|=MARGIN;
+		if(false && (changes & ALL) ){
+			//This values are set up on other placed and should not read
+			//from json structs. I added the lines just for your information.
+			double tmp = m_zHeight*m_PU/1000.0;
+			if( updateState(nhtml,ohtml,"zHeight_mm",&tmp) ){
+				m_zHeight = tmp*1000.0/m_PU;
+				changes|=YES;
+			}
+			if( updateState(nhtml,ohtml,"vatOpen",&m_vatOpen) ) changes|=YES;
+			if( updateState(nhtml,ohtml,"projectorStatus",&m_projectorStatus) ) changes|=YES;
+			if( updateState(nhtml,ohtml,"resetStatus",&m_resetStatus) ) changes|=YES;
 		}
-		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_breathTime) ) changes|=MARGIN;
-		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ) changes|=MARGIN;
 
-		if( updateState(nhtml,ohtml,"currentLayer",&m_currentLayer) ) changes|=MARGIN;
-		if( updateState(nhtml,ohtml,"vatOpen",&m_vatOpen) ) changes|=MARGIN;
-		if( updateState(nhtml,ohtml,"projectorStatus",&m_projectorStatus) ) changes|=MARGIN;
-		if( updateState(nhtml,ohtml,"resetStatus",&m_resetStatus) ) changes|=MARGIN;
-		if( updateState(nhtml,ohtml,"zHeight",&m_zHeight) ) changes|=MARGIN;
-		//call signal
-		//updateSig(this,changes);
-		
+		if(changes & CONFIG ){		
+			if( JsonConfig::update(nhtml,ohtml,"stepsPerRevolution",&m_spr) 
+					|| JsonConfig::update(nhtml,ohtml,"threadPerInch",&m_tpi) ){
+				m_PU = 1000 * 254 / (m_spr * m_tpi) ;
+				changes|=YES;
+			}
+			if( updateState(nhtml,ohtml,"zHeightLimit",&m_zHeightLimit) ) changes|=YES;
+		}
+
+		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_breathTime) ) changes|=YES;
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_currentLayer) ) changes|=YES;
+
 	}
 	unlock();
+	//start some signal handler (removed)
 
 	return changes!=NO?1:0;
 }
@@ -105,12 +128,18 @@ bool B9CreatorSettings::updateState(cJSON* jsonNew, cJSON* jsonOld,const char* i
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");
 		nval = getNumber(ntmp,"val");
-		if(oval!=nval) ret=true;
+		if(oval!=nval){
+			/* Attention. The case 'oval!=*val' indicates changes of this property
+			 * by an other thread/operation. nval OVERWRITE *val. This could
+			 * be problematic in some special cases. */
+			*val = nval;
+			ret=true;
+		}
 	}else if( ntmp != NULL){
 		nval = getNumber(ntmp,"val");
+		*val = nval;
 		ret = true;
 	}
 	//VPRINT(" %f\n",nval);				
-	*val = nval;
 	return ret;
 }

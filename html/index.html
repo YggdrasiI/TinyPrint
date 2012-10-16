@@ -43,8 +43,9 @@
 		<div class="prop" id="resetStatus">Reset status: </div>
 		<div class="prop" id="projectorStatus">Projector status: </div>
 		<div class="prop" id="vatOpen">VAT % Open: </div>
-		<div class="prop" id="zHeight">Z Height: </div>
+		<div class="prop" id="zHeight_mm">Z Height: </div>
 
+		<input type="button" onclick="sendCmd('R')" value="Reset Printer" />
 		<h1>End program</h1>
 		<input type="button" onclick="quitServerApp()" value="Quit" />
 	</div>
@@ -75,8 +76,7 @@
 			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
 		</div>
 		<div style="clear:both">
-			<input type="button" onclick="sendCmd('Z630')" value="Go To Fill Level" /><br />
-			<input type="button" onclick="sendCmd('R')" value="Reset Printer" />
+			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
 		</div>
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Print" />
 		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Abort" /><br />

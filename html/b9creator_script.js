@@ -3,7 +3,7 @@
  * entryes (first key) with strings.
  * */
 TOKENS = {
-	"projectorStatus" : {0 : "Off" , 1 : "On" },
+	"projectorStatus" : {2 : "?" , 0 : "Off" , 1 : "On" },
 	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
 }
 
@@ -46,8 +46,6 @@ function cu_fields(obj,prefix){
 					 *	Reparsing of json string creates new objects!
 					 */
 					pnode = $("#"+o.id);
-
-
 					pnode.prop("json", o);
 					(window[prefix+"_"+o.type])(o, pnode );
 				}else{
@@ -198,7 +196,6 @@ function create_stateField(obj, pnode){
 
 	//format value
 	var val = format(obj,obj.val);
-
 	var statefield = $('<span id="'+obj.id+'_">'+val+'</span>');
 
 	ret.append( statefield ); 
@@ -206,7 +203,7 @@ function create_stateField(obj, pnode){
 }
 
 function update_stateField(obj){
-	var statefield = $(obj.id+"_"); 
+	var statefield = $("#"+obj.id+"_"); 
 	var val = format(obj,obj.val);
 	var statefield2 = $('<span id="'+obj.id+'_">'+val+'</span>');
 	statefield.replaceWith(statefield2);
@@ -277,6 +274,8 @@ function update_messagesField(obj){
 	var field = $("#"+obj.id+"_");
 
 	var messarr = field.prop("messarr");
+	var scrollPos = field[0].scrollTop;
+	var onBottom = (scrollPos+field.height() + 30 > field[0].scrollHeight );
 
 	$.each(obj.messages, function(index, value){
 		//field.val(field.val()+value.line+" "+value.text+"\n");
@@ -290,8 +289,13 @@ function update_messagesField(obj){
 
 	field.val( messarr.join("\n") );
 	field.prop("messarr",messarr);
-	//scroll to bottom
-	field.scrollTop(field[0].scrollHeight);
+	if( onBottom ){
+		//scroll to bottom
+		field.scrollTop(field[0].scrollHeight);
+	}else{
+		//scroll to last known position. This is not perfect if old lines was removed. 
+		field.scrollTop(scrollPos);
+	}
 }
 
 
@@ -315,22 +319,26 @@ function format_token(o,val){
 }
 
 function format_percent(o,val){
-	var p = (typeof val === "string"?parseInt(val)*100:val*100);
+	var p = (typeof val === "string"?parseInt(val):val);
+	if( p == -100 ) return "?%";
 	return p+"%";
 }
 
 function parse_percent(o,s){
-	return parseFloat(s)/100;
+	if( s == "?%" ) return -100;
+	return parseFloat(s);
 }
 
-/* millimeter, similar to percent. Just for testing. It's no good idea to use 1m as base measure... */
+/* millimeter, similar to percent. */
 function format_mm(o,val){
-	var p = (typeof val === "string"?parseInt(val)*1000:val*1000);
+	//var p = (typeof val === "string"?parseInt(val)*1000:val*1000);
+	var p = (typeof val === "string"?parseInt(val):val);
 	return p+"mm";
 }
 
 function parse_mm(s){
-	return parseFloat(s)/1000;
+	//return parseFloat(s)/1000;
+	return parseFloat(s);
 }
 
 /* Send current json struct to server and refresh displayed values.

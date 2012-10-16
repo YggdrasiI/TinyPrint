@@ -40,9 +40,30 @@ class JsonConfig{
 		~JsonConfig(){
 			clearConfig();
 		};
-	
-		int setConfig(const char* json_str, int update);
-		char* getConfig();//const;
+
+		/*
+		 * Parse json_str to new json struct. 
+		 *
+		 * Calls virtual method update(...) to
+		 * extract the property changes from the json struct.
+		 *
+		 * Set changes on PARSE_AGAIN if you want
+		 * force the call of regenerateConfig().
+		 *
+		 */
+		int setConfig(const char* json_str, int changes);
+
+		/*
+		 * Delete old json string and call genJson()
+		 * to produce new json object. You should alter
+		 * the virtual method genJson() to control the
+		 * json object.
+		 */
+		int regenerateConfig();
+
+		/* regenerate force call of regenerateConfig().
+		 * */
+		char* getConfig(bool regenerate=false);
 		int loadConfigFile(const char* filename);
 		int saveConfigFile(const char* filename);	
 		/* 
