@@ -1,6 +1,8 @@
 #ifndef ONIONSERVER_H
 #define ONIONSERVER_H
 
+#include <string>
+#include <iostream>
 #include <pthread.h>
 //#include <png.h>
 
@@ -48,8 +50,7 @@ class OnionServer{
 
 		int start_server();
 		int stop_server();
-		int updateSetting(onion_request *req, onion_response *res);
-
+		int updateSetting(onion_request *req, onion_response *res, std::string &reply);
 };
 
 #endif

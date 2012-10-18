@@ -20,14 +20,14 @@ void DisplayManager::createGrid(){
 	dsc2.caps  = (DFBSurfaceCapabilities)( DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PIXELFORMAT );
 	//dsc2.caps = DSCAPS_NONE;
 	dsc2.flags = (DFBSurfaceDescriptionFlags) (DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PIXELFORMAT);
-	dsc2.width = screen_width;
-	dsc2.height = screen_height;
+	dsc2.width = m_screenWidth;
+	dsc2.height = m_screenHeight;
 	dsc2.pixelformat = DSPF_ARGB;
 
-	DFBCHECK (dfb->CreateSurface( dfb, &dsc2, &m_grid ));
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc2, &m_grid ));
 
-  //DFBCHECK (primary->SetColor (primary, 0x00, 0xF0, 0xF0, 0xFF));//
-  //DFBCHECK (primary->FillRectangle (primary, 0, 0, screen_width, screen_height ));
+  //DFBCHECK (m_pPrimary->SetColor (m_pPrimary, 0x00, 0xF0, 0xF0, 0xFF));//
+  //DFBCHECK (m_pPrimary->FillRectangle (m_pPrimary, 0, 0, m_screenWidth, m_screenHeight ));
 
   //DFBCHECK (m_grid->SetColor (m_grid, 0x00, 0xFF, 0x00, 0x00));//transparent
   //DFBCHECK (m_grid->FillRectangle (m_grid, 0, 0, dsc2.width, dsc2.height ));
@@ -63,11 +63,11 @@ void DisplayManager::redraw(){
 
 	m_img_mutex.lock();
 	//Clear the screen.
-  DFBCHECK (primary->SetColor (primary, 0xFF, 0x00, 0x00, 0x00));//black
-	DFBCHECK (primary->FillRectangle (primary, 0, 0, screen_width, screen_height));
+  DFBCHECK (m_pPrimary->SetColor (m_pPrimary, 0xFF, 0x00, 0x00, 0x00));//black
+	DFBCHECK (m_pPrimary->FillRectangle (m_pPrimary, 0, 0, m_screenWidth, m_screenHeight));
 
 	if( m_gridShow ){
-		DFBCHECK (primary->Blit(primary, m_grid, NULL, 0, 0));
+		DFBCHECK (m_pPrimary->Blit(m_pPrimary, m_grid, NULL, 0, 0));
 	}
 
 	if( !m_black ){
@@ -75,7 +75,7 @@ void DisplayManager::redraw(){
 	}
 
 	//Flip the front and back buffer, but wait for the vertical retrace to avoid tearing.
-	DFBCHECK (primary->Flip (primary, NULL, DSFLIP_WAITFORSYNC));
+	DFBCHECK (m_pPrimary->Flip (m_pPrimary, NULL, DSFLIP_WAITFORSYNC));
 
 	m_redraw = false;
 	m_img_mutex.unlock();
@@ -96,18 +96,18 @@ void DisplayManager::initFB(){
 	//A surface description is needed to create a surface.
 	DFBSurfaceDescription dsc;
 
-	DFBCHECK (DirectFBCreate (&dfb));
+	DFBCHECK (DirectFBCreate (&m_pDfb));
 
 	if( false ){
 		//this made problems on my laptop?! I assume you can set
 		//the value on your system.
-		DFBCHECK (dfb->SetCooperativeLevel (dfb, DFSCL_FULLSCREEN));
+		DFBCHECK (m_pDfb->SetCooperativeLevel (m_pDfb, DFSCL_FULLSCREEN));
 	}
 
 	dsc.flags = DSDESC_CAPS;
 	dsc.caps  = (DFBSurfaceCapabilities)( DSCAPS_PRIMARY | DSCAPS_FLIPPING);
-	DFBCHECK (dfb->CreateSurface( dfb, &dsc, &primary ));
-	DFBCHECK (primary->GetSize (primary, &screen_width, &screen_height));
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &m_pPrimary ));
+	DFBCHECK (m_pPrimary->GetSize (m_pPrimary, &m_screenWidth, &m_screenHeight));
 
 	createGrid();
 	m_redraw = true;
@@ -117,9 +117,9 @@ void DisplayManager::initFB(){
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
 	m_img_mutex.lock();
-	if( primary != NULL ) primary->Release (primary);
+	if( m_pPrimary != NULL ) m_pPrimary->Release (m_pPrimary);
 	if( m_grid != NULL ) m_grid->Release (m_grid);
-	if( dfb != NULL ) dfb->Release (dfb);
+	if( m_pDfb != NULL ) m_pDfb->Release (m_pDfb);
 	m_img_mutex.unlock();
 }
 
@@ -147,6 +147,9 @@ void DisplayManager::run(){
 				}
 
 				usleep(10000);
+				//check if display flag was unset 
+				if(! m_b9CreatorSettings.m_display )
+					m_pause = true;
 			}
 
 			freeFB();//quit fb
@@ -154,6 +157,10 @@ void DisplayManager::run(){
 			//wait
 			usleep(1000000);
 		}
+
+		//check if display flag was set 
+		if( m_b9CreatorSettings.m_display )
+			m_pause = false;
 	}
 
 	//quit of thread loop function

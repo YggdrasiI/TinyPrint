@@ -22,15 +22,6 @@
 
 static void* displayThread(void* arg);
 
-//This is the super interface, it's the entry point to all functionality.
-static IDirectFB *dfb = NULL;
-
-//	The primary surface, i.e. the "screen".  In cooperative level DFSCL_FULLSCREEN it's the surface of the primary layer.
-static IDirectFBSurface *primary = NULL;
-
-//	Store the width and height of the primary surface here to support all resolutions.
-static int screen_width  = 0;
-static int screen_height = 0;
 
 //	An error checking macro for a call to DirectFB.  It is suitable for very simple applications or tutorials.  In more sophisticated applications this general error checking should not be used.
 #define DFBCHECK(x...)                                         \
@@ -52,8 +43,12 @@ class DisplayManager {
 			m_gridShow(false),
 			m_die(false),
 			m_pause(true),
+			m_redraw(false),
+			m_screenWidth(0),
+			m_screenHeight(0),
+			m_pDfb(NULL),
 			m_grid(NULL),
-			m_redraw(false)
+			m_pPrimary(NULL)
 	{
 		if( pthread_create( &m_pthread, NULL, &displayThread, this) ){
 			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
@@ -109,7 +104,17 @@ class DisplayManager {
 		void run();
 
 	private:
-		B9CreatorSettings m_b9CreatorSettings;
+		//This is the super interface, it's the entry point to all functionality.
+		IDirectFB *m_pDfb;
+		//	The primary surface, i.e. the "screen".  In cooperative level DFSCL_FULLSCREEN it's the surface of the primary layer.
+		IDirectFBSurface *m_pPrimary;
+
+		//	Store the width and height of the primary surface here to support all resolutions.
+		int m_screenWidth;
+		int m_screenHeight;
+
+
+		B9CreatorSettings &m_b9CreatorSettings;
 		bool m_die; // quit frame buffer thread loop.
 		bool m_pause; // pause frame buffer loop.
 		bool m_redraw; //mark if redraw is ness.

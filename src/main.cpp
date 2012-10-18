@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	DisplayManager displayManager(b9CreatorSettings);
 	//JobManager jobManager(b9CreatorSettings, displayManager);
 	
-	displayManager.start();
+	//displayManager.start();
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
@@ -81,9 +81,11 @@ int main(int argc, char **argv) {
 		}
 		if( b9CreatorSettings.m_die ) die = true;
 
+		/*
 		usleep(4000000);
 		die = true;
 		b9CreatorSettings.m_die = true;
+		*/
 	}
 
 	/* Clean up objects */

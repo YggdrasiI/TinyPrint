@@ -54,6 +54,7 @@ class B9CreatorSettings: public JsonConfig{
 		std::string m_b9jDir;
 		int m_comBaudrate;
 		bool m_gridShow; //show grid
+		bool m_display; //display used
 		bool m_shutterEquipped;
 		bool m_projectorEquipped;
 		bool m_layerFinished; // Set on true if "F" recieved.
@@ -70,6 +71,7 @@ class B9CreatorSettings: public JsonConfig{
 		B9CreatorSettings() : 	JsonConfig(),
 		m_spr(200), m_tpi(20),
 		m_gridShow(true),
+		m_display(false),
 		m_vatOpen(-100),
 		m_projectorStatus(2), m_resetStatus(1),
 		m_zHeight(-1),

@@ -67,14 +67,13 @@ int b9creator_settings_js_template(void *p, onion_request *req, onion_response *
  * cases.
  */
 int update_data(void *p, onion_request *req, onion_response *res){
-	int ok = ((OnionServer*)p)->updateSetting(req,res);
-	if( ok != 0){
-		onion_response_set_length(res, 6);
-		onion_response_write(res, "reload", 6); 
-	} else{
-		onion_response_set_length(res, 2);
-		onion_response_write(res, "ok", 2); 
-	}
+	std::string post_reply;
+	int ok = ((OnionServer*)p)->updateSetting(req,res, post_reply);
+	if( ok == -1 ) post_reply = "reload";
+	if( ok == 1 ) post_reply = "ok";
+
+	onion_response_set_length(res, post_reply.size() );
+	onion_response_write(res, post_reply.c_str(), post_reply.size() ); 
 	return OCS_PROCESSED;
 }
 
@@ -220,10 +219,32 @@ int OnionServer::stop_server()
 	return i;
 }
 
-int OnionServer::updateSetting(onion_request *req, onion_response *res){
+/* return value marks, if reply string contains data which should
+ * return to the web client:
+ * -2: No data written into reply. Input generate error. Currently, it's not handled.
+ * -1: No data written into reply. Input generate state which require reloading of web page.
+ *  0: data written into reply
+ *  1: No data written into reply, but input processed successful.*/
+int OnionServer::updateSetting(onion_request *req, onion_response *res, std::string &reply){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
+		case 5:{ /* Toggle Display */
+						 const char* disp = onion_request_get_post(req,"display");
+						 m_b9CreatorSettings.lock();
+						 if( disp != NULL ){
+							 if( disp[0] == '2' )
+								 m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+							 else 
+								 m_b9CreatorSettings.m_display = (disp[0] == '1');
+						 }
+
+						 reply = m_b9CreatorSettings.m_display?"1":"0";
+						 m_b9CreatorSettings.unlock();
+						 return 0; 
+					 }
+					 break;
+
 		case 4:{ /* Command Message */
 						 const char* json_str = onion_request_get_post(req,"cmd");
 						 if( json_str != NULL){
@@ -264,7 +285,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 							}else{
 								printf("Filename not allowed\n");
 							}
-							return -1;
+							return -1; 
 						}
 						break;
 		case 0:
@@ -275,12 +296,13 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 								//printf("Get new printSetting: %s\n",json_str);
 								m_b9CreatorSettings.setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
 							}else{
-								return -1;
+								return -1; 
 							}
 						}
 						break;
 	}
-	return 0; 
+
+	return 1; 
 }
 
 

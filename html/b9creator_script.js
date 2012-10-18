@@ -397,6 +397,24 @@ function send(url,val, handler){
 }
 
 
+function toggleDisplay(button){
+	/* With post arg display=0: display off.
+	 * With post arg display=1: display on.
+	 * With post arg display=2: display toggle.
+	 * Without post arg: Just get value.
+	 * Return value data: display status (0|1).
+	 * */
+	send("update?actionid=5","display=2",
+			function(data){
+				if( data == 1 ){
+					button.value = "Hide Display"
+				}else{
+					button.value = "Show Display"
+				}
+			}
+			);
+}
+
 function quitServerApp(){
 	send("update?actionid=3","",null);
 }

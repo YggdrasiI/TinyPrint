@@ -48,6 +48,9 @@ class SerialManager {
 		{
 			std::cout<<"Error: "<<e.what()<<std::endl;
 			m_open = false;
+			std::string message = "Opening of '" << file << "' failed." << std::endl
+				<< "Error: " << e.what() << std::endl;
+			m_b9CreatorSettings.m_queues.m_messageQueue.add(message);
 			//exit(1) ;
 		}
 
