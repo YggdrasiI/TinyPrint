@@ -7,7 +7,7 @@ void SerialManager::run(){
 
 	while( !m_die  ){
 
-		if( m_open){
+		if( m_open ){
 			try{
 				writeLineFromQueue(); //send single command. 
 				//readLineToQueue();
@@ -88,8 +88,9 @@ void SerialManager::update(string str){
 			{
 			}
 			break;
-		case 'F':
+		case 'F': // Layer finished
 			{
+				m_b9CreatorSettings.m_layerFinished = true;
 			}
 			break;
 		case 'G':

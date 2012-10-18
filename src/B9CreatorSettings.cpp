@@ -18,20 +18,26 @@ cJSON* B9CreatorSettings::genJson()
 //	cJSON_AddItemToObject(root, "shutterEquipped", cJSON_CreateNumber(0));
 //	cJSON_AddItemToObject(root, "lampHours", cJSON_CreateNumber(-1));
 
-	char gcol[7];
-	sprintf(gcol,"%X%X%X",m_gridColor[0],m_gridColor[1],m_gridColor[2]);
-	gcol[6] = '\0';
+	char gcol[20];
+	sprintf(gcol,"%02X%02X%02X\0",m_gridColor[0],m_gridColor[1],m_gridColor[2]);
+	//gcol[6] = '\0';
 	cJSON_AddItemToObject(root, "gridColor", cJSON_CreateString(gcol));//hex string
 
 	/* sub node. This values will transmitted to web interface */
 	cJSON* html = cJSON_CreateArray();	
 	cJSON_AddItemToArray(html, jsonIntField("stepsPerRevolution",m_spr,36,1000,100,1) );
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
-	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_breathTime,1,300,10) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
+
 //	cJSON_AddItemToArray(html, jsonStateField("currentLayer",m_currentLayer) );
+	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
-				min(m_currentLayer,m_maxLayer),1,m_maxLayer,1) );
+				min(m_printProp.m_currentLayer,m_printProp.m_maxLayer),1,m_printProp.m_maxLayer,1,m_printProp.m_lockTimes) );
+
 	cJSON_AddItemToArray(html, jsonStateField("vatOpen",m_vatOpen,"percent","percent") );//in Percent
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
@@ -53,26 +59,32 @@ void B9CreatorSettings::loadDefaults()
 	m_shutterEquipped = false;
 	m_projectorEquipped= false;
 	m_lampHours = -1;
+	m_layerFinished = true;
 
 	/* sub node. This values will transmitted to web interface */
 	m_spr = 200;
 	m_tpi = 20;
-	m_breathTime = 2;
 	m_gridShow = true;
-	m_currentLayer = 1;
 	m_vatOpen = -100;
 	m_projectorStatus = 2;
 	m_resetStatus = 1;
 	m_zHeight = -1;
 	m_zHome = -1;
-
+	m_printProp.m_breathTime = 2.0;
+	m_printProp.m_releaseCycleTime = 1.75;
+	m_printProp.m_exposureTime = 12;
+	m_printProp.m_exposureTimeAL = 40;
+	m_printProp.m_nmbrOfAttachedLayers = 4;
+	m_printProp.m_currentLayer = 1;
+	m_printProp.m_maxLayer = 1;
+	m_printProp.m_lockTimes = false;
 };
 
 /*
  * replaces |=YES with |=XYZ to extend changes flag.
  * It's could be useful to detect special updates, conflicts...
  */
-int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
+int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 	cJSON* nhtml = cJSON_GetObjectItem(jsonNew,"html");
 	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 
@@ -95,15 +107,37 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 		if(changes & CONFIG ){		
 			if( JsonConfig::update(nhtml,ohtml,"stepsPerRevolution",&m_spr) 
 					|| JsonConfig::update(nhtml,ohtml,"threadPerInch",&m_tpi) ){
-				m_PU = 1000 * 254 / (m_spr * m_tpi) ;
+				m_PU = 100 * 254 / (m_spr * m_tpi) ;
 				changes|=YES;
 			}
 			if( updateState(nhtml,ohtml,"zHeightLimit",&m_zHeightLimit) ) changes|=YES;
+		
+			//parse color hex string
+			int color;
+			sscanf( JsonConfig::getString(jsonNew,"gridColor"), "%x ", &color );
+			m_gridColor[0] = max(0,min( (color>>16) & 0xFF  ,255));//red bits
+			m_gridColor[1] = max(0,min( (color>>8) & 0xFF  ,255));//green bits
+			m_gridColor[2] = max(0,min( (color>>0) & 0xFF  ,255));//blue bits
+			/*printf("Color in file: %s %i %X,%X,%X\n", 
+					JsonConfig::getString(jsonNew,"gridColor"),
+					color,
+					m_gridColor[0],
+					m_gridColor[1],
+					m_gridColor[2]);
+					*/
+			
 		}
 
-		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_breathTime) ) changes|=YES;
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ) changes|=YES;
-		if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_currentLayer) ) changes|=YES;
+
+		if(! m_printProp.m_lockTimes ){
+			if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ) changes|=YES;
+		} 
 
 	}
 	unlock();

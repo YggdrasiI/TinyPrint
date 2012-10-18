@@ -111,8 +111,13 @@ function update_intField(obj){
 	if( val != prev && prev == inputfield.val() ){
 		inputfield.val(val);
 		inputfield.prop("prevvalue", val);
-		//	inputfield.trigger('input');
+			inputfield.trigger('input');
 	}
+	//set readonly flag
+	var ro = obj.readonly;
+	inputfield.prop("readonly", ro );
+	if( ro ) $("#"+obj.id).addClass("readonly");
+	else $("#"+obj.id).removeClass("readonly");
 }
 
 /* o is subelement of json obj

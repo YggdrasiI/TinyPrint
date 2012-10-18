@@ -33,7 +33,7 @@ int JsonConfig::regenerateConfig()
 		return 0;
 }
 
-int JsonConfig::setConfig(const char* json_str, int changes=NO)
+int JsonConfig::setConfig(const char* json_str, int changes)
 {
 	cJSON* pNewRoot = cJSON_Parse(json_str);
 	if( pNewRoot == NULL ) return -1;
@@ -109,7 +109,7 @@ return root;
 }
 
 
-int JsonConfig::update(cJSON* new_json, cJSON* old_json, int changes=NO)
+int JsonConfig::update(cJSON* new_json, cJSON* old_json, int changes)
 {
 	VPRINT("Error (JsonConfig): Parent update method called.\n");
 	return 0;
@@ -308,7 +308,7 @@ bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, b
 		nval = getNumber(ntmp,"val");
 		ret = true;
 	}
-	VPRINT(" %f\n",nval);				
+	//VPRINT(" %f\n",nval);				
 	*val = nval!=0.0;
 	return ret;
 }

@@ -51,7 +51,7 @@ class JsonConfig{
 		 * force the call of regenerateConfig().
 		 *
 		 */
-		int setConfig(const char* json_str, int changes);
+		int setConfig(const char* json_str, int changes=NO);
 
 		/*
 		 * Delete old json string and call genJson()
@@ -71,7 +71,7 @@ class JsonConfig{
 		 */
 		virtual void loadDefaults();
 		virtual cJSON* genJson();
-		virtual int update(cJSON* new_json, cJSON* old_json, int changes);
+		virtual int update(cJSON* new_json, cJSON* old_json, int changes=NO);
 		cJSON* getJSON() {return m_pjson_root;};
 
 		int init(const char* filename="")

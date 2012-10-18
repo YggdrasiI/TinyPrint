@@ -47,6 +47,7 @@ class SerialManager {
 		} catch(boost::system::system_error& e)
 		{
 			std::cout<<"Error: "<<e.what()<<std::endl;
+			m_open = false;
 			//exit(1) ;
 		}
 

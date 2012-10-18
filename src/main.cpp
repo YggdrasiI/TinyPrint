@@ -18,6 +18,7 @@
 //#include "PrinterSettings.h"
 #include "SerialManager.h"
 #include "OnionServer.h"
+#include "DisplayManager.h"
 
 #include <locale.h>
 //#include <time.h>
@@ -40,10 +41,15 @@ int main(int argc, char **argv) {
 	}
 
 	//init onion server thread
-	OnionServer* ponion = new OnionServer(b9CreatorSettings); 
-	ponion->start_server();
-	
+	OnionServer onion(b9CreatorSettings); 
+	onion.start_server();
+
 	SerialManager serialManager(b9CreatorSettings);
+
+	DisplayManager displayManager(b9CreatorSettings);
+	//JobManager jobManager(b9CreatorSettings, displayManager);
+	
+	displayManager.start();
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
@@ -58,7 +64,7 @@ int main(int argc, char **argv) {
 
 		//read&handle serial messages
 
-		//update image
+		//update job/image
 
 		//unblock setting object
 		b9CreatorSettings.unlock();
@@ -74,16 +80,16 @@ int main(int argc, char **argv) {
 			break;
 		}
 		if( b9CreatorSettings.m_die ) die = true;
+
+		usleep(4000000);
+		die = true;
+		b9CreatorSettings.m_die = true;
 	}
 
 	/* Clean up objects */
-	delete ponion;
+	onion.~OnionServer(); //ness?
 
-	//cvDestroyAllWindows();
-
-	//wait some time to give img-window enought time to close.
-	//cvWaitKey(10);
-	usleep(100);
+	usleep(10000);
 
 	return EXIT_SUCCESS;
 }

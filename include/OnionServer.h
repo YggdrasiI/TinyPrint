@@ -23,7 +23,7 @@
 //thread function
 static void* start_myonion_server(void* arg){
 	printf("Onion server: Start listening.\n");
-	onion_listen((onion*)arg);//loop
+//	onion_listen((onion*)arg);//loop
 	printf("Onion server: Stop listening.\n");
 }
 

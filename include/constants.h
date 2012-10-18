@@ -20,6 +20,17 @@
  * */
 enum Changes {NO=0,YES=1,PARSE_AGAIN=2,CONFIG=4,WEB_INTERFACE=8, ALL=1023};
 
+/* List of possible states. If the serial manager recieve
+ * error messages or unexpected messages it could
+ * use this states.
+ * Currently not used.
+ * */
+enum PrinterState {PRINTER_OK=0, PRINTER_ERROR=1023};
+
+/* Not used.
+ * */
+enum JobState {IDLE=0,INIT=1,FIRST_LAYER=2,MIDDLE_LAYER=4,LAST_LAYER=8,WAIT_ON_F_MESS=32};
+
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};
 

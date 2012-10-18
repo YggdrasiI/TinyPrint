@@ -9,7 +9,9 @@ set(EXTRA_CXX_FLAGS_DEBUG "")
 ## required and optional packages
 #set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})
 #set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
-#find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
+#find_package(DirectFB REQUIRED)#source?
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 find_package(Onion REQUIRED)
 
@@ -18,6 +20,10 @@ set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
 find_package(Boost COMPONENTS signals REQUIRED)
+
+set(Directfb_LIBRARY_DIRS /usr/lib )
+set(Directfb_LIBS directfb )
+set(Directfb_INCLUDE_DIR /usr/include/directfb )
 
 ## end required and optional packages
 
@@ -28,6 +34,7 @@ include_directories(
 link_directories (
 	${Onion_LIBRARY}
 	${Boost_LIBRARY_DIRS}
+	${Directfb_LIBRARY_DIRS}
 	) 
 ## end add include dis and lib dirs of above packages
 
