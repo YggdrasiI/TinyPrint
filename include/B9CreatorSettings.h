@@ -5,9 +5,9 @@
 #include <iostream>
 #include <cstring>
 #include <queue>
+#include <onion/onion.h>
 #include "JsonConfig.h"
 #include "JsonMessage.h"
-#include "JobManager.h" //include cycle
 
 struct PrintProperties{
 		double m_breathTime;
@@ -48,7 +48,6 @@ class B9CreatorSettings: public JsonConfig{
 		int m_zHeightLimit;
 		int m_zHome;// height in PU
 		PrintProperties m_printProp;
-		JobManager* m_pJobManager; //optional
 
 		std::string m_host;
 		std::string m_port;
@@ -70,47 +69,17 @@ class B9CreatorSettings: public JsonConfig{
 		Messages m_queues; 
 
 	public:
-		B9CreatorSettings() : 	JsonConfig(),
-		m_spr(200), m_tpi(20),
-		m_gridShow(true),
-		m_display(false),
-		m_vatOpen(-100),
-		m_projectorStatus(2), m_resetStatus(1),
-		m_zHeight(-1),
-		m_zHeightLimit(100000000),
-		m_zHome(-1),
-		m_comBaudrate(115200),
-		m_queues(),
-		m_host(),
-		m_port(),
-		m_comPort(),
-		m_projectorEquipped(false),
-		m_shutterEquipped(false),
-		m_lampHours(-1),
-		m_b9jDir(),
-		m_readyForNextCycle(true),
-		m_printProp(),
-		m_pJobManager(NULL),
-		m_die(false)
-		{
-			m_PU = 100 * 254 / (m_spr * m_tpi) ;
-
-			m_printProp.m_breathTime = 2.0;
-			m_printProp.m_releaseCycleTime = 1.75;
-			m_printProp.m_exposureTime = 12;
-			m_printProp.m_exposureTimeAL = 40;
-			m_printProp.m_nmbrOfAttachedLayers = 4;
-			m_printProp.m_currentLayer = 1;
-			m_printProp.m_maxLayer = 10;
-			m_printProp.m_lockTimes = false;
-		};
-
+		B9CreatorSettings();
 	
 		void loadDefaults();
 		cJSON* genJson();
 		int update(cJSON* root, cJSON* update, int changes=NO);
 
+		/* Will called if website send data */
+		void webserverUpdateConfig(onion_request *req, int actionid, std::string &reply);
+
 	private:
+		//similar to updateIntField in JsonConfig.
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val);
 

@@ -1,4 +1,40 @@
 #include "B9CreatorSettings.h"
+#include "OnionServer.h"
+
+B9CreatorSettings::B9CreatorSettings() :
+	JsonConfig(),
+	m_spr(200), m_tpi(20),
+	m_gridShow(true),
+	m_display(false),
+	m_vatOpen(-100),
+	m_projectorStatus(2), m_resetStatus(1),
+	m_zHeight(-1),
+	m_zHeightLimit(100000000),
+	m_zHome(-1),
+	m_comBaudrate(115200),
+	m_queues(),
+	m_host(),
+	m_port(),
+	m_comPort(),
+	m_projectorEquipped(false),
+	m_shutterEquipped(false),
+	m_lampHours(-1),
+	m_b9jDir(),
+	m_readyForNextCycle(false),
+	m_printProp(),
+	m_die(false)
+{
+	m_PU = 100 * 254 / (m_spr * m_tpi) ;
+
+	m_printProp.m_breathTime = 2.0;
+	m_printProp.m_releaseCycleTime = 1.75;
+	m_printProp.m_exposureTime = 12;
+	m_printProp.m_exposureTimeAL = 40;
+	m_printProp.m_nmbrOfAttachedLayers = 4;
+	m_printProp.m_currentLayer = 1;
+	m_printProp.m_maxLayer = 10;
+	m_printProp.m_lockTimes = false;
+};
 
 /*
  * Special properties. This values can modified with the web interface.
@@ -59,7 +95,7 @@ void B9CreatorSettings::loadDefaults()
 	m_shutterEquipped = false;
 	m_projectorEquipped= false;
 	m_lampHours = -1;
-	m_readyForNextCycle = true;
+	m_readyForNextCycle = false;
 
 	/* sub node. This values will transmitted to web interface */
 	m_spr = 200;
@@ -176,4 +212,16 @@ bool B9CreatorSettings::updateState(cJSON* jsonNew, cJSON* jsonOld,const char* i
 	}
 	//VPRINT(" %f\n",nval);				
 	return ret;
+}
+
+
+void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, std::string &reply){
+	if( actionid == 0 ){
+		VPRINT("update b9CreatorSettings values\n");
+		const char* json_str = onion_request_get_post(req,"b9CreatorSettings");
+		if( json_str != NULL){
+			setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
+		}
+		reply = "ok";
+	}
 }

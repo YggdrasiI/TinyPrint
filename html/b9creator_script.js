@@ -349,7 +349,7 @@ function parse_mm(s){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
-	send("update?actionid=0","b9CreatorSetting="+JSON.stringify(json_b9creator), null);
+	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
 
 	if(false)
 		send("json","",
@@ -382,7 +382,8 @@ function refresh(){
 //send complete json struct
 function send(url,val, handler){
 	//Add space to avoid empty second arg!
-	$.post(url, val+" ", function(data){
+	if(val == "") val = " ";
+	$.post(url, val, function(data){
 		//alert("Get reply\n"+data);
 		if( data == "reload" ){
 			alert("Reload Page");
@@ -419,33 +420,35 @@ function toggleDisplay(button){
 /* Start, stop or pause printing job
  * Require two buttons and update the button labels. 
  * Possible commands:
+	 * print="init": init printer (required for start)
 	 * print="start": start print
 	 * print=="pause" : pause print
 	 * print="toggle": toggle print
 	 * print=="abort": stop print
  * */
 function jobManagerCmd(cmd,button1id, button2id){
-	var map = {"abort":0,"start":1,"toggle":2,"pause":3};
+	//var map = {"init":0,"start":1,"toggle":2,"pause":3,"abort":4};
 	var bt1 = $("#"+button1id);
 	var bt2 = $("#"+button2id);
-	//send("update?actionid=6","print="+map[print],
-	send("update?actionid=6","print="+print,
+	//send("update?actionid=6","print="+map[cmd],
+	send("update?actionid=6","print="+cmd,
 			function(data){
 				/* data return state of printer */
 				if( data == "print" ){
 					/*printing...*/
-					bt1.value("Pause"); 
-					bt2.value("Abort"); 
+					bt1.val("Pause"); 
+					bt2.val("Abort"); 
 				}else if(data == "pause"){
 					/*paused...*/
-					bt1.value("Resume"); 
-					bt2.value("Abort"); 
+					bt1.val("Resume"); 
+					bt2.val("Abort"); 
 				}else if(data == "idle"){
 					/*stoped/idle...*/
-					bt1.value("Print"); 
-					bt2.value("Abort"); 
+					bt1.val("Print"); 
+					bt2.val("Abort"); 
 				}else{
-					alert("Command was not sucessfull.\n Server returns: \n"+data);
+					//alert("Command was not sucessfull.\n Server returns: \n"+data);
+					bt1.val("Command was not sucessfull.\n Server returns: \n"+data);
 				}
 			}
 			);

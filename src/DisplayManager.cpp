@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include "DisplayManager.h"
+#include "B9CreatorSettings.h"
 
 using namespace cv;
 using namespace std;

@@ -1,6 +1,8 @@
 #include <unistd.h>
 
 #include "JobManager.h"
+#include "B9CreatorSettings.h"
+#include "DisplayManager.h"
 
 int JobManager::loadJob(const std::string filename){
 }
@@ -20,6 +22,9 @@ int JobManager::initJob(bool withReset){
 		m_state = RESET;
 	}else{
 		m_state = INIT;
+		std::string msg("Init printer");
+		std::cout << msg << std::endl;
+		m_b9CreatorSettings.m_queues.add_message(msg);
 	}
 	m_job_mutex.unlock();
 
@@ -88,6 +93,8 @@ int JobManager::resumeJob(){
 					q.add_command(cmd_close);	
 					m_b9CreatorSettings.m_queues.add_command(cmd_close);	
 				}
+				VPRINT("Repeat breath for layer %i.\n",
+						m_b9CreatorSettings.m_printProp.m_currentLayer);
 				gettimeofday( &m_tBreath.begin, NULL );
 			}
 			break;
@@ -173,7 +180,7 @@ void JobManager::run(){
 					std::string cmd_info("A"); 
 					q.add_command(cmd_info);	
 
-					//VPRINT("Start first layer\n");
+					VPRINT("Init done. Idle in JobManager.\n");
 					//m_state = FIRST_LAYER;
 					m_state = IDLE;
 				}
@@ -185,7 +192,7 @@ void JobManager::run(){
 
 					//vat open?!
 					VPRINT("Wait on 'F' message\n");
-					gettimeofday( &m_tFWait.begin, NULL );
+					gettimeofday( &(m_tFWait.begin), NULL );
 					m_tFWait.diff = MaxWaitF; 
 					m_state = WAIT_ON_F_MESS;
 
@@ -219,9 +226,15 @@ void JobManager::run(){
 						gettimeofday( &m_tBreath.begin, NULL );
 						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime;
 
-						VPRINT("Repeat breath for layer %i.\n",
+						VPRINT("Begin breath for layer %i.\n",
 								m_b9CreatorSettings.m_printProp.m_currentLayer);
 						m_state = BREATH;
+					}
+					if( m_tFWait.timePassed() ){
+						std::string msg("Runtime error in __FILE__, __LINE__. Wait to long on 'F' signal of printer. Printer connection lost?");
+						std::cerr << msg << std::endl;
+						m_b9CreatorSettings.m_queues.add_message(msg);
+						m_state = IDLE;
 					}
 				}
 				break;
@@ -288,5 +301,41 @@ void JobManager::run(){
 
 		m_job_mutex.unlock();
 		usleep(50000); //.05m
+	}
+}
+
+void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
+	
+	reply = "error";
+
+	if(actionid == 6){ /* control JobManager */
+			 std::string print_cmd ( onion_request_get_post(req,"print") );
+#ifdef VERBOSE
+			 std::cout << "'"<< print_cmd << "'" << std::endl;
+#endif
+			 if( 0 == print_cmd.compare("init") ){
+				 if( 0 != initJob(false) ) return ;
+				 reply = "idle";
+
+			 }else if( 0 == print_cmd.compare("start") ||
+			 (m_state == IDLE && 0 == print_cmd.compare("toggle")) ){
+			 if( 0 != startJob() ) return ;
+			 reply = "print";
+
+			 }else if( 0 == print_cmd.compare("pause") ||
+			 (m_state == PAUSE && 0 == print_cmd.compare("toggle")) ){
+			 if( 0 != pauseJob() ) return ;
+			 reply = "pause";
+
+			 }else if( 0 == print_cmd.compare("resume") ){
+			 if( 0 != resumeJob() ) return  ;
+			 reply = "print";
+
+			 }else if( 0 == print_cmd.compare("abort") ){
+			 if( 0 != stopJob() ) return  ;
+			 reply = "idle";
+			 }
+
+		//print_cmd unknown
 	}
 }

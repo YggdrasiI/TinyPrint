@@ -48,7 +48,13 @@ int main(int argc, char **argv) {
 
 	DisplayManager displayManager(b9CreatorSettings);
 	JobManager jobManager(b9CreatorSettings, displayManager);
-	
+
+	//connect signals
+	onion.updateSignal.connect(
+					boost::bind(&JobManager::webserverSetState,&jobManager, _1, _2, _3)
+					);
+
+
 	//displayManager.start();
 
 	/* Local needs to be set to avoid errors with printf + float values.

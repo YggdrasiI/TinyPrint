@@ -13,9 +13,13 @@
 #include <queue>
 #include <pthread.h>
 #include <sys/time.h>
+#include <onion/onion.h>
+#include "constants.h"
 #include "Mutex.h"
-#include "B9CreatorSettings.h"
-#include "DisplayManager.h"
+//#include "B9CreatorSettings.h"
+//#include "DisplayManager.h"
+class B9CreatorSettings;
+class DisplayManager;
 
 #ifndef JOBMANAGER_H
 #define JOBMANAGER_H
@@ -35,7 +39,11 @@ struct Timer{
 		long long diff;
 
 		bool timePassed( timeval_t *now = NULL ){
-			if( now == NULL ) gettimeofday( now, NULL );
+			if( now == NULL ){
+				timeval_t tmp;
+				now = &tmp;
+				gettimeofday( now, NULL );
+			}
 			return (diff < timeval_diff(now, &begin));
 		}
 
@@ -138,6 +146,8 @@ class JobManager {
 
 		//int nextStep();
 
+		/* Will called if website send data */
+		void webserverSetState(onion_request *req, int actionid, std::string &reply);
 };
 
 /* wrapper function for job thread.*/

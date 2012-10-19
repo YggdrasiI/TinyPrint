@@ -11,9 +11,12 @@
 #include <onion/dict.h>
 //#include <onion/extras/png.h>
 
+#include <boost/signal.hpp>
+#include <boost/bind.hpp>
+
 #include "JsonConfig.h"
-#include "B9CreatorSettings.h"
-//#include "PrintSettings.h"
+//#include "B9CreatorSettings.h"
+class B9CreatorSettings;
 
 
 /* Declare jSON data object here
@@ -36,14 +39,8 @@ class OnionServer{
 		//PrinterSetting* m_pprintSetting const;
 		B9CreatorSettings &m_b9CreatorSettings;
 	public:
-		OnionServer(B9CreatorSettings &b9CreatorSettings ):
-			//m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
-			m_ponion( onion_new(O_THREADED) ),
-			m_pthread(),
-			m_b9CreatorSettings(b9CreatorSettings)
-		{
-			//start_server();
-		}
+		OnionServer(B9CreatorSettings &b9CreatorSettings );
+		
 		~OnionServer()
 		{
 			if(m_ponion != NULL) stop_server();
@@ -51,7 +48,18 @@ class OnionServer{
 
 		int start_server();
 		int stop_server();
-		int updateSetting(onion_request *req, onion_response *res, std::string &reply);
+
+		/* Update signal. Called by sending of data by js script.
+		 *	Every signal handler gain access to
+		 *	- the raw request req,
+		 *	-the get param 'actionid' and,
+		 *	-the string 'reply' which will send back to the client.
+		 *	For each actionid should only one signal handler wrote into reply.
+		 *	*/
+		boost::signal<void (onion_request *req,int actionid, std::string &reply)> updateSignal;
+
+		/* Update signal handler of this class.*/
+		void updateSetting(onion_request *req, int actionid, std::string &reply);
 };
 
 #endif

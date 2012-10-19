@@ -45,7 +45,7 @@
 		<div class="prop" id="vatOpen">VAT % Open: </div>
 		<div class="prop" id="zHeight_mm">Z Height: </div>
 
-		<input type="button" onclick="sendCmd('R')" value="Reset Printer" />
+		<input type="button" onclick="sendCmd('R');jobManagerCmd('init','printButton','abortButton');" value="Reset Printer" />
 		<h1>End program</h1>
 		<input type="button" onclick="quitServerApp()" value="Quit" />
 	</div>

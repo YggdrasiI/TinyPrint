@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <regex.h>
 #include "JsonMessage.h"
+#include "B9CreatorSettings.h"
 #include "OnionServer.h"
 
 
@@ -67,13 +68,18 @@ int b9creator_settings_js_template(void *p, onion_request *req, onion_response *
  * cases.
  */
 int update_data(void *p, onion_request *req, onion_response *res){
-	std::string post_reply;
-	int ok = ((OnionServer*)p)->updateSetting(req,res, post_reply);
-	if( ok == -1 ) post_reply = "reload";
-	if( ok == 1 ) post_reply = "ok";
+	/* Default reply is 'reload' which force reload
+	 * of complete website. In mosty cases this string will replaced 
+	 * by one of the signal handlers.
+	 */
+	std::string reply("reload");
+	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 
-	onion_response_set_length(res, post_reply.size() );
-	onion_response_write(res, post_reply.c_str(), post_reply.size() ); 
+	// Attention each signal handler wrote into the same string 'post_reply'
+	((OnionServer*)p)->updateSignal(req, actionid, reply);
+
+	onion_response_set_length(res, reply.size() );
+	onion_response_write(res, reply.c_str(), reply.size() ); 
 	return OCS_PROCESSED;
 }
 
@@ -176,6 +182,23 @@ return index_html_template(d, req, res);
 }
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
+OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
+			//m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
+			m_ponion( onion_new(O_THREADED) ),
+			m_pthread(),
+			m_b9CreatorSettings(b9CreatorSettings)
+		{
+			//add default signal handler.
+			updateSignal.connect(
+					boost::bind(&OnionServer::updateSetting,this, _1, _2, _3)
+					);
+			//add signal handler of b9CreatorSettings.
+			updateSignal.connect(
+					boost::bind(&B9CreatorSettings::webserverUpdateConfig,&b9CreatorSettings, _1, _2, _3)
+					);
+			//start_server();
+		}
+
 int OnionServer::start_server()
 {
 	onion_url *url=onion_root_url(m_ponion);
@@ -225,42 +248,10 @@ int OnionServer::stop_server()
  * -1: No data written into reply. Input generate state which require reloading of web page.
  *  0: data written into reply
  *  1: No data written into reply, but input processed successful.*/
-int OnionServer::updateSetting(onion_request *req, onion_response *res, std::string &reply){
-	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
+//TODO: Shift several cases of the switch into own signal handler.
+void OnionServer::updateSetting(onion_request *req, int actionid, std::string &reply){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
-		case 6:
-			{ /* control JobManager */
-				if( m_pJobManager == NULL ) break;
-				std::string print_cmd ( onion_request_get_post(req,"print") );
-				JobState state = m_pJobManager->getState();
-				if( 0 == print_cmd.compare("start") ||
-						(state == IDLE && 0 == print_cmd.compare("toggle")) ){
-					if( 0 != m_pJobManager->startJob() ) return -1;
-					reply = "print";
-					return 0;
-
-				}else if( 0 == print_cmd.compare("pause") ||
-						(state == PAUSE && 0 == print_cmd.compare("toggle")) ){
-					if( 0 != m_pJobManager->pauseJob(true) ) return -1;
-					reply = "pause";
-					return 0;
-
-				}else if( 0 == print_cmd.compare("resume") ){
-					if( 0 != m_pJobManager->pauseJob(false) ) return -1 ;
-					reply = "print";
-					return 0;
-
-				}else if( 0 == print_cmd.compare("abort") ){
-					if( 0 != m_pJobManager->stopJob(false) ) return -1 ;
-					reply = "idle";
-					return 0;
-				}
-
-				//command unknown
-				return -1;
-			}
-			break;
 		case 5:
 			{ /* Toggle Display */
 				const char* disp = onion_request_get_post(req,"display");
@@ -274,7 +265,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 
 				reply = m_b9CreatorSettings.m_display?"1":"0";
 				m_b9CreatorSettings.unlock();
-				return 0; 
+				//return 0; 
 			}
 			break;
 
@@ -285,6 +276,9 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 					Messages &q = m_b9CreatorSettings.m_queues;
 					std::string cmd(json_str); 
 					q.add_command(cmd);	
+					reply = "ok";
+				}else{
+					reply = "missing post variable 'cmd'";
 				}
 			}
 			break;
@@ -294,52 +288,17 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 				m_b9CreatorSettings.lock();
 				m_b9CreatorSettings.m_die = true;
 				m_b9CreatorSettings.unlock();
+				reply = "quit";
 			}
 			break;
-		case -2:{
-							const char* filename = onion_request_get_post(req,"filename");
-							printf("Save new b9CreatorSettings: %s\n",filename);
-							if( check_filename(filename ) == 1){
-								VPRINT("%s","TODO");
-								break;
-								m_b9CreatorSettings.saveConfigFile(filename);
-								m_b9CreatorSettings.setString("lastSetting",filename);
-								m_b9CreatorSettings.saveConfigFile("b9CreatorSettings.ini");
-							}else{
-								printf("Filename not allowed\n");
-							}
-							/* force reload of website */
-							return -1;
-						}
-						break;
-		case -1:
-						{
-							const char* filename = onion_request_get_post(req,"filename");
-							VPRINT("Load new b9CreatorSettings: %s\n",filename);
-							if( check_filename(filename ) == 1){
-								m_b9CreatorSettings.loadConfigFile(filename);
-							}else{
-								printf("Filename not allowed\n");
-							}
-							return -1; 
-						}
-						break;
 		case 0:
 		default:
-						{
-							VPRINT("update printSetting values\n");
-							const char* json_str = onion_request_get_post(req,"b9CreatorSetting");
-							if( json_str != NULL){
-								//printf("Get new printSetting: %s\n",json_str);
-								m_b9CreatorSettings.setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
-							}else{
-								return -1; 
-							}
-						}
-						break;
+			{
+			}
+			break;
 	}
 
-	return 1; 
+	//return 1; 
 }
 
 

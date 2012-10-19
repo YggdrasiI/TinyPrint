@@ -17,8 +17,9 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "constants.h"
-#include "B9CreatorSettings.h"
 #include "Mutex.h"
+//#include "B9CreatorSettings.h"
+class B9CreatorSettings;
 
 static void* displayThread(void* arg);
 
