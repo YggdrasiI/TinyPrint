@@ -90,7 +90,7 @@ void SerialManager::update(string str){
 			break;
 		case 'F': // Layer finished
 			{
-				m_b9CreatorSettings.m_layerFinished = true;
+				m_b9CreatorSettings.m_readyForNextCycle = true;
 			}
 			break;
 		case 'G':

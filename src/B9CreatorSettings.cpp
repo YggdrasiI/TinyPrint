@@ -59,7 +59,7 @@ void B9CreatorSettings::loadDefaults()
 	m_shutterEquipped = false;
 	m_projectorEquipped= false;
 	m_lampHours = -1;
-	m_layerFinished = true;
+	m_readyForNextCycle = true;
 
 	/* sub node. This values will transmitted to web interface */
 	m_spr = 200;
@@ -76,7 +76,7 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
 	m_printProp.m_currentLayer = 1;
-	m_printProp.m_maxLayer = 1;
+	m_printProp.m_maxLayer = 10;
 	m_printProp.m_lockTimes = false;
 };
 

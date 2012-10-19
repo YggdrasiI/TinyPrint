@@ -57,7 +57,7 @@ class B9CreatorSettings: public JsonConfig{
 		bool m_display; //display used
 		bool m_shutterEquipped;
 		bool m_projectorEquipped;
-		bool m_layerFinished; // Set on true if "F" recieved.
+		bool m_readyForNextCycle; // Set on true if "F" recieved.
 		int m_lampHours;
 		unsigned char m_gridColor[3]; //rgb value
 		bool m_die; // flag indicate end of main loop
@@ -86,7 +86,7 @@ class B9CreatorSettings: public JsonConfig{
 		m_shutterEquipped(false),
 		m_lampHours(-1),
 		m_b9jDir(),
-		m_layerFinished(true),
+		m_readyForNextCycle(true),
 		m_printProp(),
 		m_die(false)
 		{
@@ -98,7 +98,7 @@ class B9CreatorSettings: public JsonConfig{
 			m_printProp.m_exposureTimeAL = 40;
 			m_printProp.m_nmbrOfAttachedLayers = 4;
 			m_printProp.m_currentLayer = 1;
-			m_printProp.m_maxLayer = 1;
+			m_printProp.m_maxLayer = 10;
 			m_printProp.m_lockTimes = false;
 		};
 

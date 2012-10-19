@@ -415,6 +415,28 @@ function toggleDisplay(button){
 			);
 }
 
+
+function jobManager(button,print,){
+	/* print="start": start print
+	 * print=="pause" : pause print
+	 * ToDo:
+	 * (print=="abort": stop print
+	 * print="toggle": toggle print)
+	 */
+	var map = {"abort":0,"start":1,"toggle":2,"pause":3};
+	send("update?actionid=6","print="+map[print],
+			function(data){
+				if( data == 1 ){
+					button.value = "Pause" /*printing...*/
+				}else if(data == 2){
+					button.value = "Resume"/*paused...*/
+				}else{
+					button.value = "Print"/*stoped...*/
+				}
+			}
+			);
+}
+
 function quitServerApp(){
 	send("update?actionid=3","",null);
 }

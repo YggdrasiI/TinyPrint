@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 	SerialManager serialManager(b9CreatorSettings);
 
 	DisplayManager displayManager(b9CreatorSettings);
-	//JobManager jobManager(b9CreatorSettings, displayManager);
+	JobManager jobManager(b9CreatorSettings, displayManager);
 	
 	//displayManager.start();
 
@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
 		//read&handle serial messages
 
 		//update job/image
+		jobManager.run();
 
 		//unblock setting object
 		b9CreatorSettings.unlock();

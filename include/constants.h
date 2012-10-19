@@ -27,9 +27,28 @@ enum Changes {NO=0,YES=1,PARSE_AGAIN=2,CONFIG=4,WEB_INTERFACE=8, ALL=1023};
  * */
 enum PrinterState {PRINTER_OK=0, PRINTER_ERROR=1023};
 
-/* Not used.
+/* 
+ * PAUSE - Printing job is paused.
+ * WAIT_ON_F_MESS - Waiting on next 'F' message on serial port.
+ * 	( Precice: This class has no direct connection to the serial thread.
+ * 		Moreover, to keep it the program simple, no event handling is used.
+ * 	  JobManager just watches if m_b9CreatorSettings.m_readyForNextCycle 
+ * 	  will set true.
+ * WAIT_ON_R_MESS - Same as above for 'R0' message (set m_b9CreatorSettings.m_resetStatus )
  * */
-enum JobState {IDLE=0,INIT=1,FIRST_LAYER=2,MIDDLE_LAYER=4,LAST_LAYER=8,WAIT_ON_F_MESS=32};
+enum JobState {
+	RESET=0,
+	INIT=1,
+	FIRST_LAYER=1<<1,
+	NEXT_LAYER=1<<2,
+	NEXT_LAYER_OVERCURING=1<<3, /* not used */
+	BREATH=1<<4
+	WAIT_ON_F_MESS=1<<5,
+	WAIT_ON_R_MESS=1<<6,
+	IDLE=1<<7,
+	PAUSE=1<<8,
+	FINISHED=1<<9,
+};
 
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};
