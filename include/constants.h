@@ -42,12 +42,13 @@ enum JobState {
 	FIRST_LAYER=1<<1,
 	NEXT_LAYER=1<<2,
 	NEXT_LAYER_OVERCURING=1<<3, /* not used */
-	BREATH=1<<4
+	BREATH=1<<4,
 	WAIT_ON_F_MESS=1<<5,
 	WAIT_ON_R_MESS=1<<6,
 	IDLE=1<<7,
 	PAUSE=1<<8,
 	FINISHED=1<<9,
+	CURING=1<<10
 };
 
 inline double min(double a,double b){return a<b?a:b;};

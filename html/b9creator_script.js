@@ -416,25 +416,44 @@ function toggleDisplay(button){
 }
 
 
-function jobManager(button,print,){
-	/* print="start": start print
+/* Start, stop or pause printing job
+ * Require two buttons and update the button labels. 
+ * Possible commands:
+	 * print="start": start print
 	 * print=="pause" : pause print
-	 * ToDo:
-	 * (print=="abort": stop print
-	 * print="toggle": toggle print)
-	 */
+	 * print="toggle": toggle print
+	 * print=="abort": stop print
+ * */
+function jobManagerCmd(cmd,button1id, button2id){
 	var map = {"abort":0,"start":1,"toggle":2,"pause":3};
-	send("update?actionid=6","print="+map[print],
+	var bt1 = $("#"+button1id);
+	var bt2 = $("#"+button2id);
+	//send("update?actionid=6","print="+map[print],
+	send("update?actionid=6","print="+print,
 			function(data){
-				if( data == 1 ){
-					button.value = "Pause" /*printing...*/
-				}else if(data == 2){
-					button.value = "Resume"/*paused...*/
+				/* data return state of printer */
+				if( data == "print" ){
+					/*printing...*/
+					bt1.value("Pause"); 
+					bt2.value("Abort"); 
+				}else if(data == "pause"){
+					/*paused...*/
+					bt1.value("Resume"); 
+					bt2.value("Abort"); 
+				}else if(data == "idle"){
+					/*stoped/idle...*/
+					bt1.value("Print"); 
+					bt2.value("Abort"); 
 				}else{
-					button.value = "Print"/*stoped...*/
+					alert("Command was not sucessfull.\n Server returns: \n"+data);
 				}
 			}
 			);
+}
+
+/* Abort printing job. Same structure as jobManagerPrint.*/
+function jobManagerAbort(button){
+	alert('Todo');
 }
 
 function quitServerApp(){

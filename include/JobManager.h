@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include "Mutex.h"
 #include "B9CreatorSettings.h"
+#include "DisplayManager.h"
 
 #ifndef JOBMANAGER_H
 #define JOBMANAGER_H
@@ -22,8 +23,10 @@
 // invoke thread loop.
 static void* jobThread(void* arg);
 
+typedef struct timeval timeval_t;
+
 struct Timer{
-		struct timeval begin;
+		timeval_t begin;
 		/* m_tDiff will used for if-statements of the type
 		 * 'if( m_tDiff < difference(NULL,now, m_t[...]) )'
 		 * My intention: I want omit thread blocking by usleep calls
@@ -31,22 +34,17 @@ struct Timer{
 		 */
 		long long diff;
 
-		bool timePassed(struct timeval now = time(NULL) ){
-			return (diff < timeval_diff(NULL, now, begin));
+		bool timePassed( timeval_t *now = NULL ){
+			if( now == NULL ) gettimeofday( now, NULL );
+			return (diff < timeval_diff(now, &begin));
 		}
 
 		/* Return time diff in ns */
 		static long long timeval_diff(
-				struct timeval *difference,
-				struct timeval *end_time,
-				struct timeval *start_time) 
+				timeval_t *end_time,
+				timeval_t *start_time) 
 		{   
-			struct timeval temp_diff;
-
-			if(difference==NULL)
-			{   
-				difference=&temp_diff;
-			}   
+			timeval_t *difference;	
 
 			difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
 			difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
@@ -63,12 +61,14 @@ struct Timer{
 				difference->tv_usec;
 
 		} /* timeval_diff() */
-}
+};
 
 class JobManager {
-		const long MaxWaitR = 5E10; //50s. Maximal waiting time on 'Ri' in ns.
-		const long MaxWaitF = 2E9; //2s. Maximal waiting time on 'F' in ns.
+		static const long long MaxWaitR = 5E10; //50s. Maximal waiting time on 'Ri' in ns.
+		static const long long MaxWaitF = 2E9; //2s. Maximal waiting time on 'F' in ns.
 	private:
+		pthread_t m_pthread;
+		bool m_die;
 		B9CreatorSettings &m_b9CreatorSettings;
 		DisplayManager &m_displayManager;
 		JobState m_state;
@@ -88,6 +88,8 @@ class JobManager {
 
 	public:
 		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
+			m_pthread(),
+			m_die(false),
 			m_b9CreatorSettings(b9CreatorSettings),
 			m_displayManager(displayManager),
 			m_state(IDLE),
@@ -102,9 +104,19 @@ class JobManager {
 			m_tFWait(m_tTimer),
 			m_tRWait(m_tTimer)
 	{
+		if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
+			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
+				<< "Error: Could not create thread for job manager."
+				<< std::endl ;
+			exit(1) ;
+		}
 	}
 
 	~JobManager(){
+			// kill loop in other thread
+			m_die = true;
+			//wait on other thread
+	    pthread_join( m_pthread, NULL);
 		}
 
 		JobState getState() { return m_state; };
@@ -122,11 +134,17 @@ class JobManager {
 		int resumeJob();
 		int stopJob();
 
+		void run();
+
 		//int nextStep();
 
+};
 
-
+/* wrapper function for job thread.*/
+static void* jobThread(void* arg){
+	VPRINT("Start job thread\n");
+	((JobManager*)arg)->run();
+	VPRINT("Quit job thread\n");
 }
-
 
 #endif

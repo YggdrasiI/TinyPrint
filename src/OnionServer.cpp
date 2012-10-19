@@ -205,8 +205,8 @@ int OnionServer::start_server()
 	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
 	   the Extra thread is omitable. */
 	//start loop as thread
-	//return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
-	onion_listen(m_ponion);//loop
+	return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
+	//onion_listen(m_ponion);//loop
 
 	return 0;
 }
@@ -229,38 +229,73 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
-		case 5:{ /* Toggle Display */
-						 const char* disp = onion_request_get_post(req,"display");
-						 m_b9CreatorSettings.lock();
-						 if( disp != NULL ){
-							 if( disp[0] == '2' )
-								 m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
-							 else 
-								 m_b9CreatorSettings.m_display = (disp[0] == '1');
-						 }
+		case 6:
+			{ /* control JobManager */
+				if( m_pJobManager == NULL ) break;
+				std::string print_cmd ( onion_request_get_post(req,"print") );
+				JobState state = m_pJobManager->getState();
+				if( 0 == print_cmd.compare("start") ||
+						(state == IDLE && 0 == print_cmd.compare("toggle")) ){
+					if( 0 != m_pJobManager->startJob() ) return -1;
+					reply = "print";
+					return 0;
 
-						 reply = m_b9CreatorSettings.m_display?"1":"0";
-						 m_b9CreatorSettings.unlock();
-						 return 0; 
-					 }
-					 break;
+				}else if( 0 == print_cmd.compare("pause") ||
+						(state == PAUSE && 0 == print_cmd.compare("toggle")) ){
+					if( 0 != m_pJobManager->pauseJob(true) ) return -1;
+					reply = "pause";
+					return 0;
 
-		case 4:{ /* Command Message */
-						 const char* json_str = onion_request_get_post(req,"cmd");
-						 if( json_str != NULL){
-							 Messages &q = m_b9CreatorSettings.m_queues;
-							 std::string cmd(json_str); 
-							 q.add_command(cmd);	
-						 }
-					 }
-					 break;
-		case 3:{ /* Quit */
-						 printf("Quitting...\n");
-						 m_b9CreatorSettings.lock();
-						 m_b9CreatorSettings.m_die = true;
-						 m_b9CreatorSettings.unlock();
-					 }
-					 break;
+				}else if( 0 == print_cmd.compare("resume") ){
+					if( 0 != m_pJobManager->pauseJob(false) ) return -1 ;
+					reply = "print";
+					return 0;
+
+				}else if( 0 == print_cmd.compare("abort") ){
+					if( 0 != m_pJobManager->stopJob(false) ) return -1 ;
+					reply = "idle";
+					return 0;
+				}
+
+				//command unknown
+				return -1;
+			}
+			break;
+		case 5:
+			{ /* Toggle Display */
+				const char* disp = onion_request_get_post(req,"display");
+				m_b9CreatorSettings.lock();
+				if( disp != NULL ){
+					if( disp[0] == '2' )
+						m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+					else 
+						m_b9CreatorSettings.m_display = (disp[0] == '1');
+				}
+
+				reply = m_b9CreatorSettings.m_display?"1":"0";
+				m_b9CreatorSettings.unlock();
+				return 0; 
+			}
+			break;
+
+		case 4:
+			{ /* Command Message */
+				const char* json_str = onion_request_get_post(req,"cmd");
+				if( json_str != NULL){
+					Messages &q = m_b9CreatorSettings.m_queues;
+					std::string cmd(json_str); 
+					q.add_command(cmd);	
+				}
+			}
+			break;
+		case 3:
+			{ /* Quit */
+				printf("Quitting...\n");
+				m_b9CreatorSettings.lock();
+				m_b9CreatorSettings.m_die = true;
+				m_b9CreatorSettings.unlock();
+			}
+			break;
 		case -2:{
 							const char* filename = onion_request_get_post(req,"filename");
 							printf("Save new b9CreatorSettings: %s\n",filename);
@@ -277,7 +312,8 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 							return -1;
 						}
 						break;
-		case -1:{
+		case -1:
+						{
 							const char* filename = onion_request_get_post(req,"filename");
 							VPRINT("Load new b9CreatorSettings: %s\n",filename);
 							if( check_filename(filename ) == 1){
@@ -289,7 +325,8 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res, std::str
 						}
 						break;
 		case 0:
-		default:{
+		default:
+						{
 							VPRINT("update printSetting values\n");
 							const char* json_str = onion_request_get_post(req,"b9CreatorSetting");
 							if( json_str != NULL){

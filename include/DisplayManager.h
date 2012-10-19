@@ -52,7 +52,7 @@ class DisplayManager {
 	{
 		if( pthread_create( &m_pthread, NULL, &displayThread, this) ){
 			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-				<< "Error: Could not create thread for frame buffer display"
+				<< "Error: Could not create thread for frame buffer display."
 				<< std::endl ;
 			exit(1) ;
 		}
@@ -95,10 +95,11 @@ class DisplayManager {
 		 * img should contain a rgb, rgba or
 		 * greyscaled image.
 		 */
-		void show(cv::Mat img, cv::Point topLeftCorner=cv::Point(0,0) );
+		void show(cv::Mat &img, cv::Point topLeftCorner=cv::Point(0,0) );
+		void show( );
 
 		/* Hide all displayed images. */
-		void blank(bool black);
+		void blank(bool black=true);
 
 		/* Should only called by displayThread() */
 		void run();
@@ -134,7 +135,7 @@ class DisplayManager {
 };
 
 
-/* function for serial communication thread */
+/* wrapper function for display thread.*/
 static void* displayThread(void* arg){
 	VPRINT("Start display thread\n");
 	((DisplayManager*)arg)->run();

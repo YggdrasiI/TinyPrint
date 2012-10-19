@@ -48,7 +48,9 @@ void DisplayManager::createGrid(){
 	}
 }
 
-void DisplayManager::show(cv::Mat img, cv::Point topLeftCorner ){
+void DisplayManager::show(){
+}
+void DisplayManager::show(cv::Mat &img, cv::Point topLeftCorner ){
 
 
 }

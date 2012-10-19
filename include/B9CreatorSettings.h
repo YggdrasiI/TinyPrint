@@ -7,6 +7,7 @@
 #include <queue>
 #include "JsonConfig.h"
 #include "JsonMessage.h"
+#include "JobManager.h" //include cycle
 
 struct PrintProperties{
 		double m_breathTime;
@@ -37,7 +38,6 @@ class B9CreatorSettings: public JsonConfig{
 		 * */
 		int m_spr; 
 		int m_tpi;
-		PrintProperties m_printProp;
 
 	public:
 		int m_PU;
@@ -47,6 +47,8 @@ class B9CreatorSettings: public JsonConfig{
 		int m_zHeight;// height in PU
 		int m_zHeightLimit;
 		int m_zHome;// height in PU
+		PrintProperties m_printProp;
+		JobManager* m_pJobManager; //optional
 
 		std::string m_host;
 		std::string m_port;
@@ -88,6 +90,7 @@ class B9CreatorSettings: public JsonConfig{
 		m_b9jDir(),
 		m_readyForNextCycle(true),
 		m_printProp(),
+		m_pJobManager(NULL),
 		m_die(false)
 		{
 			m_PU = 100 * 254 / (m_spr * m_tpi) ;

@@ -15,10 +15,10 @@
 #include "constants.h"
 #include "JsonConfig.h"
 #include "B9CreatorSettings.h"
-//#include "PrinterSettings.h"
 #include "SerialManager.h"
 #include "OnionServer.h"
 #include "DisplayManager.h"
+#include "JobManager.h"
 
 #include <locale.h>
 //#include <time.h>
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 		//read&handle serial messages
 
 		//update job/image
-		jobManager.run();
+		//jobManager.run();
 
 		//unblock setting object
 		b9CreatorSettings.unlock();
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* Clean up objects */
-	onion.~OnionServer(); //ness?
+	//none
 
 	usleep(10000);
 

@@ -23,13 +23,6 @@ int JobManager::initJob(bool withReset){
 	}
 	m_job_mutex.unlock();
 
-}
-
-//get printer properties.
-std::string cmd_info("A"); //'A' messages includes 'I'
-m_b9CreatorSettings.m_queues.add_command(cmd_info);	
-//usleep(100000);//0.1s, not ness.
-
 return 0;	
 }
 
@@ -42,17 +35,20 @@ int JobManager::startJob(){
 		return -1;
 	}
 
-	b9CreatorSettings.lock();
-	b9CreatorSettings.m_printProp.m_lockTimes = false;
-	b9CreatorSettings.unlock();
+	m_b9CreatorSettings.lock();
+	m_b9CreatorSettings.m_printProp.m_lockTimes = false;
+	m_b9CreatorSettings.unlock();
 
 	m_state = FIRST_LAYER;
 }
 
 int JobManager::pauseJob(){
+	if( m_state == IDLE ) return -1;
+
 	Messages &q = m_b9CreatorSettings.m_queues;
 
-	m_tPause.begin = time(NULL);
+	gettimeofday( &m_tTimer.begin, NULL );
+	//m_tPause.begin = (timeval_t*) time(NULL);
 	m_pauseInState = m_state;
 
 	/** Try to reach hazard-free state. **/
@@ -62,44 +58,59 @@ int JobManager::pauseJob(){
 	/* Close VAT if printer is equipped with slider */
 	if( m_b9CreatorSettings.m_shutterEquipped ){
 		std::string cmd_close("V0"); 
-		q.add_command(cmd);	
-		m_b9CreatorSettings.m_queues.add_command(cmd_info);	
+		q.add_command(cmd_close);	
+		m_b9CreatorSettings.m_queues.add_command(cmd_close);	
 	}
 
 	m_state = PAUSE;
+	return 0;
 }
 
 int JobManager::resumeJob(){
+	if( m_state != PAUSE ) return -1;
+
+	Messages &q = m_b9CreatorSettings.m_queues;
 	// Analyse m_pauseInState to fix some timing
 	switch( m_pauseInState ){
-		case IDLE: 
-			std::string msg("Can not resume job. It was not paused");
-			std::cerr << msg << std::endl;
-			m_b9CreatorSettings.m_queues.add_message(msg);
-			return -1;
-		case BREATH:
-			// Open shutter 
-			if( m_b9CreatorSettings.m_shutterEquipped ){
-				std::string cmd_close("V0"); 
-				q.add_command(cmd);	
-				m_b9CreatorSettings.m_queues.add_command(cmd_info);	
+		case IDLE:
+			{ 
+				std::string msg("Can not resume job. It was not paused");
+				std::cerr << msg << std::endl;
+				m_b9CreatorSettings.m_queues.add_message(msg);
+				return -1;
 			}
-			m_tBreath.begin = time(NULL);
+			break;
+		case BREATH:
+			{
+				// Open shutter 
+				if( m_b9CreatorSettings.m_shutterEquipped ){
+					std::string cmd_close("V0"); 
+					q.add_command(cmd_close);	
+					m_b9CreatorSettings.m_queues.add_command(cmd_close);	
+				}
+				gettimeofday( &m_tBreath.begin, NULL );
+			}
 			break;
 		case CURING:
-			// Substract elapsed time before job was stoped.
-			m_tCuring.diff = m_tCuring.diff
-				- Timer.difference(NULL,m_tCuring.begin,m_tCuring.begin);
-			m_tCuring.begin = time(NULL);
-			m_displayManager.show(NULL,NULL); //TODO
+			{
+				// Substract elapsed time before job was stoped.
+				m_tCuring.diff = m_tCuring.diff
+					- Timer::timeval_diff( &m_tPause.begin ,&m_tCuring.begin );
+				gettimeofday( &m_tCuring.begin, NULL );
+				m_displayManager.show(); //TODO
+			}
 			break;
 		case WAIT_ON_R_MESS:
-			m_pauseInState = RESET;
+			{
+				m_pauseInState = RESET;
+			}
 			break;
 		case WAIT_ON_F_MESS:
+			{
 				m_b9CreatorSettings.lock();
 				m_b9CreatorSettings.m_readyForNextCycle = true;
 				m_b9CreatorSettings.unlock();
+			}
 			break;
 		default:
 			break;
@@ -125,12 +136,12 @@ int JobManager::nextStep(){
 void JobManager::run(){
 	Messages &q = m_b9CreatorSettings.m_queues;
 
-	while( !m_b9CreatorSettings.m_die ){
+	while( !m_b9CreatorSettings.m_die && !m_die ){
 		m_job_mutex.lock();
 		switch( m_state ){
 			case RESET:
 				{
-					m_tRWait.begin = time(NULL);
+					gettimeofday( &m_tRWait.begin, NULL );
 					m_tRWait.diff = MaxWaitR; 
 
 					/* Send reset command to printer */
@@ -174,7 +185,7 @@ void JobManager::run(){
 
 					//vat open?!
 					VPRINT("Wait on 'F' message\n");
-					m_tFWait.begin = time(NULL);
+					gettimeofday( &m_tFWait.begin, NULL );
 					m_tFWait.diff = MaxWaitF; 
 					m_state = WAIT_ON_F_MESS;
 
@@ -183,13 +194,13 @@ void JobManager::run(){
 			case NEXT_LAYER:
 				{
 					std::string cmd_next;
-					cmd_next << "N" << 1000; //has to reseach
+					cmd_next = "N1000"; //has to reseach
 					VPRINT("Send N%i for next layer.\n",1000 );
 					q.add_command(cmd_next);	
 
 					//vat open?!
 					VPRINT("Wait on 'F' message\n");
-					m_tFWait.begin = time(NULL);
+					gettimeofday( &m_tFWait.begin, NULL );
 					m_tFWait.diff = MaxWaitF; 
 					m_state = WAIT_ON_F_MESS;
 				}
@@ -205,10 +216,11 @@ void JobManager::run(){
 						// unset the ready flag
 						r = false;
 
-						m_tBreath.begin = time(NULL);
-						m_tBreath.diff = m_b9CreatorSettings.m_breathTime;
+						gettimeofday( &m_tBreath.begin, NULL );
+						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime;
 
-						VPRINT("Start breath for layer %i.\n",l);
+						VPRINT("Repeat breath for layer %i.\n",
+								m_b9CreatorSettings.m_printProp.m_currentLayer);
 						m_state = BREATH;
 					}
 				}
@@ -216,15 +228,15 @@ void JobManager::run(){
 			case BREATH:
 				{
 					if( m_tBreath.timePassed() ){
-						int l = m_b9CreatorSettings.m_currentLayer;
-						m_tCuring.begin = time(NULL);
-						if( l <= m_b9CreatorSettings.m_nmbrOfAttachedLayers ){
-							m_tCuring.diff = m_b9CreatorSettings.m_exposureTimeAL;
+						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+						gettimeofday( &m_tCuring.begin, NULL );
+						if( l <= m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
+							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL;
 						}else{
-							m_tCuring.diff = m_b9CreatorSettings.m_exposureTime;
+							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime;
 						}
 
-						m_displayManager.show(NULL,NULL); //TODO
+						m_displayManager.show(); //TODO
 						m_state = CURING;
 						VPRINT("Start curing of layer %i.\n",l);
 					}
@@ -236,9 +248,9 @@ void JobManager::run(){
 						//hide slice on projector image.
 						m_displayManager.blank();
 
-						int &l = m_b9CreatorSettings.m_currentLayer;
+						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 						l++;
-						if( l <= m_b9CreatorSettings.m_maxLayer ){
+						if( l <= m_b9CreatorSettings.m_printProp.m_maxLayer ){
 							m_state = NEXT_LAYER;
 						}else {
 							m_state = FINISHED;
@@ -256,14 +268,18 @@ void JobManager::run(){
 				{
 					std::string cmd_finished;
 					VPRINT("Send F%i. Job finished\n",9000 );
-					cmd_finished << "F" << 9000; 
+					cmd_finished = "F9000" ; 
 					q.add_command(cmd_finished);
 
-					b9CreatorSettings.lock();
-					b9CreatorSettings.m_printProp.m_lockTimes = false;
-					b9CreatorSettings.unlock();
+					m_b9CreatorSettings.lock();
+					m_b9CreatorSettings.m_printProp.m_lockTimes = false;
+					m_b9CreatorSettings.unlock();
 
 					m_state = IDLE;
+				}
+				break;
+		case IDLE:
+				{
 				}
 				break;
 			default: 

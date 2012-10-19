@@ -82,8 +82,8 @@
 		<div style="clear:both">
 			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
 		</div>
-		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Print" />
-		<input style="padding-top:1em;padding-bottom:1em" type="button" onclick="alert('ToDo')" value="Abort" /><br />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print" />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
 	</div>
 	<div class="containerL">
 		<h1>Raw Messages</h1>

@@ -25,7 +25,7 @@
 //thread function
 static void* start_myonion_server(void* arg){
 	printf("Onion server: Start listening.\n");
-//	onion_listen((onion*)arg);//loop
+	onion_listen((onion*)arg);//loop
 	printf("Onion server: Stop listening.\n");
 }
 
@@ -37,7 +37,8 @@ class OnionServer{
 		B9CreatorSettings &m_b9CreatorSettings;
 	public:
 		OnionServer(B9CreatorSettings &b9CreatorSettings ):
-			m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
+			//m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
+			m_ponion( onion_new(O_THREADED) ),
 			m_pthread(),
 			m_b9CreatorSettings(b9CreatorSettings)
 		{

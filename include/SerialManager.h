@@ -4,9 +4,9 @@
  *
  * */
 #include <cstdlib>
-#include <cstdio>
-#include <iostream>
+//#include <cstdio>
 #include <string>
+#include <iostream>
 #include <queue>
 #include <pthread.h>
 #include <boost/asio.hpp>
@@ -48,9 +48,10 @@ class SerialManager {
 		{
 			std::cout<<"Error: "<<e.what()<<std::endl;
 			m_open = false;
-			std::string message = "Opening of '" << file << "' failed." << std::endl
-				<< "Error: " << e.what() << std::endl;
-			m_b9CreatorSettings.m_queues.m_messageQueue.add(message);
+			std::ostringstream message;
+			message << "File '" << file << "' not found.\n Error: " <<e.what() << std::endl;
+			std::string mess = message.str();
+			m_b9CreatorSettings.m_queues.add_message( mess );
 			//exit(1) ;
 		}
 
