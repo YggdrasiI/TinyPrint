@@ -47,9 +47,15 @@ enum JobState {
 	WAIT_ON_R_MESS=1<<6,
 	IDLE=1<<7,
 	PAUSE=1<<8,
-	FINISHED=1<<9,
-	CURING=1<<10
+	FINISH=1<<9,
+	CURING=1<<10,
+	START_STATE = 1<<11,
+	ERROR = 1<<12, /* React like FINISH. TODO: Just blank image, (optional)close vat and (optional) power off projektor. */
+	WAIT_ON_ZERO_HEIGHT = 1<<13
 };
+/* Remark: Mostly or all if-statements just checks one state at once. (No 'val & A|B' args)
+ * It should be possible switch 1,2,3,4,5,... if #state numbers > #bits
+ * */
 
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};

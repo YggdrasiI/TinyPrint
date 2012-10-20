@@ -44,36 +44,40 @@ struct Timer{
 				now = &tmp;
 				gettimeofday( now, NULL );
 			}
+			//VPRINT("Diff1: %lli",diff);
 			return (diff < timeval_diff(now, &begin));
 		}
 
 		/* Return time diff in ns */
 		static long long timeval_diff(
-				timeval_t *end_time,
-				timeval_t *start_time) 
+				timeval_t *pEndTime,
+				timeval_t *pStartTime) 
 		{   
-			timeval_t *difference;	
+			timeval_t difference;	
 
-			difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
-			difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
+			difference.tv_sec =pEndTime->tv_sec -pStartTime->tv_sec ;
+			difference.tv_usec=pEndTime->tv_usec-pStartTime->tv_usec;
 
+
+			//VPRINT("Start: %li End: %li Diff: %lli\n",pStartTime->tv_sec,pEndTime->tv_sec,1000000LL*difference.tv_sec);
 			/* Using while instead of if below makes the code slightly more robust. */
 
-			while(difference->tv_usec<0)
+			while(difference.tv_usec<0)
 			{   
-				difference->tv_usec+=1000000;
-				difference->tv_sec -=1;
+				difference.tv_usec+=1000000;
+				difference.tv_sec -=1;
 			}   
 
-			return 1000000LL*difference->tv_sec+
-				difference->tv_usec;
+			return 1000000LL*difference.tv_sec+
+				difference.tv_usec;
 
-		} /* timeval_diff() */
+		}
 };
 
 class JobManager {
-		static const long long MaxWaitR = 5E10; //50s. Maximal waiting time on 'Ri' in ns.
-		static const long long MaxWaitF = 2E9; //2s. Maximal waiting time on 'F' in ns.
+		static const long long MaxWaitR = 12E7; //120s. Maximal waiting time on 'Ri' in ns.
+		static const long long MaxWaitF = 5E6; //5s. Maximal waiting time on 'F' in ns.
+		//static const long long MaxWaitFfrist = MaxWaitR; // Maximal waiting time on 'F' for base layer.
 	private:
 		pthread_t m_pthread;
 		bool m_die;
@@ -100,7 +104,7 @@ class JobManager {
 			m_die(false),
 			m_b9CreatorSettings(b9CreatorSettings),
 			m_displayManager(displayManager),
-			m_state(IDLE),
+			m_state(START_STATE),
 			m_pauseInState(IDLE),
 			m_job_mutex(),
 			m_tTimer(),

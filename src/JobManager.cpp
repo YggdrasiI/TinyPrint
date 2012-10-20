@@ -1,4 +1,7 @@
 #include <unistd.h>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "JobManager.h"
 #include "B9CreatorSettings.h"
@@ -12,19 +15,20 @@ int JobManager::loadImg(const std::string filename){
 
 int JobManager::initJob(bool withReset){
 	m_job_mutex.lock();
-	if( m_state != IDLE ){
-		std::string msg("Runtime error in __FILE__, __LINE__. Job already running. Abort initialisation of job.");
+	if( m_state != IDLE && m_state != START_STATE ){
+		std::string msg("(Job) Job already running. Abort initialisation of job.");
 		std::cerr << msg << std::endl;
 		m_b9CreatorSettings.m_queues.add_message(msg);
 		return -1;
 	}
-	if( withReset ){
+
+	// reset at least one time
+	if( withReset ||
+			( (m_b9CreatorSettings.m_resetStatus != 0) && m_state == START_STATE )
+		){
 		m_state = RESET;
 	}else{
 		m_state = INIT;
-		std::string msg("Init printer");
-		std::cout << msg << std::endl;
-		m_b9CreatorSettings.m_queues.add_message(msg);
 	}
 	m_job_mutex.unlock();
 
@@ -32,19 +36,22 @@ return 0;
 }
 
 int JobManager::startJob(){
+	if( m_state == START_STATE ){
+	}
 	
 	if( m_state != IDLE ){
-		std::string msg("Runtime error in __FILE__, __LINE__. Can not start job.");
+		std::string msg("(Job) Can not start job.");
 		std::cerr << msg << std::endl;
 		m_b9CreatorSettings.m_queues.add_message(msg);
 		return -1;
 	}
 
 	m_b9CreatorSettings.lock();
-	m_b9CreatorSettings.m_printProp.m_lockTimes = false;
+	m_b9CreatorSettings.m_printProp.m_lockTimes = true;
 	m_b9CreatorSettings.unlock();
 
 	m_state = FIRST_LAYER;
+	return 0;
 }
 
 int JobManager::pauseJob(){
@@ -129,8 +136,13 @@ int JobManager::resumeJob(){
 }
 
 int JobManager::stopJob(){
-	m_displayManager.blank();
-	m_state = FINISHED;
+	//can not stop job, if in idle state
+	if( m_state == IDLE) return -1;
+
+	// reset pause state to default value
+	if( m_state == PAUSE ) m_pauseInState = IDLE;
+
+	m_state = FINISH;
 	return 0;
 }
 
@@ -155,19 +167,22 @@ void JobManager::run(){
 					std::string cmd_reset("R"); 
 					q.add_command(cmd_reset);	
 
+					VPRINT("Reset requested. Now wait on 'R' Message.\n");
 					m_state = WAIT_ON_R_MESS;
 				}
 				break;
 			case WAIT_ON_R_MESS:
 				{
-					if( m_b9CreatorSettings.m_resetStatus != 0  ){
+					VPRINT("Wait on 'R' message...\n");
+					if( m_b9CreatorSettings.m_resetStatus == 0  ){
 						m_state = INIT;
 					}
 					if( m_tRWait.timePassed() ){
-						std::string msg("Runtime error in __FILE__, __LINE__. Wait to long on ready signal of printer. Printer connection lost?");
+						std::string msg("(Job) Wait to long on ready signal of printer. Printer connection lost?");
 						std::cerr << msg << std::endl;
 						m_b9CreatorSettings.m_queues.add_message(msg);
-						m_state = IDLE;
+						//m_state = IDLE;
+m_b9CreatorSettings.m_resetStatus = 0;//test
 					}
 					if( m_b9CreatorSettings.m_die ){
 						m_state = IDLE;
@@ -180,33 +195,95 @@ void JobManager::run(){
 					std::string cmd_info("A"); 
 					q.add_command(cmd_info);	
 
+					// Set layer number to base layer index.
+					m_b9CreatorSettings.m_printProp.m_currentLayer = 1;
+
+					// reset pause state to default value
+					m_pauseInState = IDLE;
+
 					VPRINT("Init done. Idle in JobManager.\n");
+
 					//m_state = FIRST_LAYER;
 					m_state = IDLE;
 				}
 				break;
 			case FIRST_LAYER:
 				{
-					std::string cmd_base("B550"); //has to reseachr original value...
+					std::string cmd_base("B0"); 
 					q.add_command(cmd_base);	
 
-					//vat open?!
-					VPRINT("Wait on 'F' message\n");
+					//wait on shutter opening.
+					/* Thats not possible. 'F' message is send on shutter opening and not
+					 * after table movement.
+					VPRINT("First layer state. Wait on 'F' message\n");
+					gettimeofday( &(m_tFWait.begin), NULL );
+					m_tFWait.diff = MaxWaitFfrist; 
+					m_state = WAIT_ON_F_MESS;
+					*/
+
+					/* Wait on zHeight = 0 */
 					gettimeofday( &(m_tFWait.begin), NULL );
 					m_tFWait.diff = MaxWaitF; 
-					m_state = WAIT_ON_F_MESS;
+					VPRINT("Move Table to base position.\n");
 
+					m_state = WAIT_ON_ZERO_HEIGHT;
+
+				}
+				break;
+			case WAIT_ON_ZERO_HEIGHT:
+				{
+					if( m_b9CreatorSettings.m_zHeight == 0 ){
+						m_state = WAIT_ON_F_MESS; // or BREATH
+					}else{
+						VPRINT("Wait till base position reached...\n");
+					}
 				}
 				break;
 			case NEXT_LAYER:
 				{
-					std::string cmd_next;
-					cmd_next = "N1000"; //has to reseach
-					VPRINT("Send N%i for next layer.\n",1000 );
-					q.add_command(cmd_next);	
+					int &zHeight = m_b9CreatorSettings.m_zHeight; //Reference!
+					int zHeightLimit = m_b9CreatorSettings.m_zHeightLimit; 
+					int zRes = m_b9CreatorSettings.m_printProp.m_zResolution;
+					int pu = m_b9CreatorSettings.m_PU;
+					int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
-					//vat open?!
-					VPRINT("Wait on 'F' message\n");
+					//int zHeight2 = 100*( zRes )/pu + zHeight; //sum up rounding errors
+					int zHeight2 = 100*( (l-1)*zRes )/pu; //require zHeight(layer 1)=0
+					if( zHeight2 > zHeightLimit ){
+						std::ostringstream zError;
+						zError << "(Job) Height of next layer lower as current height. Abort job."
+						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
+						<< std::endl << "Height limit: " << zHeightLimit
+						<< std::endl << "Next layer: " << l;
+						std::string zErrorStr = zError.str();
+						VPRINT("%s", zErrorStr.c_str() );
+						q.add_message( zErrorStr );	
+						m_state = ERROR;
+						break;
+					}
+					if( zHeight2 <= zHeight ){
+						std::ostringstream zError;
+						zError << "(Job) Height of next layer lower as current height. Abort job."
+						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
+						<< std::endl << "Next layer: " << l;
+						std::string zErrorStr = zError.str();
+						VPRINT("%s", zErrorStr.c_str() );
+						q.add_message( zErrorStr );	
+						m_state = ERROR;
+						break;
+					}
+
+					//update height.
+					//zHeight = zHeight2;
+					//no, do not update value manually. wait on message on serial channel.
+
+					std::ostringstream cmd_next;
+					cmd_next << "N" << zHeight2 ;
+					std::string cmd_nextStr = cmd_next.str();
+					q.add_command( cmd_nextStr );	
+					VPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
+
+					//wait on shutter opening.
 					gettimeofday( &m_tFWait.begin, NULL );
 					m_tFWait.diff = MaxWaitF; 
 					m_state = WAIT_ON_F_MESS;
@@ -218,20 +295,22 @@ void JobManager::run(){
 							break;*/
 			case WAIT_ON_F_MESS:
 				{	
+					VPRINT("Wait on 'F' message...\n");
 					bool & r = m_b9CreatorSettings.m_readyForNextCycle;
-					if( r ){
+					if( r || m_tFWait.timePassed() ){
+					//if( r ){
 						// unset the ready flag
 						r = false;
 
 						gettimeofday( &m_tBreath.begin, NULL );
-						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime;
+						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime*1000000;
 
 						VPRINT("Begin breath for layer %i.\n",
 								m_b9CreatorSettings.m_printProp.m_currentLayer);
 						m_state = BREATH;
-					}
+					}else
 					if( m_tFWait.timePassed() ){
-						std::string msg("Runtime error in __FILE__, __LINE__. Wait to long on 'F' signal of printer. Printer connection lost?");
+						std::string msg("(Job) Wait to long on 'F' signal of printer. Printer connection lost?");
 						std::cerr << msg << std::endl;
 						m_b9CreatorSettings.m_queues.add_message(msg);
 						m_state = IDLE;
@@ -240,23 +319,25 @@ void JobManager::run(){
 				break;
 			case BREATH:
 				{
+					VPRINT("Breathing...\n");
 					if( m_tBreath.timePassed() ){
 						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 						gettimeofday( &m_tCuring.begin, NULL );
 						if( l <= m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
-							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL;
+							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL*1000000;
 						}else{
-							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime;
+							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime*1000000;
 						}
 
 						m_displayManager.show(); //TODO
 						m_state = CURING;
-						VPRINT("Start curing of layer %i.\n",l);
+						VPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
 					}
 				}
 				break;
 			case CURING:
 				{
+					VPRINT("Curing...\n");
 					if( m_tCuring.timePassed() ){
 						//hide slice on projector image.
 						m_displayManager.blank();
@@ -266,7 +347,7 @@ void JobManager::run(){
 						if( l <= m_b9CreatorSettings.m_printProp.m_maxLayer ){
 							m_state = NEXT_LAYER;
 						}else {
-							m_state = FINISHED;
+							m_state = FINISH;
 						}
 
 					}
@@ -274,11 +355,15 @@ void JobManager::run(){
 				break;
 			case PAUSE:
 				{
-
+					VPRINT("Pause...\n");
 				}
 				break;
-			case FINISHED:
+			case ERROR:
+			case FINISH:
 				{
+					m_displayManager.blank();
+					//TODO?! Power of Projector?!
+
 					std::string cmd_finished;
 					VPRINT("Send F%i. Job finished\n",9000 );
 					cmd_finished = "F9000" ; 
@@ -293,14 +378,24 @@ void JobManager::run(){
 				break;
 		case IDLE:
 				{
+					VPRINT("Idle...\n");
+				}
+				break;
+		case START_STATE:
+				{
+
 				}
 				break;
 			default: 
 				std::cout << "State " << m_state << " unknown" << std::endl;
 		}
+		m_b9CreatorSettings.lock();
+		m_b9CreatorSettings.m_jobState = m_state;
+		m_b9CreatorSettings.unlock();
 
 		m_job_mutex.unlock();
-		usleep(50000); //.05m
+		usleep(50000); //.05s
+		usleep(2000000); //2s
 	}
 }
 
@@ -309,32 +404,46 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 	reply = "error";
 
 	if(actionid == 6){ /* control JobManager */
-			 std::string print_cmd ( onion_request_get_post(req,"print") );
+		std::string print_cmd ( onion_request_get_post(req,"print") );
 #ifdef VERBOSE
-			 std::cout << "'"<< print_cmd << "'" << std::endl;
+		std::cout << "'"<< print_cmd << "'" << std::endl;
 #endif
-			 if( 0 == print_cmd.compare("init") ){
-				 if( 0 != initJob(false) ) return ;
-				 reply = "idle";
+		if( 0 == print_cmd.compare("init") ){
+			if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
+			reply = "idle";
 
-			 }else if( 0 == print_cmd.compare("start") ||
-			 (m_state == IDLE && 0 == print_cmd.compare("toggle")) ){
-			 if( 0 != startJob() ) return ;
-			 reply = "print";
+		}else if( 0 == print_cmd.compare("start") || 0 == print_cmd.compare("toggle")){
+			if( m_state == START_STATE){
+				//we can not start job. Init at first.
+				if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
+				reply = "idle";
+				return;
+			}
+			if( m_state == IDLE ){
+				if( 0 != startJob() ) return ;
+				reply = "print";
+			}
+		}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
+			if( m_state == PAUSE ){
+				if( 0 != pauseJob() ) return ;
+				reply = "pause";
+			}
+			//can not resume without pause state.
+		}else if( 0 == print_cmd.compare("resume") ){
+			if( 0 != resumeJob() ) return  ;
+			reply = "print";
 
-			 }else if( 0 == print_cmd.compare("pause") ||
-			 (m_state == PAUSE && 0 == print_cmd.compare("toggle")) ){
-			 if( 0 != pauseJob() ) return ;
-			 reply = "pause";
-
-			 }else if( 0 == print_cmd.compare("resume") ){
-			 if( 0 != resumeJob() ) return  ;
-			 reply = "print";
-
-			 }else if( 0 == print_cmd.compare("abort") ){
-			 if( 0 != stopJob() ) return  ;
-			 reply = "idle";
-			 }
+		}else if( 0 == print_cmd.compare("abort") ){
+			if( 0 != stopJob() ){
+				if( m_state == IDLE ){
+					//stop failed, but printer mode is idle. Thus,
+					//stopping produce no error.
+					reply = "idle";
+				}
+				return  ;
+			}
+			reply = "idle";
+		}
 
 		//print_cmd unknown
 	}

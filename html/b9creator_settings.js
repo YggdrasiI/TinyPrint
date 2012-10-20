@@ -22,6 +22,6 @@ $(function(){
 		create_fields(json_b9creator);
 		create_fields(json_messages);
 
-		refreshIntervall = window.setInterval("refresh()", 5000);
+		refreshIntervall = window.setInterval("refresh()", 1000);
 });
 

@@ -22,9 +22,11 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_b9jDir(),
 	m_readyForNextCycle(false),
 	m_printProp(),
+	m_jobState(IDLE),
 	m_die(false)
 {
-	m_PU = 100 * 254 / (m_spr * m_tpi) ;
+	//m_PU = 100 * 254 / (m_spr * m_tpi) ;
+	m_PU = 10000 * 254 / (m_spr * m_tpi) ;
 
 	m_printProp.m_breathTime = 2.0;
 	m_printProp.m_releaseCycleTime = 1.75;
@@ -34,6 +36,8 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp.m_currentLayer = 1;
 	m_printProp.m_maxLayer = 10;
 	m_printProp.m_lockTimes = false;
+	m_printProp.m_zResolution = 50;
+	m_printProp.m_xyResolution = 100;
 };
 
 /*
@@ -71,6 +75,8 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonIntField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
 				min(m_printProp.m_currentLayer,m_printProp.m_maxLayer),1,m_printProp.m_maxLayer,1,m_printProp.m_lockTimes) );
 
@@ -78,6 +84,7 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
+	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"token","token") );
 
 	cJSON_AddItemToObject(root, "html", html);
 
@@ -113,7 +120,10 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_nmbrOfAttachedLayers = 4;
 	m_printProp.m_currentLayer = 1;
 	m_printProp.m_maxLayer = 10;
+	m_printProp.m_zResolution = 50;
+	m_printProp.m_xyResolution = 100;
 	m_printProp.m_lockTimes = false;
+	m_jobState = IDLE;
 };
 
 /*
@@ -143,7 +153,7 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 		if(changes & CONFIG ){		
 			if( JsonConfig::update(nhtml,ohtml,"stepsPerRevolution",&m_spr) 
 					|| JsonConfig::update(nhtml,ohtml,"threadPerInch",&m_tpi) ){
-				m_PU = 100 * 254 / (m_spr * m_tpi) ;
+				m_PU = 10000 * 254 / (m_spr * m_tpi) ;
 				changes|=YES;
 			}
 			if( updateState(nhtml,ohtml,"zHeightLimit",&m_zHeightLimit) ) changes|=YES;
@@ -173,6 +183,8 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 		} 
 
 	}

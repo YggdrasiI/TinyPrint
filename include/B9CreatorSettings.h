@@ -20,6 +20,8 @@ struct PrintProperties{
 		bool m_lockTimes; /*flag to set some fields 'readable' 
 												on the web page 
 												if printing is running */
+		int m_zResolution; // in μm.
+		int m_xyResolution; // in μm.
 };
 
 class B9CreatorSettings: public JsonConfig{
@@ -31,10 +33,10 @@ class B9CreatorSettings: public JsonConfig{
 		 * Definition of m_PU:
 		 * 1PU	= 1/spr * 1/tpi * inch 
 		 * 			= 1/spr * 1/tpi * 254 mm
-		 * 			= 1/spr * 1/tpi * 254000 nm
-		 * 			=: m_PU nm
-		 * => m_PU is scaled by Metric unit nm!
-		 * 1″ = 25.4 mm
+		 * 			= 1/spr * 1/tpi * 254000 μm
+		 * 			=: m_PU * 10μm
+		 * => m_PU is scaled by unit '10μm'!
+		 * Remark: 1″ = 1 inch = 25.4 mm
 		 * */
 		int m_spr; 
 		int m_tpi;
@@ -62,6 +64,7 @@ class B9CreatorSettings: public JsonConfig{
 		int m_lampHours;
 		unsigned char m_gridColor[3]; //rgb value
 		bool m_die; // flag indicate end of main loop
+		JobState m_jobState; //updated by JobManager Thread.
 
 		/* This object owns his own mutexes.
 			This could cause deadlocks if some mutexes will enwinded... 

@@ -45,7 +45,7 @@
 		<div class="prop" id="vatOpen">VAT % Open: </div>
 		<div class="prop" id="zHeight_mm">Z Height: </div>
 
-		<input type="button" onclick="sendCmd('R');jobManagerCmd('init','printButton','abortButton');" value="Reset Printer" />
+		<input type="button" onclick="sendCmd('R');" value="Reset Printer" />
 		<h1>End program</h1>
 		<input type="button" onclick="quitServerApp()" value="Quit" />
 	</div>
@@ -61,6 +61,8 @@
 		<h1>File browser</h1>
 		<span class="prop" id="filebrowserList">Files: </span>
 		<input type="button" onclick="alert('ToDo')" value="Open" />
+		<div class="prop" id="zResolution">Z Resolution: </div>
+		<div class="prop" id="xyResolution">XY Resolution: </div>
 	</div>
 	<div class="containerL">
 		<h1>Display Window Controls</h1>
@@ -82,8 +84,10 @@
 		<div style="clear:both">
 			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
 		</div>
-		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print" />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print (Init)" />
 		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
+		<br />
+		<div class="prop" id="jobState">Job Manager State: </div>
 	</div>
 	<div class="containerL">
 		<h1>Raw Messages</h1>

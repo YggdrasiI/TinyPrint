@@ -5,6 +5,24 @@
 TOKENS = {
 	"projectorStatus" : {2 : "?" , 0 : "Off" , 1 : "On" },
 	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
+
+	//s/\([^ \t]*\)=\([^,]*\)\(,*\)/\2 : "\1"\3
+	"jobState" : {
+		2048 : "START_STATE",
+		0 : "RESET",
+		1 : "INIT",
+		2 : "FIRST_LAYER",
+		4 : "NEXT_LAYER",
+		8 : "NEXT_LAYER_OVERCURING", /* not used */
+		16 : "BREATH",
+		32 : "WAIT_ON_F_MESS",
+		64 : "WAIT_ON_R_MESS",
+		128 : "IDLE",
+		256 : "PAUSE",
+		512 : "FINISH",
+		1024 : "CURING"
+	}
+
 }
 
 /* maximal number of lines in the messages 
@@ -337,13 +355,14 @@ function parse_percent(o,s){
 /* millimeter, similar to percent. */
 function format_mm(o,val){
 	//var p = (typeof val === "string"?parseInt(val)*1000:val*1000);
-	var p = (typeof val === "string"?parseInt(val):val);
+	var p = (typeof val === "string"?parseInt(val)/100:val/100);
+	var p = Math.round(p*100)/100;
 	return p+"mm";
 }
 
 function parse_mm(s){
 	//return parseFloat(s)/1000;
-	return parseFloat(s);
+	return parseFloat(s)*100;
 }
 
 /* Send current json struct to server and refresh displayed values.
