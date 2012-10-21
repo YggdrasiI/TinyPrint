@@ -7,10 +7,37 @@
 #include "B9CreatorSettings.h"
 #include "DisplayManager.h"
 
+using namespace std;
+using namespace cv;
+
 int JobManager::loadJob(const std::string filename){
+	m_job_mutex.lock();
+	m_job_mutex.unlock();
 }
 
 int JobManager::loadImg(const std::string filename){
+	m_job_mutex.lock();
+	JobFile tmp;
+	m_files.push_back(tmp); // store copy of jf
+	JobFile &jf = m_files[m_files.size()-1];//reference of new entry
+	jf.position = cv::Point(0,0);
+	jf.zResolution = 50;
+	jf.xyResolution = 100;
+
+	for( int i=0;i<m_b9CreatorSettings.m_printProp.m_maxLayer; i++){
+		printf("Load image for slice %i\n",i+1);
+		Mat m = imread(filename, CV_LOAD_IMAGE_COLOR);//set second arg to 0 for greyscale.
+		if( !m.data ) // Check for invalid input
+		{
+			m_job_mutex.unlock();
+			cout <<  "Could not open or find the image '" << filename << "'." << std::endl ;
+			return -1;
+		}
+		jf.slices.push_back(m);//store copy of m
+	}
+
+	m_job_mutex.unlock();
+	return 0;
 }
 
 int JobManager::initJob(bool withReset){
@@ -96,12 +123,12 @@ int JobManager::resumeJob(){
 			{
 				// Open shutter 
 				if( m_b9CreatorSettings.m_shutterEquipped ){
-					std::string cmd_close("V0"); 
-					q.add_command(cmd_close);	
-					m_b9CreatorSettings.m_queues.add_command(cmd_close);	
+					std::string cmd_open("V100"); 
+					q.add_command(cmd_open);	
+					m_b9CreatorSettings.m_queues.add_command(cmd_open);	
 				}
 				VPRINT("Repeat breath for layer %i.\n",
-						m_b9CreatorSettings.m_printProp.m_currentLayer);
+						m_b9CreatorSettings.m_printProp.m_currentLayer );
 				gettimeofday( &m_tBreath.begin, NULL );
 			}
 			break;
@@ -111,7 +138,7 @@ int JobManager::resumeJob(){
 				m_tCuring.diff = m_tCuring.diff
 					- Timer::timeval_diff( &m_tPause.begin ,&m_tCuring.begin );
 				gettimeofday( &m_tCuring.begin, NULL );
-				m_displayManager.show(); //TODO
+				show( m_b9CreatorSettings.m_printProp.m_currentLayer ); 
 			}
 			break;
 		case WAIT_ON_R_MESS:
@@ -202,6 +229,9 @@ void JobManager::run(){
 
 					// Set layer number to base layer index.
 					m_b9CreatorSettings.m_printProp.m_currentLayer = 1;
+					// Set display framebuffer on
+					m_b9CreatorSettings.m_display = true;
+					
 
 					// reset pause state to default value
 					m_pauseInState = IDLE;
@@ -345,7 +375,11 @@ void JobManager::run(){
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime*1000000;
 						}
 
-						m_displayManager.show(); //TODO
+						//update and display slice
+						//m_job_mutex.unlock();
+						show(l);
+						//m_job_mutex.lock();
+
 						m_state = CURING;
 						VPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
 					}
@@ -463,4 +497,26 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 
 		//print_cmd unknown
 	}
+}
+
+void JobManager::show(int slice){
+	//m_job_mutex.lock();
+
+	//remove old displayed images
+	m_displayManager.clear();
+
+	//add new slices
+	vector<JobFile>::iterator it = m_files.begin();
+	const vector<JobFile>::const_iterator it_end = m_files.end();
+	for( ; it<it_end ; it++ ){
+		m_displayManager.add( (*it).slices[slice-1], (*it).position );
+	}
+
+	//force redraw of screen
+#ifdef VERBOSE
+	std::cout << "(Job) Show sprites of slicer " << slice << "."  << std::endl;
+#endif
+	m_displayManager.show();
+
+	//m_job_mutex.unlock();
 }

@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
 
 
 	//displayManager.start();
+	jobManager.loadImg("../test.png");
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/

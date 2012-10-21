@@ -14,24 +14,14 @@ void DisplayManager::stop(){
 
 void DisplayManager::createGrid(){
 
-	/*DFBSurfaceDescription dsc;
-	dsc.flags = DSDESC_CAPS;
-	dsc2.caps  = (DFBSurfaceCapabilities)( DSCAPS_PRIMARY | DSCAPS_FLIPPING);*/
 	DFBSurfaceDescription dsc2;
-	dsc2.caps  = (DFBSurfaceCapabilities)( DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PIXELFORMAT );
-	//dsc2.caps = DSCAPS_NONE;
+	dsc2.caps  = DSCAPS_NONE ;
 	dsc2.flags = (DFBSurfaceDescriptionFlags) (DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PIXELFORMAT);
 	dsc2.width = m_screenWidth;
 	dsc2.height = m_screenHeight;
 	dsc2.pixelformat = DSPF_ARGB;
 
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc2, &m_grid ));
-
-  //DFBCHECK (m_pPrimary->SetColor (m_pPrimary, 0x00, 0xF0, 0xF0, 0xFF));//
-  //DFBCHECK (m_pPrimary->FillRectangle (m_pPrimary, 0, 0, m_screenWidth, m_screenHeight ));
-
-  //DFBCHECK (m_grid->SetColor (m_grid, 0x00, 0xFF, 0x00, 0x00));//transparent
-  //DFBCHECK (m_grid->FillRectangle (m_grid, 0, 0, dsc2.width, dsc2.height ));
 
 	// Set color of grid lines */
   DFBCHECK (m_grid->SetColor (m_grid, 
@@ -50,15 +40,87 @@ void DisplayManager::createGrid(){
 }
 
 void DisplayManager::show(){
+	m_blank = false;
+	m_redraw = true; 
 }
-void DisplayManager::show(cv::Mat &img, cv::Point topLeftCorner ){
 
+/*Release the images.
+ * Attention: The vector contains pointers and
+ * not the objects itself.
+ * */
+void DisplayManager::clear(){
+			m_img_mutex.lock();
+			std::vector<Sprite>::iterator it = m_sprites.begin();
+			const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
+			for ( ; it < it_end ; it++ )
+			{
+				if( (*it).pSurface != NULL ) (*it).pSurface->Release( (*it).pSurface );
+			}
+			m_sprites.clear();
 
+			m_img_mutex.unlock();
+}
+
+void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
+	//bad idea: do not use local var as data container....
+	//Mat dfbimg(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
+	
+	Sprite sprite;
+	sprite.pSurface = NULL;
+	sprite.position = topLeftCorner;
+	sprite.cvmat = cv::Mat(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
+
+	/*Die Farben in opencv sind in slices organisiert,
+	 * bbbb,gggg,rrrr,aaaa,… , aber in directfb punktweise,
+	 * argb, argb,… . Daher müssen die Daten
+	 * umorganisiert werden. Da es den Typ in Opencv nicht gibt werden
+	 * alle Kanäle in ein Graustufenbild mit 4*8bit gepackt und dann
+	 * in directfb als "argb" interpretiert.
+	 * Kann die Umwandlung vermieden/automatisiert werden?
+	 * */
+	typedef Vec<uchar, 4> VT;
+
+	MatConstIterator_<VT> it1 = cvimg.begin<VT>(),
+		it1_end = cvimg.end<VT>();
+	MatIterator_<uchar> dst_it = sprite.cvmat.begin<uchar>();
+  for( ; it1 != it1_end; ++it1, ++dst_it ) {
+		VT pix1 = *it1;
+		/**dst_it = (*it1.val[3] << 24) 
+			+ (*it1.val[4] << 16)
+			+ (*it1.val[4] << 8)
+			+ (*it1.val[0]); */
+		*dst_it = pix1[3];//saturate_cast<uchar>( pix1[3]);
+		++dst_it;
+		*dst_it = pix1[1];//saturate_cast<uchar>( pix1[3]);
+		++dst_it;
+		*dst_it = pix1[2];//saturate_cast<uchar>( pix1[3]);
+		++dst_it;
+		*dst_it = pix1[0];//saturate_cast<uchar>( pix1[3]);
+	}
+
+	DFBSurfaceDescription dsc;
+	dsc.width = cvimg.size().width;
+	dsc.height = cvimg.size().height;
+	dsc.caps = DSCAPS_NONE;
+	dsc.flags = (DFBSurfaceDescriptionFlags) 
+		( DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PREALLOCATED | DSDESC_PIXELFORMAT );
+	dsc.pixelformat = DSPF_ARGB;
+	dsc.preallocated[0].data = sprite.cvmat.data;      
+	dsc.preallocated[0].pitch = dsc.width*4;
+	dsc.preallocated[1].data = NULL;
+	dsc.preallocated[1].pitch = 0;
+
+	IDirectFBSurface *imageSurface = NULL;
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface) ));
+	
+	m_img_mutex.lock();
+	m_sprites.push_back( sprite );
+	m_img_mutex.unlock();
 }
 
 /* Hide all displayed images. */
 void DisplayManager::blank(bool black){
-	m_black = black;
+	m_blank = black;
 	m_redraw = true; 
 }
 
@@ -66,15 +128,24 @@ void DisplayManager::redraw(){
 
 	m_img_mutex.lock();
 	//Clear the screen.
-  DFBCHECK (m_pPrimary->SetColor (m_pPrimary, 0xFF, 0x00, 0x00, 0x00));//black
+  DFBCHECK (m_pPrimary->SetColor (m_pPrimary, 0x00, 0x00, 0x00, 0xFF));//black
 	DFBCHECK (m_pPrimary->FillRectangle (m_pPrimary, 0, 0, m_screenWidth, m_screenHeight));
 
 	if( m_gridShow ){
 		DFBCHECK (m_pPrimary->Blit(m_pPrimary, m_grid, NULL, 0, 0));
 	}
 
-	if( !m_black ){
-		//[...]
+	if( !m_blank ){
+		std::vector<Sprite>::iterator it = m_sprites.begin();
+		const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
+		for ( ; it < it_end ; it++ )
+		{
+			if( (*it).pSurface != NULL ){
+				DFBCHECK (m_pPrimary->Blit(m_pPrimary,
+							(*it).pSurface, NULL, (*it).position.x , (*it).position.y ));
+			}
+		}
+
 	}
 
 	//Flip the front and back buffer, but wait for the vertical retrace to avoid tearing.
@@ -83,12 +154,14 @@ void DisplayManager::redraw(){
 	m_redraw = false;
 	m_img_mutex.unlock();
 }
+
 /* Start thread with framebuffer loop */
 void DisplayManager::initFB(){
 
 	//create arg to disable cursor
 	char foo[] = { "arg1" };
 	char no_cur[] = { "--dfb:no-cursor" };
+	//char no_cur[] = { "--dfb:debug" };
 	int argc2 = /*argc+*/2;
 	char** argv2 = (char**) malloc( (argc2)*sizeof(char*));
 	//memcpy( argv2, argv, argc*sizeof(char*) );
@@ -112,6 +185,9 @@ void DisplayManager::initFB(){
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &m_pPrimary ));
 	DFBCHECK (m_pPrimary->GetSize (m_pPrimary, &m_screenWidth, &m_screenHeight));
 
+	//Set blitting flags to DSBLIT_BLEND_ALPHACHANNEL that enables alpha blending using the alpha channel of the source.
+	DFBCHECK (m_pPrimary->SetBlittingFlags (m_pPrimary, DSBLIT_BLEND_ALPHACHANNEL));
+
 	createGrid();
 	m_redraw = true;
 
@@ -119,11 +195,12 @@ void DisplayManager::initFB(){
 
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
-	m_img_mutex.lock();
+	clear();
+	//m_img_mutex.lock();
 	if( m_pPrimary != NULL ) m_pPrimary->Release (m_pPrimary);
 	if( m_grid != NULL ) m_grid->Release (m_grid);
 	if( m_pDfb != NULL ) m_pDfb->Release (m_pDfb);
-	m_img_mutex.unlock();
+	//m_img_mutex.unlock();
 }
 
 /* Should only called by displayThread() */

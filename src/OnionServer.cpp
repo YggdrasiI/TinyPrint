@@ -105,11 +105,9 @@ int getPrinterMessages(void *p, onion_request *req, onion_response *res){
 
 		Messages &q = ((OnionServer*)p)->m_b9CreatorSettings.m_queues;
 		//VPRINT("Messages: %i\n", q.m_messageQueue.size() );
-		q.m_messageMutex.lock();
 		cJSON* tmp = jsonMessages("serialMessages", q.m_messageQueue);
 		const char* json_serialMessages = cJSON_Print( tmp );
 		if( tmp != NULL ) cJSON_Delete(tmp);
-		q.m_messageMutex.unlock();
 
 		size_t len = strlen( json_serialMessages );
 		onion_response_set_length(res, (int) len);

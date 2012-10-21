@@ -21,9 +21,6 @@
 //#include "B9CreatorSettings.h"
 class B9CreatorSettings;
 
-static void* displayThread(void* arg);
-
-
 //	An error checking macro for a call to DirectFB.  It is suitable for very simple applications or tutorials.  In more sophisticated applications this general error checking should not be used.
 #define DFBCHECK(x...)                                         \
   {                                                            \
@@ -35,6 +32,16 @@ static void* displayThread(void* arg);
         DirectFBErrorFatal( #x, err );                         \
       }                                                        \
   }
+
+//#define DFBCHECK(x...)                                         
+
+struct Sprite{
+		IDirectFBSurface* pSurface; 
+		cv::Point position;
+		cv::Mat cvmat; //cv struture with same data array as pSurface.
+};
+
+static void* displayThread(void* arg);
 
 class DisplayManager {
 	public: 
@@ -73,17 +80,7 @@ class DisplayManager {
 			 * Attention: The vector contains pointers and
 			 * not the objects itself.
 			 * */
-			
-			std::vector<IDirectFBSurface*>::iterator it = m_imageSurfaces.begin();
-			std::vector<IDirectFBSurface*>::iterator it_end = m_imageSurfaces.end();
-			m_img_mutex.lock();
-			for ( ; it < it_end ; it++ )
-			{
-				if( *it != NULL ) (*it)->Release( *it );
-			}
-
-			m_imageSurfaces.clear();
-			m_img_mutex.unlock();
+			clear();
 		}
 
 		// Init & Start framebuffer loop
@@ -92,11 +89,14 @@ class DisplayManager {
 		// Stop framebuffer loop
 		void stop();
 
-		/*Display (unscaled) image img. 
+		/*Add (unscaled) image img. 
 		 * img should contain a rgb, rgba or
 		 * greyscaled image.
 		 */
-		void show(cv::Mat &img, cv::Point topLeftCorner=cv::Point(0,0) );
+		void add(cv::Mat &img, cv::Point topLeftCorner=cv::Point(0,0) );
+		/* Remove added images */
+		void clear();
+		/* Redraw images */
 		void show( );
 
 		/* Hide all displayed images. */
@@ -120,11 +120,11 @@ class DisplayManager {
 		bool m_die; // quit frame buffer thread loop.
 		bool m_pause; // pause frame buffer loop.
 		bool m_redraw; //mark if redraw is ness.
-		bool m_black; //mark if slices are not shown.
+		bool m_blank; //mark if slices are not shown.
 		pthread_t m_pthread;
 		Mutex m_img_mutex;
-		cv::Mat m_img;
-		std::vector<IDirectFBSurface*> m_imageSurfaces;
+		//std::vector<IDirectFBSurface*> m_imageSurfaces;
+		std::vector<Sprite> m_sprites;
 		IDirectFBSurface* m_grid; 
 		void createGrid();//init m_grid
 		/* Create directfb objects */

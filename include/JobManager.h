@@ -10,10 +10,14 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
-#include <queue>
+#include <vector>
 #include <pthread.h>
 #include <sys/time.h>
 #include <onion/onion.h>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include "constants.h"
 #include "Mutex.h"
 //#include "B9CreatorSettings.h"
@@ -74,6 +78,15 @@ struct Timer{
 		}
 };
 
+/* Should be filled by loadJob */
+struct JobFile{
+		std::vector<cv::Mat> slices;
+		int zResolution; //unit: 10μm.
+		int xyResolution; //unit: 10μm.
+		cv::Point position;
+};
+
+
 class JobManager {
 		static const long long MaxWaitR = 12E7; //120s. Maximal waiting time on 'Ri' in ns.
 		static const long long MaxWaitF = 5E6; //5s. Maximal waiting time on 'F' in ns.
@@ -97,6 +110,7 @@ class JobManager {
 		Timer &m_tBreath;
 		Timer &m_tFWait;
 		Timer &m_tRWait;
+		std::vector<JobFile> m_files;
 
 	public:
 		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
@@ -114,7 +128,8 @@ class JobManager {
 			m_tProjectImage(m_tTimer),
 			m_tBreath(m_tTimer),
 			m_tFWait(m_tTimer),
-			m_tRWait(m_tTimer)
+			m_tRWait(m_tTimer),
+			m_files()
 	{
 		if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
 			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
@@ -152,6 +167,9 @@ class JobManager {
 
 		/* Will called if website send data */
 		void webserverSetState(onion_request *req, int actionid, std::string &reply);
+
+	private:
+		void show(int slice);
 };
 
 /* wrapper function for job thread.*/
