@@ -1,0 +1,6 @@
+Required libraries:
+
+OpenCV
+Directfb
+Onion (git source, see 3rd_party dir)
+librsvg2 (sudo apt-get install librsvg2-dev )
