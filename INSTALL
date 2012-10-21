@@ -1,6 +1,6 @@
 List of required libraries:
 
-i OpenCV
+i) OpenCV
 ii) Directfb
 iii) Boost
 iv) Onion 
