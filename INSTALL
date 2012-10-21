@@ -1,6 +1,28 @@
-Required libraries:
+List of required libraries:
 
-OpenCV
-Directfb
-Onion (git source, see 3rd_party dir)
-librsvg2 (sudo apt-get install librsvg2-dev )
+i OpenCV
+ii) Directfb
+iii) Boost
+iv) Onion 
+v) librsvg2 
+
+================================================================
+
+Installation on Debian based systems. (State Oct 2012 )
+
+----------------------------------------------------------------
+i) sudo apt-get install libopencv-core-dev libopencv-highgui-dev
+ii) sudo apt-get install libdirectfb-dev
+iii) sudo apt-get install libboost-signals-dev
+iv) This lib has to be installed manually.
+	I.e.:
+	cd TinyPrint
+	git clone https://github.com/davidmoreno/onion.git
+	cd onion
+	mkdir build
+	cd build
+	cmake -DCMAKE_INSTALL_PREFIX=../../lib/onion ..
+	make
+	make install
+
+v) sudo apt-get install librsvg2-dev 
