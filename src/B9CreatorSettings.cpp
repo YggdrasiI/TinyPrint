@@ -23,6 +23,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_readyForNextCycle(false),
 	m_printProp(),
 	m_jobState(IDLE),
+	m_connected(false),
 	m_die(false)
 {
 	//m_PU = 100 * 254 / (m_spr * m_tpi) ;

@@ -7,7 +7,7 @@ void SerialManager::run(){
 
 	while( !m_die  ){
 
-		if( m_open ){
+		if( m_b9CreatorSettings.m_connected /*m_open*/ ){
 			try{
 				writeLineFromQueue(); //send single command. 
 				//readLineToQueue();
@@ -17,6 +17,9 @@ void SerialManager::run(){
 			{
 				cout<<"Error: "<<e.what()<<endl;
 				//m_die = true;
+				m_b9CreatorSettings.lock();
+				m_b9CreatorSettings.m_connected = false;
+				m_b9CreatorSettings.unlock();
 				usleep(5000000);
 			}
 			usleep(100000);//wait 100ms

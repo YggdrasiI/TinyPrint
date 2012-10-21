@@ -64,6 +64,7 @@ class B9CreatorSettings: public JsonConfig{
 		int m_lampHours;
 		unsigned char m_gridColor[3]; //rgb value
 		bool m_die; // flag indicate end of main loop
+		bool m_connected; // flag indicate serial connecton.
 		JobState m_jobState; //updated by JobManager Thread.
 
 		/* This object owns his own mutexes.

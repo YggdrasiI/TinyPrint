@@ -167,7 +167,7 @@ void JobManager::run(){
 					std::string cmd_reset("R"); 
 					q.add_command(cmd_reset);	
 
-					VPRINT("Reset requested. Now wait on 'R' Message.\n");
+					VPRINT("Reset requested. Now wait on 'R0' Message.\n");
 					m_state = WAIT_ON_R_MESS;
 				}
 				break;
@@ -181,8 +181,13 @@ void JobManager::run(){
 						std::string msg("(Job) Wait to long on ready signal of printer. Printer connection lost?");
 						std::cerr << msg << std::endl;
 						m_b9CreatorSettings.m_queues.add_message(msg);
-						//m_state = IDLE;
-m_b9CreatorSettings.m_resetStatus = 0;//test
+						m_state = IDLE;
+					}
+					if( !m_b9CreatorSettings.m_connected ){
+						std::string msg("(Job) No printer connection. Skip wait on 'R0' Message.");
+						std::cerr << msg << std::endl;
+						//m_b9CreatorSettings.m_queues.add_message(msg);
+						m_b9CreatorSettings.m_resetStatus = 0;
 					}
 					if( m_b9CreatorSettings.m_die ){
 						m_state = IDLE;
@@ -232,6 +237,10 @@ m_b9CreatorSettings.m_resetStatus = 0;//test
 				break;
 			case WAIT_ON_ZERO_HEIGHT:
 				{
+					if( !m_b9CreatorSettings.m_connected ){
+						VPRINT("(Job) Printer not connected. Set height manually to 0.\n");
+						m_b9CreatorSettings.m_zHeight = 0;
+					}
 					if( m_b9CreatorSettings.m_zHeight == 0 ){
 						m_state = WAIT_ON_F_MESS; // or BREATH
 					}else{
@@ -314,6 +323,13 @@ m_b9CreatorSettings.m_resetStatus = 0;//test
 						std::cerr << msg << std::endl;
 						m_b9CreatorSettings.m_queues.add_message(msg);
 						m_state = IDLE;
+					}
+
+					if( !m_b9CreatorSettings.m_connected ){
+						std::string msg("(Job) Printer not connected. Skip waiting on 'F' message.");
+						std::cerr << msg << std::endl;
+						//m_b9CreatorSettings.m_queues.add_message(msg);
+						r = true;
 					}
 				}
 				break;

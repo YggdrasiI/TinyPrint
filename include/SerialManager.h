@@ -23,7 +23,7 @@ static void* serialThread(void* arg);
 class SerialManager {
 	public: 
 		bool m_die;
-		bool m_open;
+		//bool m_open;
 	private:
 		B9CreatorSettings &m_b9CreatorSettings;
     boost::asio::io_service m_io;
@@ -33,7 +33,7 @@ class SerialManager {
 		SerialManager(B9CreatorSettings &b9CreatorSettings ) :
 			m_b9CreatorSettings(b9CreatorSettings),
 			m_die(false),
-			m_open(false),
+			//m_open(false),
 			m_io(),
 			m_serialStream(m_io)
 	{
@@ -43,11 +43,17 @@ class SerialManager {
 		try {
 			m_serialStream.open( file );
 			m_serialStream.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-			m_open = true;
+			//m_open = true;
+			m_b9CreatorSettings.lock();
+			m_b9CreatorSettings.m_connected = false;
+			m_b9CreatorSettings.unlock();
 		} catch(boost::system::system_error& e)
 		{
 			std::cout<<"Error: "<<e.what()<<std::endl;
-			m_open = false;
+			//m_open = false;
+			m_b9CreatorSettings.lock();
+			m_b9CreatorSettings.m_connected = false;
+			m_b9CreatorSettings.unlock();
 			std::ostringstream message;
 			message << "File '" << file << "' not found.\n Error: " <<e.what() << std::endl;
 			std::string mess = message.str();
