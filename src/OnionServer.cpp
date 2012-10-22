@@ -250,22 +250,6 @@ int OnionServer::stop_server()
 void OnionServer::updateSetting(onion_request *req, int actionid, std::string &reply){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
-		case 5:
-			{ /* Toggle Display */
-				const char* disp = onion_request_get_post(req,"display");
-				m_b9CreatorSettings.lock();
-				if( disp != NULL ){
-					if( disp[0] == '2' )
-						m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
-					else 
-						m_b9CreatorSettings.m_display = (disp[0] == '1');
-				}
-
-				reply = m_b9CreatorSettings.m_display?"1":"0";
-				m_b9CreatorSettings.unlock();
-				//return 0; 
-			}
-			break;
 
 		case 4:
 			{ /* Command Message */

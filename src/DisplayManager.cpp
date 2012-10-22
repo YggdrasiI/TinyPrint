@@ -245,3 +245,26 @@ void DisplayManager::run(){
 
 	//quit of thread loop function
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

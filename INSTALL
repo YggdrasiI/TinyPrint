@@ -13,7 +13,7 @@ Installation on Debian based systems. (State Oct 2012 )
 ----------------------------------------------------------------
 i) sudo apt-get install libopencv-core-dev libopencv-highgui-dev
 ii) sudo apt-get install libdirectfb-dev
-iii) sudo apt-get install libboost-signals-dev libboost-iostreams-dev
+iii) sudo apt-get install libboost-signals-dev libboost-iostreams-dev libboost-system-dev
 iv) This lib has to be installed manually.
 	I.e.:
 	cd TinyPrint

@@ -472,6 +472,9 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 			if( m_state == IDLE ){
 				if( 0 != startJob() ) return ;
 				reply = "print";
+			}else{
+				//can not start. Reply error message or just send idle.
+				reply = "idle";
 			}
 		}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
 			if( m_state == PAUSE ){
@@ -497,6 +500,25 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 
 		//print_cmd unknown
 	}
+	
+	if( actionid ==  5) { /* Toggle Display */
+ 		const char* disp = onion_request_get_post(req,"display");
+ 		m_b9CreatorSettings.lock();
+ 		if( disp != NULL ){
+ 			if( disp[0] == '2' )
+ 				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+ 			else 
+ 				m_b9CreatorSettings.m_display = (disp[0] == '1');
+ 		}
+ 		reply = m_b9CreatorSettings.m_display?"1":"0";
+ 		m_b9CreatorSettings.unlock();
+ 
+ 		//set displayed slice
+ 		if( m_b9CreatorSettings.m_display ){
+ 			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+ 		}
+ 
+ 	}
 }
 
 void JobManager::show(int slice){
