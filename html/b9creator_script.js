@@ -8,7 +8,6 @@ TOKENS = {
 
 	//s/\([^ \t]*\)=\([^,]*\)\(,*\)/\2 : "\1"\3
 	"jobState" : {
-		2048 : "START_STATE",
 		0 : "RESET",
 		1 : "INIT",
 		2 : "FIRST_LAYER",
@@ -20,7 +19,10 @@ TOKENS = {
 		128 : "IDLE",
 		256 : "PAUSE",
 		512 : "FINISH",
-		1024 : "CURING"
+		1024 : "CURING",
+		2048 : "START_STATE",
+		4096 : "ERROR",
+		8192 : "WAIT_ON_ZERO_HEIGHT"
 	}
 
 }
