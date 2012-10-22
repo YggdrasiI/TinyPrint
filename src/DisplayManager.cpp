@@ -1,9 +1,56 @@
 #include <unistd.h>
+#include <directfb.h>
 #include "DisplayManager.h"
 #include "B9CreatorSettings.h"
 
 using namespace cv;
 using namespace std;
+
+/* Definiton of elements with dependenies to directfb */
+struct Sprite{
+		IDirectFBSurface* pSurface; 
+		cv::Point position;
+		cv::Mat cvmat; //cv struture with same data array as pSurface.
+};
+
+
+/* ++++++++++ DisplayManager class functions +++++++++++++*/
+DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
+	m_b9CreatorSettings( b9CreatorSettings ),
+	m_gridShow(false),
+	m_die(false),
+	m_pause(true),
+	m_redraw(false),
+	m_screenWidth(0),
+	m_screenHeight(0),
+	m_pDfb(NULL),
+	m_grid(NULL),
+	m_pPrimary(NULL)
+{
+	if( pthread_create( &m_pthread, NULL, &displayThread, this) ){
+		std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
+			<< "Error: Could not create thread for frame buffer display."
+			<< std::endl ;
+		exit(1) ;
+	}
+}
+
+DisplayManager::~DisplayManager(){
+
+			// kill loop in other thread
+			m_die = true;
+			//wait on other thread
+	    pthread_join( m_pthread, NULL);
+			//now, freeFB was already
+			//called in the other thread
+			//do not release this data again.
+
+			/*Release the images.
+			 * Attention: The vector contains pointers and
+			 * not the objects itself.
+			 * */
+			clear();
+		}
 
 void DisplayManager::start(){
 	m_pause = false;
