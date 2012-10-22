@@ -37,15 +37,17 @@ class SerialManager {
 			m_io(),
 			m_serialStream(m_io)
 	{
-		std::string file( m_b9CreatorSettings.getString("comPort") );
-		int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
+		//std::string file( m_b9CreatorSettings.getString("comPort") );
+		//int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
+		std::string file( m_b9CreatorSettings.m_comPort );
+		int baudrate( (int) m_b9CreatorSettings.m_comBaudrate ); 
 		// Open the serial port for communication.
 		try {
 			m_serialStream.open( file );
 			m_serialStream.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
 			//m_open = true;
 			m_b9CreatorSettings.lock();
-			m_b9CreatorSettings.m_connected = false;
+			m_b9CreatorSettings.m_connected = true;
 			m_b9CreatorSettings.unlock();
 		} catch(boost::system::system_error& e)
 		{
