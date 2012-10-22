@@ -21,7 +21,8 @@ TOKENS = {
 		256 : "PAUSE",
 		512 : "FINISH",
 		1024 : "CURING",
-		2048 : "WAIT_ON_ZERO_HEIGHT"
+		2048 : "ERROR",
+		4096 : "WAIT_ON_ZERO_HEIGHT"
 	}
 
 }

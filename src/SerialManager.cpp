@@ -22,7 +22,7 @@ void SerialManager::run(){
 				m_b9CreatorSettings.unlock();
 				usleep(5000000);
 			}
-			usleep(100000);//wait 100ms
+			usleep(10000);//wait 100ms
 		}else{
 			//com port not open-> Wait. ToDo: Try reconnect to maschine.
 			usleep(1000000);

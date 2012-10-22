@@ -328,6 +328,8 @@ void JobManager::run(){
 					q.add_command( cmd_nextStr );	
 					VPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
 
+					//hm, should I wait on release cycle here?!
+
 					//wait on shutter opening.
 					gettimeofday( &m_tFWait.begin, NULL );
 					m_tFWait.diff = MaxWaitF; 
@@ -374,6 +376,7 @@ void JobManager::run(){
 					VPRINT("Breathing...\n");
 					if( m_tBreath.timePassed() ){
 						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+
 						gettimeofday( &m_tCuring.begin, NULL );
 						if( l <= m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL*1000000;
@@ -451,7 +454,7 @@ void JobManager::run(){
 
 		m_job_mutex.unlock();
 		usleep(50000); //.05s
-		usleep(2000000); //2s
+		//usleep(2000000); //2s
 	}
 }
 

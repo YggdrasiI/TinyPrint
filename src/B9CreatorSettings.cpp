@@ -59,6 +59,8 @@ cJSON* B9CreatorSettings::genJson()
 //	cJSON_AddItemToObject(root, "shutterEquipped", cJSON_CreateNumber(0));
 //	cJSON_AddItemToObject(root, "lampHours", cJSON_CreateNumber(-1));
 
+VPRINT("Comport? %s\n",m_comPort.c_str() );
+
 	char gcol[20];
 	sprintf(gcol,"%02X%02X%02X\0",m_gridColor[0],m_gridColor[1],m_gridColor[2]);
 	//gcol[6] = '\0';
@@ -177,19 +179,19 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ) changes|=YES;
 
-		if(! m_printProp.m_lockTimes ){
-			if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
-			if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
+		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
 			changes|=YES;
 #ifdef VERBOSE
 			std::cout << "Updathe release cycle time to " << m_printProp.m_releaseCycleTime << std::endl;
 #endif
-					std::ostringstream cmd_cycle;
-					cmd_cycle << "D" << (int)(1000*m_printProp.m_releaseCycleTime);
-					std::string cmd_cycleStr(cmd_cycle.str()); 
-					m_queues.add_command(cmd_cycleStr);	
-			}
-			if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
+			std::ostringstream cmd_cycle;
+			cmd_cycle << "D" << (int)(1000*m_printProp.m_releaseCycleTime);
+			std::string cmd_cycleStr(cmd_cycle.str()); 
+			m_queues.add_command(cmd_cycleStr);	
+		}
+		if(! m_printProp.m_lockTimes ){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ) changes|=YES;
