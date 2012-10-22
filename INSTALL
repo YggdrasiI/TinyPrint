@@ -1,16 +1,19 @@
-List of required libraries:
+
+
+================================================================
+
+Dependiencies:
 
 i) OpenCV
 ii) Directfb
 iii) Boost
 iv) Onion 
-v) librsvg2 
-
-================================================================
-
-Installation on Debian based systems. (State Oct 2012 )
+v) librsvg2 (later)
 
 ----------------------------------------------------------------
+
+Installation of required libraries on Debian based systems (State Oct 2012 ):
+
 i) sudo apt-get install libopencv-core-dev libopencv-highgui-dev
 ii) sudo apt-get install libdirectfb-dev
 iii) sudo apt-get install libboost-signals-dev libboost-iostreams-dev
@@ -26,3 +29,29 @@ iv) This lib has to be installed manually.
 	make install
 
 v) sudo apt-get install librsvg2-dev 
+
+
+================================================================
+
+Configuration and Compiling:
+
+	This project use the cmake as makefile generator. You can 
+	use the common steps:
+		cd TinyPrint
+		mkdir build
+		cd build
+		cmake ..
+		make
+
+=================================================================
+
+Start and setup software:
+
+If the compiling went successful, the build directory contains the executable
+'bin/main'.  Go into the build dir, and call 'bin/main' to generate the
+configuration file 'b9CreatorSettings.ini' and quit the program with Ctrl+C.
+Plug in your printer and check if the
+value of the 'comPort' variable (default: /dev/ttyACM0) match with the correct serial port on your system.
+
+As final step, I execute the software as super user (sudo bin/main).
+Unfortunately, I do not know how you could use Directfb without super user rights. Help would be appreciated. 
