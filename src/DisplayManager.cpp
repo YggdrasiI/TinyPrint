@@ -161,12 +161,13 @@ void DisplayManager::initFB(){
 	//create arg to disable cursor
 	char foo[] = { "arg1" };
 	char no_cur[] = { "--dfb:no-cursor" };
-	//char no_cur[] = { "--dfb:debug" };
-	int argc2 = /*argc+*/2;
+	char mode[] = { "--dfb:mode=1024x768" };
+	int argc2 = /*argc+*/3;
 	char** argv2 = (char**) malloc( (argc2)*sizeof(char*));
 	//memcpy( argv2, argv, argc*sizeof(char*) );
 	argv2[0] = foo;
 	argv2[1] = no_cur;
+	argv2[2] = mode;
 	DFBCHECK (DirectFBInit (&argc2, &argv2));
 
 	//A surface description is needed to create a surface.
