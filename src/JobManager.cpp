@@ -223,6 +223,12 @@ void JobManager::run(){
 				break;
 			case INIT:
 				{
+					/* Set release cycle time */
+					std::ostringstream cmd_cycle;
+					cmd_cycle << "D" << (int)(1000*m_b9CreatorSettings.m_printProp.m_releaseCycleTime);
+					std::string cmd_cycleStr(cmd_cycle.str()); 
+					q.add_command(cmd_cycleStr);	
+
 					/* Update machine data ('A' covers 'I' command.) */
 					std::string cmd_info("A"); 
 					q.add_command(cmd_info);	

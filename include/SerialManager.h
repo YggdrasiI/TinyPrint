@@ -45,7 +45,7 @@ class SerialManager {
 			m_serialStream.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
 			//m_open = true;
 			m_b9CreatorSettings.lock();
-			m_b9CreatorSettings.m_connected = false;
+			m_b9CreatorSettings.m_connected = true;
 			m_b9CreatorSettings.unlock();
 		} catch(boost::system::system_error& e)
 		{

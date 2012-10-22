@@ -55,7 +55,7 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToObject(root, "port", cJSON_CreateString(m_port.c_str() ));
 	cJSON_AddItemToObject(root, "jobDir", cJSON_CreateString(m_b9jDir.c_str() ));
 	cJSON_AddItemToObject(root, "comPort", cJSON_CreateString(m_comPort.c_str() ));
-	cJSON_AddItemToObject(root, "comBaudrate", cJSON_CreateNumber(115200));
+	cJSON_AddItemToObject(root, "comBaudrate", cJSON_CreateNumber(m_comBaudrate));
 //	cJSON_AddItemToObject(root, "shutterEquipped", cJSON_CreateNumber(0));
 //	cJSON_AddItemToObject(root, "lampHours", cJSON_CreateNumber(-1));
 
@@ -71,9 +71,9 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
 
 //	cJSON_AddItemToArray(html, jsonStateField("currentLayer",m_currentLayer) );
-	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,10,m_printProp.m_lockTimes ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,10,m_printProp.m_lockTimes ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,10,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,10, 0/*m_printProp.m_lockTimes*/ ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,0 ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
@@ -179,7 +179,16 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 
 		if(! m_printProp.m_lockTimes ){
 			if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
-			if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
+			changes|=YES;
+#ifdef VERBOSE
+			std::cout << "Updathe release cycle time to " << m_printProp.m_releaseCycleTime << std::endl;
+#endif
+					std::ostringstream cmd_cycle;
+					cmd_cycle << "D" << (int)(1000*m_printProp.m_releaseCycleTime);
+					std::string cmd_cycleStr(cmd_cycle.str()); 
+					m_queues.add_command(cmd_cycleStr);	
+			}
 			if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
