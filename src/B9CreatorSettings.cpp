@@ -59,8 +59,6 @@ cJSON* B9CreatorSettings::genJson()
 //	cJSON_AddItemToObject(root, "shutterEquipped", cJSON_CreateNumber(0));
 //	cJSON_AddItemToObject(root, "lampHours", cJSON_CreateNumber(-1));
 
-VPRINT("Comport? %s\n",m_comPort.c_str() );
-
 	char gcol[20];
 	sprintf(gcol,"%02X%02X%02X\0",m_gridColor[0],m_gridColor[1],m_gridColor[2]);
 	//gcol[6] = '\0';
@@ -138,6 +136,19 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 
 	lock();
+
+	/*load values outside of the html node. This valus should only
+	* read from config files.
+	*/
+	if( changes & CONFIG ){
+		m_host = JsonConfig::getString(jsonNew,"host");
+		m_port = JsonConfig::getString(jsonNew,"port");
+		m_b9jDir = JsonConfig::getString(jsonNew,"jobDir");
+
+		m_comPort = JsonConfig::getString(jsonNew,"comPort");
+		m_comBaudrate =  (int) JsonConfig::getNumber(jsonNew,"comBaudrate"); 
+	}
+
 	if( nhtml != NULL){
 
 		if(false && (changes & ALL) ){

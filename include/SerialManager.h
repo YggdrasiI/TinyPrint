@@ -37,8 +37,10 @@ class SerialManager {
 			m_io(),
 			m_serialStream(m_io)
 	{
-		std::string file( m_b9CreatorSettings.getString("comPort") );
-		int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
+		//std::string file( m_b9CreatorSettings.getString("comPort") );
+		//int baudrate( (int) m_b9CreatorSettings.getNumber("comBaudrate") ); 
+		std::string file( m_b9CreatorSettings.m_comPort );
+		int baudrate( (int) m_b9CreatorSettings.m_comBaudrate ); 
 		// Open the serial port for communication.
 		try {
 			m_serialStream.open( file );
