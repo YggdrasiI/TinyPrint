@@ -26,8 +26,8 @@ class SerialManager {
 		//bool m_open;
 	private:
 		B9CreatorSettings &m_b9CreatorSettings;
-    boost::asio::io_service m_io;
-    boost::asio::serial_port m_serialStream;
+		boost::asio::io_service m_io;
+		boost::asio::serial_port m_serialStream;
 		pthread_t m_pthread;
 	public:
 		SerialManager(B9CreatorSettings &b9CreatorSettings ) :
@@ -83,15 +83,15 @@ class SerialManager {
 			// kill loop in other thread
 			m_die = true;
 			//wait on other thread
-	    pthread_join( m_pthread, NULL);
+			pthread_join( m_pthread, NULL);
 
 		}
 
 		void run();
 
-/* Update state =>
- *	 Analyse serial message and alter m_b9CreatorSettings.
- */
+		/* Update state =>
+		 *	 Analyse serial message and alter m_b9CreatorSettings.
+		 */
 		void update(std::string);
 
 	private:
@@ -100,41 +100,57 @@ class SerialManager {
 		/* Write command from queue to serial input */
 		void writeLineFromQueue();
 
-    /**
-     * Blocks until a line is received from the serial device.
-     * Eventual '\n' or '\r\n' characters at the end of the string are removed.
-     * \return a string containing the received line
-     * \throws boost::system::system_error on failure
-     */
-    std::string readLine()
-    {
-        //Reading data char by char, code is optimized for simplicity, not speed
-        char c;
-        std::string result;
-        for(;;)
+		/**
+		 * Blocks until a line is received from the serial device.
+		 * Eventual '\n' or '\r\n' characters at the end of the string are removed.
+		 * \return a string containing the received line
+		 * \throws boost::system::system_error on failure
+		 */
+		std::string readLine()
+		{
+			//Reading data char by char, code is optimized for simplicity, not speed
+			char c;
+			std::string result;
+			for(;;)
+			{
+				boost::asio::read(m_serialStream,boost::asio::buffer(&c,1));
+				switch(c)
 				{
-					boost::asio::read(m_serialStream,boost::asio::buffer(&c,1));
-					switch(c)
-					{
-						case '\r':
-							break;
-						case '\n':
-							return result;
-						default:
-							result+=c;
-					}
+					case '\r':
+						break;
+					case '\n':
+						return result;
+					default:
+						result+=c;
 				}
-				return "Error in __FILE__ in __LINE__ \n";
-    }
-    /**
-     * Write a string to the serial device.
-     * \param s string to write
-     * \throws boost::system::system_error on failure
-     */
-    void writeString(std::string s)
-    {
-        boost::asio::write(m_serialStream,boost::asio::buffer(s.c_str(),s.size()));
-    }
+			}
+			return "Error in __FILE__ in __LINE__ \n";
+		}
+
+
+		// complete_condition for asio::write. Just flush everything
+		static bool completion_condition(
+				//const boost::asio::error_code &error,
+				const boost::system::error_code &error,
+				std::size_t bytes_transferred)
+		{
+			return true;
+		}
+
+
+		/**
+		 * Write a string to the serial device.
+		 * \param s string to write
+		 * \throws boost::system::system_error on failure
+		 */
+		void writeString(std::string s)
+		{
+			boost::asio::write(m_serialStream,
+					boost::asio::buffer(s.c_str(),s.size()),
+					&SerialManager::completion_condition
+					);
+		}
+
 
 };
 
