@@ -20,7 +20,7 @@ set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
 find_package(Boost 
-	COMPONENTS signals system filesystem iostreams
+	COMPONENTS signals system filesystem iostreams regex
 	REQUIRED)
 #message(STATUS "Boost libs: ${Boost_LIBRARIES}" )
 

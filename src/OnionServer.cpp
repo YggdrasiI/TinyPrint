@@ -20,11 +20,14 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-#include <assert.h>
-#include <sys/types.h>
-#include <regex.h> //TODO: This can be replaced by boost variant.
+#include <fstream>
+//#include <sys/types.h>
 
+#include <boost/regex.hpp> 
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/stream.hpp>
 #include "boost/filesystem.hpp" 
+//#include <istream>
 namespace fs = boost::filesystem; 
 
 #include "JsonMessage.h"
@@ -33,31 +36,18 @@ namespace fs = boost::filesystem;
 
 
 int check_filename(const char *filename){
-	regex_t regex;
-	int reti, ret;
-	char msgbuf[100];
-
-	/* Compile regular expression */
-	//reti = regcomp(&regex, "^[[:alnum:]]*\\.json$", 0);
-	reti = regcomp(&regex, "^[[:alnum:]]*\\.b9j$", 0);
-	if( reti ){ fprintf(stderr, "Could not compile regex\n"); return -1; }
-
-	/* Execute regular expression */
-	reti = regexec(&regex, filename, 0, NULL, 0);
-	if( !reti ){
-		ret= 1;
-	}else if( reti == REG_NOMATCH ){
-		ret= 0;
-	}else{
-		regerror(reti, &regex, msgbuf, sizeof(msgbuf));
-		fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-		ret= 0;
+	boost::regex re;
+	std::string pattern("^[[:alnum:]]*\\.b9j$");
+	std::string s(filename);
+	try {
+		re.assign(pattern, boost::regex_constants::icase);
+	} catch (boost::regex_error& e) {
+		std::cout << pattern << " is not a valid regular expression: \""
+			<< e.what() << "\"" << std::endl;
 	}
 
-	/* Free compiled regular expression if you want to use the regex_t again */
-	regfree(&regex);
-
-	return ret;
+	if (boost::regex_match(s, re)) return true;
+	return false;
 }
 
 // This has to be extern, as we are compiling C++
@@ -83,7 +73,7 @@ int update_data(void *p, onion_request *req, onion_response *res){
 	// Attention each signal handler wrote into the same string 'post_reply'
 	((OnionServer*)p)->updateSignal(req, actionid, reply);
 
-	onion_response_set_length(res, reply.size() );
+	//onion_response_set_length(res, reply.size() );
 	onion_response_write(res, reply.c_str(), reply.size() ); 
 	return OCS_PROCESSED;
 }
@@ -97,7 +87,7 @@ int update_data(void *p, onion_request *req, onion_response *res){
 int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
 	const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig(true);
 	size_t len = strlen( b9Creator );
-	onion_response_set_length(res, (int) len);
+	//onion_response_set_length(res, (int) len);
 	onion_response_write(res, b9Creator, (int) len); 
 	return OCS_PROCESSED;
 }
@@ -106,6 +96,7 @@ int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
  Returns json struct of filenames in job files folder.
 */
 int getJobFolder(void *p, onion_request *req, onion_response *res){
+
 	std::string &folder = ((OnionServer*)p)->m_b9CreatorSettings.m_b9jDir;
 	std::ostringstream json_reply;
 
@@ -114,7 +105,7 @@ int getJobFolder(void *p, onion_request *req, onion_response *res){
 
 	unsigned long file_count = 0;
 
-	json_reply << "json_folder = { \"name\" : \"" << folder << "\", \"content\" : [" ;
+	json_reply << "{ \"name\" : \"" << folder << "\", \"content\" : [" ;
 
 	if( !fs::exists( full_path ) ){
 		std::cout << "Not found: " << full_path.filename() << std::endl;
@@ -133,10 +124,14 @@ int getJobFolder(void *p, onion_request *req, onion_response *res){
 				if (! fs::is_directory( dir_itr->status() ) )
 				{ //regluar file or symbolic link
 					if( file_count ) json_reply << ", " << std::endl;
-					json_reply << "{ " << file_count << ":	" \
+					json_reply << "{ \"" << file_count << "\":	" \
 						<< dir_itr->path().filename() << " }";
 					++file_count;
 				}
+				/*Remark: The index numbers are sourounded by "'s 
+				 * to avoid problems on the javascript side.
+				 * I.E. {"0" : "filename" }.
+				 * */
 
 			}
 			catch ( const std::exception & ex )
@@ -146,13 +141,24 @@ int getJobFolder(void *p, onion_request *req, onion_response *res){
 		}
 	}
 
-	json_reply << "] };" ;
+	json_reply << "] }" ;
 
 	std::string json_replyStr = json_reply.str();
 	size_t len = json_replyStr.size();
-	onion_response_set_length(res, (int) len);
+	//onion_response_set_length(res, (int) len);
 	onion_response_write(res, json_replyStr.c_str(), (int) len); 
 	return OCS_PROCESSED;
+}
+
+
+/* Like getJobFolder but with some prefix and suffix text
+ * to get an *.js file.
+ * */
+int getJobFolderWrapped(void *p, onion_request *req, onion_response *res){
+	onion_response_write(res, "json_job_files = ", 17); 
+	int ret = getJobFolder(p, req, res);
+	onion_response_write(res, ";", 1); 
+	return ret;
 }
 
 
@@ -169,7 +175,7 @@ int getPrinterMessages(void *p, onion_request *req, onion_response *res){
 		if( tmp != NULL ) cJSON_Delete(tmp);
 
 		size_t len = strlen( json_serialMessages );
-		onion_response_set_length(res, (int) len);
+		//onion_response_set_length(res, (int) len);
 		onion_response_write(res, json_serialMessages, (int) len); 
 
 	return OCS_PROCESSED;
@@ -181,37 +187,45 @@ int getPrinterMessages(void *p, onion_request *req, onion_response *res){
 int search_file(onion_dict *context, onion_request *req, onion_response *res){
 	//const char* path = onion_request_get_path(req);//empty?!
 	const char* path = onion_request_get_fullpath(req);
+#ifdef VERBOSE
 	printf("Request of %s %i.\n",path, strlen(path));
-	char filename[strlen(path)+8];
-	//sprintf(filename,"./%s",path);
-	sprintf(filename,"./html/%s",path);
+#endif
+	std::string filename("./html/");
+	filename.append(path);
 
-		//read file 
-	if( FILE *f=fopen(filename,"rb") ){
-		fseek(f,0,SEEK_END);
-		long len=ftell(f);
-		fseek(f,0,SEEK_SET);
-		char *data=(char*)malloc(len+1);
-		fread(data,1,len,f);
-		fclose(f);
+	if (context != NULL ) onion_dict_add(context,
+			"LANG", onion_request_get_language_code(req), OD_FREE_VALUE);
 
-		if (context) onion_dict_add(context, "LANG", onion_request_get_language_code(req), OD_FREE_VALUE);
-		onion_response_set_length(res, len);
-		onion_response_write(res, data, len); 
-		if (context) onion_dict_free(context);
+	//boost::iostreams::stream<boost::iostreams::file_source> file(filename.c_str());//.is_open() does not react like ifstream variant.
+	std::ifstream file(filename.c_str());
+	std::string line;
 
-		free(data);
+	if( file.is_open()){
+		try{
+			while (std::getline(file, line)) { 
+				onion_response_write(res, line.c_str(), line.size() ); 
+				onion_response_write(res, "\n", 1 ); 
+			}
+		}//catch ( const boost::iobase::failure &ex ){
+		catch ( const std::exception & ex ){
+			std::cerr << "Can not read " << filename << std::endl;
+			//onion_response_set_length(res, 35);
+			onion_response_write(res, "<h1>Error while reading File.</h1>", 35); 
+		}
 	}else{
-		onion_response_set_length(res, 24);
-		onion_response_write(res, "<h1>File not found</h1>", 24); 
+		//onion_response_set_length(res, 25);
+		onion_response_write(res, "<h1>File not found.</h1>", 25); 
 	}
+
+	if (context != NULL ) onion_dict_free(context);
+
 	return OCS_PROCESSED;
-}
+	}
 
 /*
  Replace some template variables and send b9creator_settings.js
 */
-int insert_json(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
+int getB9CreatorSettingsWrapped(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
 {
  //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
 onion_dict *d=onion_dict_new();
@@ -271,16 +285,18 @@ int OnionServer::start_server()
 
 	onion_set_hostname(m_ponion, host); // Force ipv4.
 	onion_set_port(m_ponion, port);
-	//onion_url_add_with_data(url, "b9creator_settings.js", (void*)insert_json, m_pprintSetting, NULL);
-	onion_url_add_with_data(url, "b9creator_settings.js", (void*)insert_json, this, NULL);
 	onion_url_add_with_data(url, "index.html", (void*)index_html, &m_b9CreatorSettings, NULL);
 	onion_url_add_with_data(url, "", (void*)index_html, &m_b9CreatorSettings, NULL);
-	//onion_url_add_with_data(url, "index.html", (void*)getB9CreatorSettings, this, NULL);
-	//onion_url_add_with_data(url, "", (void*)getB9CreatorSettings, this, NULL);
-	onion_url_add_with_data(url, "update", (void*)update_data, this, NULL); /* <-- Recive data */
-	onion_url_add_with_data(url, "json", (void*)getB9CreatorSettings, this, NULL); /* <-- Send data */
-	onion_url_add_with_data(url, "messages", (void*)getPrinterMessages, this, NULL); /* <-- Send data */
+
+	//dynamic content
+	onion_url_add_with_data(url, "b9creator_settings.js", (void*)getB9CreatorSettingsWrapped, this, NULL);
+	onion_url_add_with_data(url, "settings", (void*)getB9CreatorSettings, this, NULL); /* <-- Send data */
+	onion_url_add_with_data(url, "files.js", (void*)getJobFolderWrapped, this, NULL); /* <-- Send data */
 	onion_url_add_with_data(url, "files", (void*)getJobFolder, this, NULL); /* <-- Send data */
+	onion_url_add_with_data(url, "messages", (void*)getPrinterMessages, this, NULL); /* <-- Send data */
+	onion_url_add_with_data(url, "update", (void*)update_data, this, NULL); /* <-- Recive data */
+
+	//static content
 	onion_url_add(url, "^.*$", (void*)search_file);
 
 	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
