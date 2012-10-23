@@ -47,6 +47,7 @@ add_library (server SHARED ${server_SRCS})
 #add_dependencies(server index_html.c kinectgrid_script_js.c)
 ## end http server
 
+
 ## main executable
 set(main_SRCS
 	main.cpp
@@ -59,7 +60,7 @@ set(main_SRCS
 add_executable (main ${main_SRCS} )
 
 # Link again this libs
-target_link_libraries(main server ${Directfb_LIBS} ${OpenCV_LIBS} ${Onion_LIBS} boost_system boost_iostreams )
+target_link_libraries(main server ${Directfb_LIBS} ${OpenCV_LIBS} ${Onion_LIBS} )
 target_link_libraries(main ${Boost_LIBRARIES})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -77,3 +78,13 @@ install(TARGETS main
 	LIBRARY DESTINATION lib
 	)
 ## end main executable
+
+## Create job_files folder
+# TODO: Does not work
+set(JOB_FILES_CREATE_FOLDER "mkdir ${CMAKE_ROOT}/job_files" )
+add_custom_target(job_files
+	COMMAND "${JOB_FILES_CREATE_FOLDER}"
+	#	DEPENDS main
+	COMMENT "Create default folder for job files."
+	)
+## End create job_files folder

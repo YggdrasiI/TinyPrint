@@ -19,9 +19,14 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <assert.h>
 #include <sys/types.h>
-#include <regex.h>
+#include <regex.h> //TODO: This can be replaced by boost variant.
+
+#include "boost/filesystem.hpp" 
+namespace fs = boost::filesystem; 
+
 #include "JsonMessage.h"
 #include "B9CreatorSettings.h"
 #include "OnionServer.h"
@@ -96,6 +101,60 @@ int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
 	onion_response_write(res, b9Creator, (int) len); 
 	return OCS_PROCESSED;
 }
+
+/*
+ Returns json struct of filenames in job files folder.
+*/
+int getJobFolder(void *p, onion_request *req, onion_response *res){
+	std::string &folder = ((OnionServer*)p)->m_b9CreatorSettings.m_b9jDir;
+	std::ostringstream json_reply;
+
+	fs::path full_path( fs::initial_path<fs::path>() );
+	full_path = fs::system_complete( fs::path( folder ) );
+
+	unsigned long file_count = 0;
+
+	json_reply << "json_folder = { \"name\" : \"" << folder << "\", \"content\" : [" ;
+
+	if( !fs::exists( full_path ) ){
+		std::cout << "Not found: " << full_path.filename() << std::endl;
+		json_reply << "\"none\"";
+	}else if ( !fs::is_directory( full_path ) ){
+		std::cout << "Path is no directory: " << full_path.filename() << std::endl;
+		json_reply << "\"none\"";
+	}else{
+		fs::directory_iterator end_iter;
+		for ( fs::directory_iterator dir_itr( full_path );
+				dir_itr != end_iter;
+				++dir_itr )
+		{
+			try
+			{
+				if (! fs::is_directory( dir_itr->status() ) )
+				{ //regluar file or symbolic link
+					if( file_count ) json_reply << ", " << std::endl;
+					json_reply << "{ " << file_count << ":	" \
+						<< dir_itr->path().filename() << " }";
+					++file_count;
+				}
+
+			}
+			catch ( const std::exception & ex )
+			{
+				std::cout << dir_itr->path().filename() << " " << ex.what() << std::endl;
+			}
+		}
+	}
+
+	json_reply << "] };" ;
+
+	std::string json_replyStr = json_reply.str();
+	size_t len = json_replyStr.size();
+	onion_response_set_length(res, (int) len);
+	onion_response_write(res, json_replyStr.c_str(), (int) len); 
+	return OCS_PROCESSED;
+}
+
 
 /*
  * Convert all enties of message queue into json code and send this file
@@ -221,6 +280,7 @@ int OnionServer::start_server()
 	onion_url_add_with_data(url, "update", (void*)update_data, this, NULL); /* <-- Recive data */
 	onion_url_add_with_data(url, "json", (void*)getB9CreatorSettings, this, NULL); /* <-- Send data */
 	onion_url_add_with_data(url, "messages", (void*)getPrinterMessages, this, NULL); /* <-- Send data */
+	onion_url_add_with_data(url, "files", (void*)getJobFolder, this, NULL); /* <-- Send data */
 	onion_url_add(url, "^.*$", (void*)search_file);
 
 	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and

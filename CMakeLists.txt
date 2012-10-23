@@ -19,7 +19,10 @@ set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
-find_package(Boost COMPONENTS signals REQUIRED)
+find_package(Boost 
+	COMPONENTS signals system filesystem iostreams
+	REQUIRED)
+#message(STATUS "Boost libs: ${Boost_LIBRARIES}" )
 
 set(Directfb_LIBRARY_DIRS /usr/lib )
 set(Directfb_LIBS directfb )
@@ -41,7 +44,7 @@ link_directories (
 add_subdirectory(lib)
 add_subdirectory(src)
 
-## Copy html folder to build directory.
+## Copy html folder to build directory. (On configuation time)
 file(COPY html/ DESTINATION html PATTERN kinectgrid_settings.js EXCLUDE )
 
 macro(copy_files GLOBPAT DESTINATION)
@@ -64,3 +67,4 @@ endmacro(copy_files)
 ## end TODO
 
 #add_dependencies(main copy_files "html/*.js" "${CMAKE_CURRENT_BINARY_DIR}/html" )
+
