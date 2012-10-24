@@ -1,4 +1,10 @@
-# Search libfreenect header and libary
+# This module defines
+# Onion_FOUND
+# Onion_INCLUDE_DIR
+# Onion_LIBRARY_DIR
+# Onion_LIBS
+# Onion_BIN_DIR
+
 find_path(Onion_INCLUDE_DIR
 	NAMES
 		onion/onion.h
@@ -13,7 +19,7 @@ find_path(Onion_INCLUDE_DIR
 		libonion
 )
 
-find_path(Onion_LIBRARY
+find_path(Onion_LIBRARY_DIR
 	NAMES
 		libonion.so
 	PATHS
@@ -38,17 +44,17 @@ if(Onion_BIN_DIR)
 	set(OTEMPLATE ${Onion_BIN_DIR}/otemplate)
 endif(Onion_BIN_DIR)
 
-if(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
+if(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)
 	set(Onion_FOUND TRUE)
 	set(Onion_LIBS onion onion_extras)
-else(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
+else(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)
 	set(Onion_FOUND FALSE)
-endif(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
+endif(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)
 
 if(Onion_FOUND)
 	message(STATUS " Lib: ${Onion_LIBS}")
 	message(STATUS " - Includes: ${Onion_INCLUDE_DIR}")
-	message(STATUS " - Libraries: ${Onion_LIBRARY}")
+	message(STATUS " - Libraries: ${Onion_LIBRARY_DIR}")
 	message(STATUS " - Binaries: ${Onion_BIN_DIR}")
 else(Onion_FOUND)
 	message(FATAL_ERROR "Could not find onion installation.")

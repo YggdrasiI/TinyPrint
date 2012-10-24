@@ -15,6 +15,9 @@
 #include <sys/time.h>
 #include <onion/onion.h>
 
+#include <librsvg/rsvg.h>
+#include <cairo/cairo-svg.h>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -27,6 +30,11 @@ class DisplayManager;
 
 #ifndef JOBMANAGER_H
 #define JOBMANAGER_H
+
+extern "C"{
+gboolean    rsvg_handle_render_cairo     (RsvgHandle * handle, cairo_t * cr);
+gboolean    rsvg_handle_render_cairo_sub (RsvgHandle * handle, cairo_t * cr, const char *id);
+}
 
 // invoke thread loop.
 static void* jobThread(void* arg);
@@ -79,11 +87,79 @@ struct Timer{
 };
 
 /* Should be filled by loadJob */
-struct JobFile{
-		std::vector<cv::Mat> slices;
-		int zResolution; //unit: 10μm.
-		int xyResolution; //unit: 10μm.
-		cv::Point position;
+class JobFile{
+	public:
+		//std::vector<cv::Mat> slices;
+		int m_zResolution; //unit: 10μm.
+		int m_xyResolution; //unit: 10μm.
+		cv::Point m_position;
+	private:
+		cairo_t *m_pCairo;
+		cairo_surface_t *m_pSurface;
+		RsvgHandle *m_pRsvgHandle;
+		RsvgDimensionData m_dimensions;
+		int m_layer;
+		cv::Mat m_slice;
+	public:
+		JobFile(const char* filename):
+			m_layer(-1),
+			m_zResolution(-1),
+			m_xyResolution(-1),
+			m_pCairo(NULL),
+			m_pSurface(NULL),
+			m_pRsvgHandle(NULL) {
+
+				float dpi=254.0;
+				GError *error = NULL;
+				g_type_init();
+				rsvg_set_default_dpi_x_y (dpi,dpi);//no reaction?
+				m_pRsvgHandle = rsvg_handle_new_from_file (filename, &error);
+				if( m_pRsvgHandle != NULL ){
+				rsvg_handle_get_dimensions (m_pRsvgHandle, &m_dimensions);
+				}else{
+					std::cout << "Error while loading file '"
+						<< filename << "'." << std::endl;
+				}
+
+				int scale = 5; //why 5?
+
+				m_pSurface = (cairo_surface_t *)cairo_image_surface_create(
+						CAIRO_FORMAT_ARGB32,
+						scale*m_dimensions.width, scale*m_dimensions.height
+						//10244, 768
+						);
+				m_pCairo = cairo_create(m_pSurface);
+				cairo_scale( m_pCairo, scale, scale);
+			}
+
+
+		~JobFile(){
+
+			cairo_destroy (m_pCairo);
+			cairo_surface_destroy (m_pSurface);
+			g_object_unref (G_OBJECT (m_pRsvgHandle));
+		}
+		
+		/* Return reference to cv::Mat 
+		 * with the image data. */
+		/*const*/ cv::Mat &getSlice(int layer){
+			if( layer == m_layer ) return m_slice;
+
+			std::ostringstream id;
+			id << "#layer" << layer;//filter with group name
+			rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
+
+			m_slice = cv::Mat(
+					cairo_image_surface_get_height(m_pSurface),
+					cairo_image_surface_get_width(m_pSurface),
+					CV_8UC4,
+					(void*) cairo_image_surface_get_data(m_pSurface)
+					);
+
+			m_layer = layer;
+			return m_slice;
+		}
+
 };
 
 
@@ -111,7 +187,8 @@ class JobManager {
 		Timer &m_tBreath;
 		Timer &m_tFWait;
 		Timer &m_tRWait;
-		std::vector<JobFile> m_files;
+		//std::vector<JobFile> m_files;
+		std::vector<JobFile*> m_files;
 
 	public:
 		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
@@ -140,12 +217,7 @@ class JobManager {
 		}
 	}
 
-	~JobManager(){
-			// kill loop in other thread
-			m_die = true;
-			//wait on other thread
-	    pthread_join( m_pthread, NULL);
-		}
+	~JobManager();
 
 		JobState getState() { return m_state; };
 

@@ -1,7 +1,10 @@
 ## extra include directories
 include_directories(
-	${CMAKE_SOURCE_DIR}/lib/onion/include
 	${CMAKE_SOURCE_DIR}/lib/cJSON
+	${Onion_INCLUDE_DIR}
+	${Cairo_INCLUDE_DIR}
+	${Rsvg_INCLUDE_DIR}
+	${GTK2_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIR}
 	${Directfb_INCLUDE_DIR}
 	)
@@ -60,8 +63,15 @@ set(main_SRCS
 add_executable (main ${main_SRCS} )
 
 # Link again this libs
-target_link_libraries(main server ${Directfb_LIBS} ${OpenCV_LIBS} ${Onion_LIBS} )
-target_link_libraries(main ${Boost_LIBRARIES})
+target_link_libraries(main server 
+	${Directfb_LIBS}
+	${OpenCV_LIBS}
+	${Onion_LIBS}
+	${Cairo_LIBS}
+	${Rsvg_LIBS}
+	${GTK2_LIBARIES}
+	${Boost_LIBRARIES}
+	)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 

@@ -14,6 +14,8 @@ find_package(OpenCV REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 find_package(Onion REQUIRED)
+find_package(Cairo REQUIRED)
+find_package(Rsvg REQUIRED)
 
 set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
@@ -24,9 +26,18 @@ find_package(Boost
 	REQUIRED)
 #message(STATUS "Boost libs: ${Boost_LIBRARIES}" )
 
-set(Directfb_LIBRARY_DIRS /usr/lib )
+set(Directfb_LIBRARY_DIR /usr/lib )
 set(Directfb_LIBS directfb )
 set(Directfb_INCLUDE_DIR /usr/include/directfb )
+
+find_package(GTK2 REQUIRED)
+if(GTK2_FOUND )
+message(STATUS " Lib: gtk-2.0" )
+message(STATUS " - Includes: ${GTK2_INCLUDE_DIRS}" )
+message(STATUS " - Libraries: ${GTK2_LIBRARIES}" )
+else(GTK2_FOUND)
+message(FATAL_ERROR "Could not find gtk2 installation.")
+endif(GTK2_FOUND)
 
 ## end required and optional packages
 
@@ -35,9 +46,11 @@ include_directories(
 		${CMAKE_SOURCE_DIR}/include
 	)
 link_directories (
-	${Onion_LIBRARY}
-	${Boost_LIBRARY_DIRS}
-	${Directfb_LIBRARY_DIRS}
+	${Onion_LIBRARY_DIR}
+	${Boost_LIBRARY_DIR}
+	${Directfb_LIBRARY_DIR}
+	${Cairo_LIBRARY_DIR}
+	${Rsvg_LIBRARY_DIR}
 	) 
 ## end add include dis and lib dirs of above packages
 
