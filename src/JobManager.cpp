@@ -40,7 +40,7 @@ int JobManager::loadJob(const std::string filename){
 	m_files.push_back(jf);
 
 	//TODO: Eval correct max layer value. 
-	//m_b9CreatorSettings.m_printProp.m_maxLayer = 100;
+	m_b9CreatorSettings.m_printProp.m_maxLayer = 20;
 
 	m_job_mutex.unlock();
 }

@@ -92,7 +92,7 @@ class DisplayManager {
 		pthread_t m_pthread;
 		Mutex m_img_mutex;
 		//std::vector<IDirectFBSurface*> m_imageSurfaces;
-		std::vector<Sprite> m_sprites;
+		std::vector<Sprite*> m_sprites;
 		IDirectFBSurface* m_grid; 
 		void createGrid();//init m_grid
 		/* Create directfb objects */

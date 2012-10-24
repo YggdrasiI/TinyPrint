@@ -44,12 +44,6 @@ DisplayManager::~DisplayManager(){
 			//now, freeFB was already
 			//called in the other thread
 			//do not release this data again.
-
-			/*Release the images.
-			 * Attention: The vector contains pointers and
-			 * not the objects itself.
-			 * */
-			clear();
 		}
 
 void DisplayManager::start(){
@@ -97,11 +91,12 @@ void DisplayManager::show(){
  * */
 void DisplayManager::clear(){
 			m_img_mutex.lock();
-			std::vector<Sprite>::iterator it = m_sprites.begin();
-			const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
+			std::vector<Sprite*>::iterator it = m_sprites.begin();
+			const std::vector<Sprite*>::const_iterator it_end = m_sprites.end();
 			for ( ; it < it_end ; it++ )
 			{
-				if( (*it).pSurface != NULL ) (*it).pSurface->Release( (*it).pSurface );
+				if( (*it)->pSurface != NULL ) (*it)->pSurface->Release( (*it)->pSurface );
+				delete (*it);
 			}
 			m_sprites.clear();
 
@@ -114,13 +109,12 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 	
 	m_img_mutex.lock();
 
-	Sprite tmp;
-	m_sprites.push_back( tmp );
-	Sprite &sprite = m_sprites[m_sprites.size()-1];
+	Sprite *sprite = new Sprite();
+	m_sprites.push_back( sprite );
 
-	sprite.pSurface = NULL;
-	sprite.position = topLeftCorner;
-	sprite.cvmat = cv::Mat(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
+	sprite->pSurface = NULL;
+	sprite->position = topLeftCorner;
+	sprite->cvmat = cv::Mat(cvimg.size().height,4*cvimg.size().width,CV_8UC1);
 
 	/*Die Farben in opencv sind in slices organisiert,
 	 * bbbb,gggg,rrrr,aaaa,… , aber in directfb punktweise,
@@ -134,7 +128,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 
 	MatConstIterator_<VT> it1 = cvimg.begin<VT>(),
 		it1_end = cvimg.end<VT>();
-	MatIterator_<uchar> dst_it = sprite.cvmat.begin<uchar>();
+	MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
   for( ; it1 != it1_end; ++it1, ++dst_it ) {
 		VT pix1 = *it1;
 		/**dst_it = (*it1.val[3] << 24) 
@@ -157,17 +151,17 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 	dsc.flags = (DFBSurfaceDescriptionFlags) 
 		( DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PREALLOCATED | DSDESC_PIXELFORMAT );
 	dsc.pixelformat = DSPF_ARGB;
-	dsc.preallocated[0].data = sprite.cvmat.data;      
+	dsc.preallocated[0].data = sprite->cvmat.data;      
 	dsc.preallocated[0].pitch = dsc.width*4;
 	dsc.preallocated[1].data = NULL;
 	dsc.preallocated[1].pitch = 0;
 
 	//DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface) ));
 	
-	printf("Test c. Pointer: %p\n", sprite.pSurface) ;
-	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface)));
+	printf("Test c. Pointer: %p\n", sprite->pSurface) ;
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite->pSurface)));
 	m_img_mutex.unlock();
-	printf("Test d. Pointer: %p\n", sprite.pSurface) ;
+	printf("Test d. Pointer: %p\n", sprite->pSurface) ;
 }
 
 /* Hide all displayed images. */
@@ -188,13 +182,13 @@ void DisplayManager::redraw(){
 	}
 
 	if( !m_blank ){
-		std::vector<Sprite>::iterator it = m_sprites.begin();
-		const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
+		std::vector<Sprite*>::iterator it = m_sprites.begin();
+		const std::vector<Sprite*>::const_iterator it_end = m_sprites.end();
 		for ( ; it < it_end ; it++ )
 		{
-			if( (*it).pSurface != NULL ){
+			if( (*it)->pSurface != NULL ){
 				DFBCHECK (m_pPrimary->Blit(m_pPrimary,
-							(*it).pSurface, NULL, (*it).position.x , (*it).position.y ));
+							(*it)->pSurface, NULL, (*it)->position.x , (*it)->position.y ));
 			}
 		}
 
