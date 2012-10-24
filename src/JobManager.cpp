@@ -10,34 +10,43 @@
 using namespace std;
 using namespace cv;
 
+JobManager::~JobManager(){
+	// kill loop in other thread
+	m_die = true;
+	//wait on other thread
+	pthread_join( m_pthread, NULL);
+
+	//clear job file vector.
+	vector<JobFile*>::iterator it = m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_files.end();
+	for( ; it<it_end ; it++ ){
+		delete (*it);
+	}
+	m_files.clear();
+
+}
+
 int JobManager::loadJob(const std::string filename){
 	m_job_mutex.lock();
+
+	std::string path(m_b9CreatorSettings.m_b9jDir);
+	path.append("/");
+	path.append(filename);
+
+	JobFile *jf = new JobFile(path.c_str());
+	jf->m_position = cv::Point(0,0);
+	jf->m_zResolution = 50;
+	jf->m_xyResolution = 100;
+	m_files.push_back(jf);
+
+	//TODO: Eval correct max layer value. 
+	//m_b9CreatorSettings.m_printProp.m_maxLayer = 100;
+
 	m_job_mutex.unlock();
 }
 
 int JobManager::loadImg(const std::string filename){
-	m_job_mutex.lock();
-	JobFile tmp;
-	m_files.push_back(tmp); // store copy of jf
-	JobFile &jf = m_files[m_files.size()-1];//reference of new entry
-	jf.position = cv::Point(0,0);
-	jf.zResolution = 50;
-	jf.xyResolution = 100;
-
-	for( int i=0;i<m_b9CreatorSettings.m_printProp.m_maxLayer; i++){
-		printf("Load image for slice %i\n",i+1);
-		Mat m = imread(filename, CV_LOAD_IMAGE_COLOR);//set second arg to 0 for greyscale.
-		if( !m.data ) // Check for invalid input
-		{
-			m_job_mutex.unlock();
-			cout <<  "Could not open or find the image '" << filename << "'." << std::endl ;
-			return -1;
-		}
-		jf.slices.push_back(m);//store copy of m
-	}
-
-	m_job_mutex.unlock();
-	return 0;
+	return -1;
 }
 
 int JobManager::initJob(bool withReset){
@@ -345,7 +354,6 @@ void JobManager::run(){
 					VPRINT("Wait on 'F' message...\n");
 					bool & r = m_b9CreatorSettings.m_readyForNextCycle;
 					if( r || m_tFWait.timePassed() ){
-					//if( r ){
 						// unset the ready flag
 						r = false;
 
@@ -462,7 +470,7 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 	
 	reply = "error";
 
-	if(actionid == 6){ /* control JobManager */
+	if( actionid == 6 ){ /* control JobManager */
 		std::string print_cmd ( onion_request_get_post(req,"print") );
 #ifdef VERBOSE
 		std::cout << "'"<< print_cmd << "'" << std::endl;
@@ -508,39 +516,55 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 		}
 
 		//print_cmd unknown
+	}else if ( actionid == 5){ /* Toggle Display */
+		const char* disp = onion_request_get_post(req,"display");
+
+		if( disp != NULL ){
+
+			m_b9CreatorSettings.lock();
+			int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+
+			if( disp[0] == '2' )
+				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+			else 
+				m_b9CreatorSettings.m_display = (disp[0] == '1');
+			reply = m_b9CreatorSettings.m_display?"1":"0";
+			m_b9CreatorSettings.unlock();
+
+			if( m_b9CreatorSettings.m_display ){
+				show(l);
+			}
+		}
+
 	}
-	
-	if( actionid ==  5) { /* Toggle Display */
- 		const char* disp = onion_request_get_post(req,"display");
- 		m_b9CreatorSettings.lock();
- 		if( disp != NULL ){
- 			if( disp[0] == '2' )
- 				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
- 			else 
- 				m_b9CreatorSettings.m_display = (disp[0] == '1');
- 		}
- 		reply = m_b9CreatorSettings.m_display?"1":"0";
- 		m_b9CreatorSettings.unlock();
- 
- 		//set displayed slice
- 		if( m_b9CreatorSettings.m_display ){
- 			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
- 		}
- 
- 	}
 }
 
 void JobManager::show(int slice){
 	//m_job_mutex.lock();
 
 	//remove old displayed images
+	VPRINT("Clear \n");
 	m_displayManager.clear();
 
 	//add new slices
+	/*
 	vector<JobFile>::iterator it = m_files.begin();
 	const vector<JobFile>::const_iterator it_end = m_files.end();
 	for( ; it<it_end ; it++ ){
-		m_displayManager.add( (*it).slices[slice-1], (*it).position );
+		if( (*it).slices.size() >= slice ){
+			VPRINT("Add a\n");
+			Mat &m = (*it).slices[slice-1];
+			m_displayManager.add( m, (*it).position );
+			VPRINT("Add b\n");
+		}
+	}
+	*/
+	vector<JobFile*>::iterator it = m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_files.end();
+	for( ; it<it_end ; it++ ){
+		VPRINT("Add a\n");
+		cv::Mat &s = (*it)->getSlice(slice);
+		m_displayManager.add( s, (*it)->m_position);
 	}
 
 	//force redraw of screen

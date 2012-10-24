@@ -323,7 +323,62 @@ function update_messagesField(obj){
 	}
 }
 
+/*
+ * Convert json_files into drop down list
+ */
+function create_jobFileList(){
+	pnode = $("#fileBrowserList");
 
+	var description = "List of job files. Edit the *.ini file to change the folder";
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
+
+	var selectfield = $('<select id="fileBrowserListSelection" size="1">'); 
+	selectfield.change( function(event){
+		//alert($(this).val());
+	});
+
+	ret.append( selectfield ); 
+	pnode.append( ret );
+
+	filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
+}
+
+function filling_jobFileList( id, objArr ){
+	selectfield =  $('#'+id);
+	$('#'+id+" option").remove();
+	if( objArr.length < 1 ){
+		$("<option/>").val("-1").text("No files.").appendTo(selectfield);
+	}else{
+		for(var i=0; i<objArr.length; i++){			
+			$("<option/>").val(objArr[i][""+i+""]).text(objArr[i][i]).appendTo(selectfield);
+		}
+	}
+}
+
+/*
+ * Update files list.
+ * */
+function update_jobFileList(){
+	send("files","",
+			function(data){
+				json_job_files = JSON.parse(data);//change global var
+				filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
+			}
+			);
+}
+
+/*
+ *
+ * */
+function loadFile(){
+	var filename = $('#fileBrowserListSelection').val();
+	send("update?actionid=7","job_file="+filename,
+			function(data){
+				alert('ToDo');	
+			}
+			);
+}
 
 /**
  * Format functions.
@@ -373,7 +428,7 @@ function send_setting(){
 	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
 
 	if(false)
-		send("json","",
+		send("settings","",
 				function(data){
 					json_b9creator = JSON.parse(data);//change global var
 					update_fields(json_b9creator);
@@ -384,7 +439,7 @@ function send_setting(){
 /*
  * refresh raw message window */
 function refresh(){
-	send("json","",
+	send("settings","",
 			function(data){
 				json_b9creator = JSON.parse(data);//change global var
 				update_fields(json_b9creator);

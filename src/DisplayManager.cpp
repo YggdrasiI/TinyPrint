@@ -112,7 +112,12 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 	//bad idea: do not use local var as data container....
 	//Mat dfbimg(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
 	
-	Sprite sprite;
+	m_img_mutex.lock();
+
+	Sprite tmp;
+	m_sprites.push_back( tmp );
+	Sprite &sprite = m_sprites[m_sprites.size()-1];
+
 	sprite.pSurface = NULL;
 	sprite.position = topLeftCorner;
 	sprite.cvmat = cv::Mat(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
@@ -157,12 +162,12 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 	dsc.preallocated[1].data = NULL;
 	dsc.preallocated[1].pitch = 0;
 
-	IDirectFBSurface *imageSurface = NULL;
-	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface) ));
+	//DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface) ));
 	
-	m_img_mutex.lock();
-	m_sprites.push_back( sprite );
+	printf("Test c. Pointer: %p\n", sprite.pSurface) ;
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface)));
 	m_img_mutex.unlock();
+	printf("Test d. Pointer: %p\n", sprite.pSurface) ;
 }
 
 /* Hide all displayed images. */
