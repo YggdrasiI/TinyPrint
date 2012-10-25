@@ -339,7 +339,6 @@ function create_filesField(obj, pnode){
 	pnode.append(ret);
 
 	//loop throuth files-Array.
-	var i = 1;
 	for( var i in obj.filearray){
 		var file = obj.filearray[i];
 		var filespan = $("<div tite='"+file.filename+"' id='file_"+i+"'>");
@@ -363,15 +362,19 @@ function create_filesField(obj, pnode){
 		//fill new element nodes
 		create_fields(file);
 
-		i++;
 	}
 
 }
 
 function update_filesField(obj){
-//Todo: Prüfe ob eine Änderung vorliegt, lösche alte Elemente
-//und rufe create neu auf... Update von prob nicht vergessen?!
 
+	//loop throuth files-Array.
+	for( var i in obj.filearray){
+		var file = obj.filearray[i];
+
+		//fill new element nodes
+		update_fields(file);
+	}
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -478,9 +481,9 @@ function parse_mm(s){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
-	l = json_b9creator["html"].length;
-	//alert(	JSON.stringify (json_b9creator["html"][ l-1 ]) );
-	//alert(JSON.stringify (json_b9creator["html"][ json_b9creator["html"].length-1]["filesarray"] ));
+	//l = json_b9creator["html"].length;
+	//alert(JSON.stringify (json_b9creator["html"][l-1]["filearray"] ));
+	//alert(JSON.stringify (json_b9creator ));
 	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
 
 	if(false)

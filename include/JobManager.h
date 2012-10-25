@@ -126,11 +126,6 @@ class JobManager {
 		int resumeJob();
 		int stopJob();
 
-		/* Call this method to eval the highest layer number
-		 * for current list of m_files.
-		 * Set numberOfLayers on 10 if list of files is empty.*/
-		int updateMaxLayer();
-
 		void run();
 
 		//int nextStep();

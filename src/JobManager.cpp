@@ -64,7 +64,9 @@ int JobManager::loadJob(const std::string filename){
 
 	//Update the number layers which should
 	//printed.
-	updateMaxLayer();
+	m_b9CreatorSettings.updateMaxLayer();
+	//update json
+	m_b9CreatorSettings.regenerateConfig();
 
 	m_job_mutex.unlock();
 }
@@ -604,16 +606,3 @@ void JobManager::show(int slice){
 	//m_job_mutex.unlock();
 }
 
-int JobManager::updateMaxLayer(){
-	int nmbrOfLayers = 0;
-	vector<JobFile*>::iterator it = m_b9CreatorSettings.m_files.begin();
-	const vector<JobFile*>::const_iterator it_end = m_b9CreatorSettings.m_files.end();
-	for( ; it<it_end ; ++it ){
-		nmbrOfLayers = max(nmbrOfLayers,
-				(*it)->m_maxLayer - (*it)->m_minLayer + 1 ); 
-	}
-	m_b9CreatorSettings.lock();
-	m_b9CreatorSettings.m_printProp.m_nmbrOfLayers = nmbrOfLayers;
-	m_b9CreatorSettings.unlock();
-
-}

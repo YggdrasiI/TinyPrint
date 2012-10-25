@@ -24,6 +24,6 @@ $(function(){
 
 		create_jobFileList();
 
-		//refreshIntervall = window.setInterval("refresh()", 1000);
+		refreshIntervall = window.setInterval("refresh()", 1000);
 });
 

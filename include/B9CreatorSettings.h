@@ -86,6 +86,11 @@ class B9CreatorSettings: public JsonConfig{
 		/* Will called if website send data */
 		void webserverUpdateConfig(onion_request *req, int actionid, std::string &reply);
 
+		/* Call this method to eval the highest layer number
+		 * for current list of m_files.
+		 * Set numberOfLayers on 10 if list of files is empty.*/
+		int updateMaxLayer();
+
 	private:
 		//similar to updateIntField in JsonConfig.
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);

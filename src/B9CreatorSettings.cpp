@@ -228,7 +228,12 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 
 
-			if( B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ) changes|=YES;
+			if( B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ){
+				unlock();
+				updateMaxLayer();
+				lock();
+				changes|=YES;
+			}
 		} 
 
 	}
@@ -299,7 +304,7 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 	int i = 0;
 	vector<JobFile*>::iterator it = files.begin();
 	const vector<JobFile*>::const_iterator it_end = files.end();
-	for( ; it<it_end ; ++it ){
+	for( ; it<it_end ; ++it,++i ){
 
 		cJSON *file = cJSON_CreateObject();	
 		cJSON_AddStringToObject(file, "filename", (*it)->m_filename.c_str() );
@@ -312,10 +317,16 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 
 		cJSON *html = cJSON_CreateArray();
 		cJSON_AddItemToArray(html, jsonIntField(maxL.str().c_str(),
-					(*it)->m_minLayer, 0, (*it)->m_maxLayer, 10,m_printProp.m_lockTimes )
+					(*it)->m_maxLayer,
+					(*it)->m_minLayer,
+					(*it)->m_nmbrOfLayers-1,
+					10,m_printProp.m_lockTimes )
 				);
 		cJSON_AddItemToArray(html, jsonIntField(minL.str().c_str(),
-					(*it)->m_minLayer, (*it)->m_minLayer, (*it)->m_nmbrOfLayers-1, 10,m_printProp.m_lockTimes )
+					(*it)->m_minLayer,
+					0,
+					(*it)->m_maxLayer,
+					10,m_printProp.m_lockTimes )
 				);
 		cJSON_AddItemToArray(html, jsonIntField(positionX.str().c_str(),
 					(*it)->m_position.x,
@@ -335,7 +346,6 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 	}
 
 	cJSON_AddItemToObject(jsonf,"filearray", fa );
-
 	return jsonf;
 }
 
@@ -376,8 +386,8 @@ bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 		cJSON *jsonfileOld = cJSON_GetArrayItem(jsonfilearrayOld, i);
 		if( jsonfileNew == NULL || jsonfileOld == NULL ) continue;
 
-		cJSON *htmlNew = cJSON_GetObjectItem(jsonfilearrayNew, "html");
-		cJSON *htmlOld = cJSON_GetObjectItem(jsonfilearrayOld, "html");
+		cJSON *htmlNew = cJSON_GetObjectItem(jsonfileNew, "html");
+		cJSON *htmlOld = cJSON_GetObjectItem(jsonfileOld, "html");
 		if( htmlNew == NULL || htmlOld == NULL ) continue;
 
 		std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
@@ -385,14 +395,29 @@ bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 		std::ostringstream positionX; positionX << "file" << i << "_positionX";
 		std::ostringstream positionY; positionY << "file" << i << "_positionY";
 
-		if( JsonConfig::update(jsonfileNew,jsonfileOld,maxL.str().c_str(),&file->m_maxLayer) ) ret=true;
-		if( JsonConfig::update(jsonfileNew,jsonfileOld,minL.str().c_str(),&file->m_minLayer) ) ret=true;
-		if( JsonConfig::update(jsonfileNew,jsonfileOld,positionX.str().c_str(),&file->m_position.x) ) ret=true;
-		if( JsonConfig::update(jsonfileNew,jsonfileOld,positionY.str().c_str(),&file->m_position.y) ) ret=true;
+		if( JsonConfig::update(htmlNew,htmlOld,maxL.str().c_str(),&file->m_maxLayer) ) ret=true;
+		if( JsonConfig::update(htmlNew,htmlOld,minL.str().c_str(),&file->m_minLayer) ) ret=true;
+		if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret=true;
+		if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret=true;
 
 		if( file->m_minLayer > file->m_maxLayer ) file->m_minLayer = 0;
-		std::cout << "Änderung!\n";
 	}
 
 	return ret;
+}
+
+int B9CreatorSettings::updateMaxLayer(){
+	int nmbrOfLayers = 0;
+	vector<JobFile*>::iterator it = m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_files.end();
+	for( ; it<it_end ; ++it ){
+		nmbrOfLayers = max(nmbrOfLayers,
+				(*it)->m_maxLayer - (*it)->m_minLayer + 1 ); 
+	}
+	lock();
+	m_printProp.m_nmbrOfLayers = nmbrOfLayers;
+	if( m_printProp.m_currentLayer  > nmbrOfLayers )
+		m_printProp.m_currentLayer = nmbrOfLayers;
+	unlock();
+
 }
