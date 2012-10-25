@@ -9,6 +9,8 @@
 #include "JsonConfig.h"
 #include "JsonMessage.h"
 
+class JobFile;
+
 struct PrintProperties{
 		double m_breathTime;
 		double m_releaseCycleTime;
@@ -16,7 +18,7 @@ struct PrintProperties{
 		double m_exposureTimeAL;
 		int m_nmbrOfAttachedLayers;
 		int m_currentLayer;
-		int m_maxLayer; //chaged after file loading
+		int m_nmbrOfLayers; //chaged after file loading
 		bool m_lockTimes; /*flag to set some fields 'readable' 
 												on the web page 
 												if printing is running */
@@ -66,6 +68,7 @@ class B9CreatorSettings: public JsonConfig{
 		bool m_die; // flag indicate end of main loop
 		bool m_connected; // flag indicate serial connecton.
 		JobState m_jobState; //updated by JobManager Thread.
+		std::vector<JobFile*> m_files;
 
 		/* This object owns his own mutexes.
 			This could cause deadlocks if some mutexes will enwinded... 
@@ -74,6 +77,7 @@ class B9CreatorSettings: public JsonConfig{
 
 	public:
 		B9CreatorSettings();
+		~B9CreatorSettings();
 	
 		void loadDefaults();
 		cJSON* genJson();

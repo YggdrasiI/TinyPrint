@@ -4,6 +4,7 @@
 #include <string>
 
 #include "JobManager.h"
+#include "JobFile.h"
 #include "B9CreatorSettings.h"
 #include "DisplayManager.h"
 
@@ -28,8 +29,7 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 	m_tProjectImage(m_tTimer),
 	m_tBreath(m_tTimer),
 	m_tFWait(m_tTimer),
-	m_tRWait(m_tTimer),
-	m_files()
+	m_tRWait(m_tTimer)
 {
 
 	if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
@@ -46,13 +46,6 @@ JobManager::~JobManager(){
 	//wait on other thread
 	pthread_join( m_pthread, NULL);
 
-	//clear job file vector.
-	vector<JobFile*>::iterator it = m_files.begin();
-	const vector<JobFile*>::const_iterator it_end = m_files.end();
-	for( ; it<it_end ; ++it ){
-		delete (*it);
-	}
-	m_files.clear();
 
 }
 
@@ -64,10 +57,11 @@ int JobManager::loadJob(const std::string filename){
 	path.append(filename);
 
 	JobFile *jf = new JobFile(path.c_str());
-	m_files.push_back(jf);
+	m_b9CreatorSettings.m_files.push_back(jf);
 
-	//TODO: Eval correct max layer value. 
-	m_b9CreatorSettings.m_printProp.m_maxLayer = 200;
+	//Update the number layers which should
+	//printed.
+	updateMaxLayer();
 
 	m_job_mutex.unlock();
 }
@@ -270,7 +264,7 @@ void JobManager::run(){
 					q.add_command(cmd_info);	
 
 					// Set layer number to base layer index.
-					m_b9CreatorSettings.m_printProp.m_currentLayer = 1;
+					m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
 					// Set display framebuffer on
 					m_b9CreatorSettings.m_display = true;
 					
@@ -329,7 +323,7 @@ void JobManager::run(){
 					int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
 					//int zHeight2 = 100*( zRes )/pu + zHeight; //sum up rounding errors
-					int zHeight2 = 100*( (l-1)*zRes )/pu; //require zHeight(layer 1)=0
+					int zHeight2 = 100*( l*zRes )/pu; //require zHeight(layer 0)=0
 					if( zHeight2 > zHeightLimit ){
 						std::ostringstream zError;
 						zError << "(Job) Height of next layer lower as current height. Abort job."
@@ -413,7 +407,7 @@ void JobManager::run(){
 						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
 						gettimeofday( &m_tCuring.begin, NULL );
-						if( l <= m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL*1000000;
 						}else{
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime*1000000;
@@ -438,7 +432,7 @@ void JobManager::run(){
 
 						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 						l++;
-						if( l <= m_b9CreatorSettings.m_printProp.m_maxLayer ){
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfLayers ){
 							m_state = NEXT_LAYER;
 						}else {
 							m_state = FINISH;
@@ -584,13 +578,17 @@ void JobManager::show(int slice){
 	m_displayManager.clear();
 
 	//add new slices
-	vector<JobFile*>::iterator it = m_files.begin();
-	const vector<JobFile*>::const_iterator it_end = m_files.end();
+	vector<JobFile*>::iterator it = m_b9CreatorSettings.m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_b9CreatorSettings.m_files.end();
 	for( ; it<it_end ; ++it ){
-		cv::Mat &s = (*it)->getSlice(slice);
-		cv::Point &p = (*it)->m_position;
-		printf("Position: %i %i\n", p.x, p.y);
-		m_displayManager.add( s, p );
+		// shift slice by local m_minLayer
+		int local_slice = slice + (*it)->m_minLayer;
+		if( local_slice <= (*it)->m_maxLayer &&
+				local_slice >=  (*it)->m_minLayer ){
+			cv::Mat &s = (*it)->getSlice(local_slice);
+			cv::Point &p = (*it)->m_position;
+			m_displayManager.add( s, p );
+		}
 	}
 
 	m_showedLayer = slice;
@@ -601,4 +599,18 @@ void JobManager::show(int slice){
 	m_displayManager.show();
 
 	//m_job_mutex.unlock();
+}
+
+int JobManager::updateMaxLayer(){
+	int nmbrOfLayers = 0;
+	vector<JobFile*>::iterator it = m_b9CreatorSettings.m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_b9CreatorSettings.m_files.end();
+	for( ; it<it_end ; ++it ){
+		nmbrOfLayers = max(nmbrOfLayers,
+				(*it)->m_maxLayer - (*it)->m_minLayer + 1 ); 
+	}
+	m_b9CreatorSettings.lock();
+	m_b9CreatorSettings.m_printProp.m_nmbrOfLayers = nmbrOfLayers;
+	m_b9CreatorSettings.unlock();
+
 }

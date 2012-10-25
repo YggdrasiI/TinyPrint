@@ -1,5 +1,9 @@
+#include <vector>
 #include "B9CreatorSettings.h"
+#include "JobFile.h"
 #include "OnionServer.h"
+
+using namespace std;
 
 B9CreatorSettings::B9CreatorSettings() :
 	JsonConfig(),
@@ -24,6 +28,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp(),
 	m_jobState(IDLE),
 	m_connected(false),
+	m_files(),
 	m_die(false)
 {
 	//m_PU = 100 * 254 / (m_spr * m_tpi) ;
@@ -34,13 +39,23 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
-	m_printProp.m_currentLayer = 1;
-	m_printProp.m_maxLayer = 10;
+	m_printProp.m_currentLayer = 0;
+	m_printProp.m_nmbrOfLayers = 10;
 	m_printProp.m_lockTimes = false;
 	m_printProp.m_zResolution = 50;
 	m_printProp.m_xyResolution = 100;
 };
 
+B9CreatorSettings::~B9CreatorSettings(){
+
+	//clear job file vector.
+	vector<JobFile*>::iterator it = m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_files.end();
+	for( ; it<it_end ; ++it ){
+		delete (*it);
+	}
+	m_files.clear();
+}
 /*
  * Special properties. This values can modified with the web interface.
  * I.e. angle of kinect, nmbr of areas, position of areas, minimal blob size.
@@ -70,7 +85,6 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
 
-//	cJSON_AddItemToArray(html, jsonStateField("currentLayer",m_currentLayer) );
 	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,10,0 ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,10, 0/*m_printProp.m_lockTimes*/ ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,0 ) );
@@ -79,7 +93,7 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
-				min(m_printProp.m_currentLayer,m_printProp.m_maxLayer),1,m_printProp.m_maxLayer,1,m_printProp.m_lockTimes) );
+				min(m_printProp.m_currentLayer,m_printProp.m_nmbrOfLayers-1),0,m_printProp.m_nmbrOfLayers-1,1,m_printProp.m_lockTimes) );
 
 	cJSON_AddItemToArray(html, jsonStateField("vatOpen",m_vatOpen,"percent","percent") );//in Percent
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
@@ -119,8 +133,8 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
-	m_printProp.m_currentLayer = 1;
-	m_printProp.m_maxLayer = 10;
+	m_printProp.m_currentLayer = 0;
+	m_printProp.m_nmbrOfLayers = 10;
 	m_printProp.m_zResolution = 50;
 	m_printProp.m_xyResolution = 100;
 	m_printProp.m_lockTimes = false;

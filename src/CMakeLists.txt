@@ -58,6 +58,7 @@ set(main_SRCS
 	SerialManager.cpp
 	DisplayManager.cpp
 	JobManager.cpp
+	JobFile.cpp
 	)
 
 add_executable (main ${main_SRCS} )
