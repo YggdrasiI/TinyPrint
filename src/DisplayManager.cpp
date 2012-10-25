@@ -25,7 +25,7 @@ DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
 	m_gridShow(false),
 	m_die(false),
 	m_pause(true),
-	m_redraw(false),
+	//m_redraw(false),
 	m_screenWidth(0),
 	m_screenHeight(0),
 	m_pDfb(NULL),
@@ -88,7 +88,7 @@ void DisplayManager::createGrid(){
 
 void DisplayManager::show(){
 	m_blank = false;
-	m_redraw = true; 
+	m_b9CreatorSettings.m_redraw = true; 
 }
 
 /*Release the images.
@@ -180,7 +180,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 /* Hide all displayed images. */
 void DisplayManager::blank(bool black){
 	m_blank = black;
-	m_redraw = true; 
+	m_b9CreatorSettings.m_redraw = true; 
 }
 
 void DisplayManager::redraw(){
@@ -211,7 +211,7 @@ void DisplayManager::redraw(){
 	//Flip the front and back buffer, but wait for the vertical retrace to avoid tearing.
 	DFBCHECK (m_pPrimary->Flip (m_pPrimary, NULL, DSFLIP_WAITFORSYNC));
 
-	m_redraw = false;
+	m_b9CreatorSettings.m_redraw = false;
 	m_img_mutex.unlock();
 }
 
@@ -256,14 +256,14 @@ void DisplayManager::initFB(){
 	DFBCHECK (m_pPrimary->SetBlittingFlags (m_pPrimary, DSBLIT_BLEND_ALPHACHANNEL));
 
 	createGrid();
-	m_redraw = true;
+	m_b9CreatorSettings.m_redraw = true;
 
 }
 
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
 	m_img_mutex.lock();
-	m_redraw = false;
+	m_b9CreatorSettings.m_redraw = false;
 	if( m_grid != NULL ) m_grid->Release (m_grid);
 	m_grid = NULL;
 
@@ -286,18 +286,19 @@ void DisplayManager::run(){
 		if( !m_pause ){
 			initFB();//start fb
 			//init red grid surface
-			m_redraw = true;
+			m_b9CreatorSettings.m_redraw = true;
 
 			while( !m_pause && !m_die ){
 
 				if( m_b9CreatorSettings.m_gridShow != m_gridShow ){
 					m_gridShow = m_b9CreatorSettings.m_gridShow;
-					m_redraw = true;
+					m_b9CreatorSettings.m_redraw = true;
 				}
 
-				if( m_redraw ){
+				if( m_b9CreatorSettings.m_redraw ){
+					std::cout << "Redraw\n";
 					redraw();
-					m_redraw = false;
+					m_b9CreatorSettings.m_redraw = false;
 				}
 
 				usleep(10000);

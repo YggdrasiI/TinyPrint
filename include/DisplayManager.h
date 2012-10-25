@@ -87,7 +87,7 @@ class DisplayManager {
 		B9CreatorSettings &m_b9CreatorSettings;
 		bool m_die; // quit frame buffer thread loop.
 		bool m_pause; // pause frame buffer loop.
-		bool m_redraw; //mark if redraw is ness.
+		//bool m_redraw; //mark if redraw is ness.
 		bool m_blank; //mark if slices are not shown.
 		pthread_t m_pthread;
 		Mutex m_img_mutex;

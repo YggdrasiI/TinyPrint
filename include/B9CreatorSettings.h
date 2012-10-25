@@ -60,6 +60,7 @@ class B9CreatorSettings: public JsonConfig{
 		int m_comBaudrate;
 		bool m_gridShow; //show grid
 		bool m_display; //display used
+		bool m_redraw; //displayed image require redraw.
 		bool m_shutterEquipped;
 		bool m_projectorEquipped;
 		bool m_readyForNextCycle; // Set on true if "F" recieved.

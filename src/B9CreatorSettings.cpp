@@ -10,6 +10,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_spr(200), m_tpi(20),
 	m_gridShow(true),
 	m_display(false),
+	m_redraw(false),
 	m_vatOpen(-100),
 	m_projectorStatus(2), m_resetStatus(1),
 	m_zHeight(-1),
@@ -204,7 +205,10 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			
 		}
 
-		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ) changes|=YES;
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ){
+			m_redraw = true;
+			changes|=YES;
+		}
 
 		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
@@ -222,6 +226,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ){
+				m_redraw = true;
 				changes|=YES;
 			}
 			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
@@ -233,6 +238,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 				updateMaxLayer();
 				lock();
 				changes|=YES;
+				m_redraw = true;
 			}
 		} 
 
