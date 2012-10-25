@@ -431,7 +431,7 @@ function loadFile(){
 	var filename = $('#fileBrowserListSelection').val();
 	send("update?actionid=7","job_file="+filename,
 			function(data){
-				alert('ToDo');	
+				if( data == "ok" ) window.location.reload();
 			}
 			);
 }

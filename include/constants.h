@@ -57,6 +57,10 @@ enum JobState {
  * It should be possible switch 1,2,3,4,5,... if #state numbers > #bits
  * */
 
+enum Exceptions {
+	JOB_LOAD_EXCEPTION
+};
+
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};
 

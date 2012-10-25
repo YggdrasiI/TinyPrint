@@ -50,13 +50,22 @@ JobManager::~JobManager(){
 }
 
 int JobManager::loadJob(const std::string filename){
+
 	m_job_mutex.lock();
 
 	std::string path(m_b9CreatorSettings.m_b9jDir);
 	path.append("/");
 	path.append(filename);
 
-	JobFile *jf = new JobFile(path.c_str());
+	JobFile *jf;
+	try{
+	jf = new JobFile(path.c_str());
+	}catch( Exceptions e){
+		//only possible exception here: load failed
+		m_job_mutex.unlock();
+		return -1;	
+	}
+
 	m_b9CreatorSettings.m_files.push_back(jf);
 
 	//Substitute path with filename in jf
@@ -69,6 +78,7 @@ int JobManager::loadJob(const std::string filename){
 	m_b9CreatorSettings.regenerateConfig();
 
 	m_job_mutex.unlock();
+	return 0;
 }
 
 int JobManager::loadImg(const std::string filename){
@@ -505,6 +515,18 @@ void JobManager::run(){
 void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
 	
 	reply = "error";
+	if( actionid == 7 ){ /* load Job */
+		std::string job_file ( onion_request_get_post(req,"job_file") );
+#ifdef VERBOSE
+		std::cout << "Load '"<< job_file << "'" << std::endl;
+#endif
+		if( loadJob( job_file.c_str() ) == 0){
+			reply = "ok";
+		}else{
+			reply = "failed";
+		}
+
+	}
 
 	if( actionid == 6 ){ /* control JobManager */
 		std::string print_cmd ( onion_request_get_post(req,"print") );

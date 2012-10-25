@@ -56,9 +56,7 @@ int main(int argc, char **argv) {
 
 
 	//displayManager.start();
-	//jobManager.loadImg("../test.png");
 	//jobManager.loadJob("puzzle.svg");
-	jobManager.loadJob("halterung_1cm.svg");
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
