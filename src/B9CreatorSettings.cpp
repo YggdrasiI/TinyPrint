@@ -205,7 +205,9 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 		if(! m_printProp.m_lockTimes ){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
-			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ) changes|=YES;
+			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ){
+				changes|=YES;
+			}
 			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 		} 
@@ -256,6 +258,7 @@ void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, 
 		const char* json_str = onion_request_get_post(req,"b9CreatorSettings");
 		if( json_str != NULL){
 			setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
+			//hm, send update signal here with some flags which mark changes?
 		}
 		reply = "ok";
 	}

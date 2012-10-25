@@ -42,7 +42,7 @@ class B9CreatorSettings;
 
 //#define DFBCHECK(x...)                                         
 
-struct Sprite;
+class Sprite;
 static void* displayThread(void* arg);
 
 class DisplayManager {
@@ -61,7 +61,7 @@ class DisplayManager {
 		 * img should contain a rgb, rgba or
 		 * greyscaled image.
 		 */
-		void add(cv::Mat &img, cv::Point topLeftCorner=cv::Point(0,0) );
+		void add(cv::Mat &img, cv::Point &topLeftCorner );
 		/* Remove added images */
 		void clear();
 		/* Redraw images */

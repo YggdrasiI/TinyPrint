@@ -107,6 +107,7 @@ class JobFile{
 			m_xyResolution(-1),
 			m_pCairo(NULL),
 			m_pSurface(NULL),
+			m_position(cv::Point()),
 			m_pRsvgHandle(NULL) {
 
 				float dpi=254.0;
@@ -115,13 +116,15 @@ class JobFile{
 				rsvg_set_default_dpi_x_y (dpi,dpi);//no reaction?
 				m_pRsvgHandle = rsvg_handle_new_from_file (filename, &error);
 				if( m_pRsvgHandle != NULL ){
-				rsvg_handle_get_dimensions (m_pRsvgHandle, &m_dimensions);
+					rsvg_handle_get_dimensions (m_pRsvgHandle, &m_dimensions);
+					//m_position.x = (1024-m_dimensions.width)/2;
+					//m_position.y = (768-m_dimensions.height)/2;
 				}else{
 					std::cout << "Error while loading file '"
 						<< filename << "'." << std::endl;
 				}
 
-				int scale = 5; //why 5?
+				int scale = 10; //why 10?
 
 				m_pSurface = (cairo_surface_t *)cairo_image_surface_create(
 						CAIRO_FORMAT_ARGB32,
@@ -130,6 +133,9 @@ class JobFile{
 						);
 				m_pCairo = cairo_create(m_pSurface);
 				cairo_scale( m_pCairo, scale, scale);
+
+				m_position.x = (1024- scale*m_dimensions.width)/2;
+				m_position.y = (768- scale*m_dimensions.height)/2;
 			}
 
 
@@ -145,16 +151,29 @@ class JobFile{
 		/*const*/ cv::Mat &getSlice(int layer){
 			if( layer == m_layer ) return m_slice;
 
+			//clear cairo context
+			cairo_set_source_rgb (m_pCairo, 0, 0, 0);
+			cairo_paint (m_pCairo);
+	
 			std::ostringstream id;
 			id << "#layer" << layer;//filter with group name
+			printf("(JobManager.h) Extract layer %s from svg\n",id.str().c_str() );
 			rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
 
+			//m_slice.release();
 			m_slice = cv::Mat(
 					cairo_image_surface_get_height(m_pSurface),
 					cairo_image_surface_get_width(m_pSurface),
 					CV_8UC4,
 					(void*) cairo_image_surface_get_data(m_pSurface)
 					);
+
+			/*
+			std::string test("job_files/");
+			test.append( id.str() );
+			test.append(".png");
+			imwrite(test.c_str(), m_slice);
+			*/
 
 			m_layer = layer;
 			return m_slice;
@@ -189,35 +208,11 @@ class JobManager {
 		Timer &m_tRWait;
 		//std::vector<JobFile> m_files;
 		std::vector<JobFile*> m_files;
+		int m_showedLayer; //save last displayed layer number.
 
 	public:
-		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
-			m_pthread(),
-			m_die(false),
-			m_b9CreatorSettings(b9CreatorSettings),
-			m_displayManager(displayManager),
-			m_state(START_STATE),
-			m_pauseInState(IDLE),
-			m_job_mutex(),
-			m_tTimer(),
-			m_tPause(),
-			m_tCuring(m_tTimer),
-			m_tCloseSlider(m_tTimer),
-			m_tProjectImage(m_tTimer),
-			m_tBreath(m_tTimer),
-			m_tFWait(m_tTimer),
-			m_tRWait(m_tTimer),
-			m_files()
-	{
-		if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
-			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-				<< "Error: Could not create thread for job manager."
-				<< std::endl ;
-			exit(1) ;
-		}
-	}
-
-	~JobManager();
+		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );	 
+		~JobManager();
 
 		JobState getState() { return m_state; };
 
