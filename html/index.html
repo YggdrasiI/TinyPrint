@@ -21,7 +21,7 @@
 	.containerL input[type="button"] { width:10em; }
 
 	.red * input { background-color:red; }
-	.readonly * input { background-color:#AAAAAA; }
+	.readonly * input { background-color:#CCCCCC; }
 	.json_input { color:green; width:7em; /*display:inline-block;*/ padding-right:1em; };
 </style>
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
@@ -66,6 +66,8 @@
 		<span class="prop" id="fileBrowserList">Files: </span><br />
 		<input type="button" onclick="loadFile()" value="Open" />
 		<input type="button" onclick="update_jobFileList()" value="⟳" title="Refresh file list." />
+		<h1>Files</h1>
+		<div class="prop" id="files"></div>
 	</div>
 	<div class="containerL">
 		<h1>Display Window Controls</h1>

@@ -18,14 +18,17 @@ class JobFile{
 		int m_zResolution; //unit: 10μm.
 		int m_xyResolution; //unit: 10μm.
 		cv::Point m_position;
+		cv::Size m_size;
 		int m_minLayer; //cut of low layers
 		int m_maxLayer; //cut of high layers
 		int m_nmbrOfLayers;
+		std::string m_description;
+		std::string m_filename;
 	private:
 		cairo_t *m_pCairo;
 		cairo_surface_t *m_pSurface;
 		RsvgHandle *m_pRsvgHandle;
-		RsvgDimensionData m_dimensions;
+		//RsvgDimensionData m_dimensions;
 		int m_layer;
 		cv::Mat m_slice;
 	public:

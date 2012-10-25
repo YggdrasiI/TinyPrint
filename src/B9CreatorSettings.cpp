@@ -60,9 +60,9 @@ B9CreatorSettings::~B9CreatorSettings(){
  * Special properties. This values can modified with the web interface.
  * I.e. angle of kinect, nmbr of areas, position of areas, minimal blob size.
  */
-cJSON* B9CreatorSettings::genJson()
+cJSON *B9CreatorSettings::genJson()
 {
-	cJSON* root = cJSON_CreateObject();	
+	cJSON *root = cJSON_CreateObject();	
 	/* Kind only used to distinct different json structs. */
 	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("b9CreatorSettings"));
 
@@ -80,7 +80,7 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToObject(root, "gridColor", cJSON_CreateString(gcol));//hex string
 
 	/* sub node. This values will transmitted to web interface */
-	cJSON* html = cJSON_CreateArray();	
+	cJSON *html = cJSON_CreateArray();	
 	cJSON_AddItemToArray(html, jsonIntField("stepsPerRevolution",m_spr,36,1000,100,1) );
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
@@ -100,6 +100,8 @@ cJSON* B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
 	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"token","token") );
+
+	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
 
 	cJSON_AddItemToObject(root, "html", html);
 
@@ -145,9 +147,9 @@ void B9CreatorSettings::loadDefaults()
  * replaces |=YES with |=XYZ to extend changes flag.
  * It's could be useful to detect special updates, conflicts...
  */
-int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
-	cJSON* nhtml = cJSON_GetObjectItem(jsonNew,"html");
-	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
+int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
+	cJSON *nhtml = cJSON_GetObjectItem(jsonNew,"html");
+	cJSON *ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 
 	lock();
 
@@ -224,6 +226,9 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 			}
 			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
+
+
+			if( B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ) changes|=YES;
 		} 
 
 	}
@@ -234,15 +239,15 @@ int B9CreatorSettings::update(cJSON* jsonNew, cJSON* jsonOld, int changes){
 }
 
 /* Update of val without argument checking. */
-bool B9CreatorSettings::updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val){
+bool B9CreatorSettings::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* id, int* val){
 	double tmp=*val;
 	bool ret = updateState(jsonNew,jsonOld,id,&tmp);
 	*val = (int)tmp;
 	return ret;
 }
-bool B9CreatorSettings::updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val){
-	cJSON* ntmp = getArrayEntry(jsonNew,id);
-	cJSON* otmp;
+bool B9CreatorSettings::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* id, double* val){
+	cJSON *ntmp = getArrayEntry(jsonNew,id);
+	cJSON *otmp;
 	bool ret(false);
 	//VPRINT("update of %s:",id);				
 	double nval=0.0, oval=*val;
@@ -276,4 +281,118 @@ void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, 
 		}
 		reply = "ok";
 	}
+}
+
+/* See Header for generated structure of json struct */
+cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> files){
+
+	cJSON *jsonf = cJSON_CreateObject();	
+
+	cJSON_AddStringToObject(jsonf, "type", "filesField");
+	cJSON_AddStringToObject(jsonf, "id", id);
+	//cJSON_AddNumberToObject(jsonf, "val", val );
+	cJSON_AddStringToObject(jsonf, "format", "files");
+	cJSON_AddStringToObject(jsonf, "parse", "files");
+
+	cJSON *fa = cJSON_CreateArray();	
+
+	int i = 0;
+	vector<JobFile*>::iterator it = files.begin();
+	const vector<JobFile*>::const_iterator it_end = files.end();
+	for( ; it<it_end ; ++it ){
+
+		cJSON *file = cJSON_CreateObject();	
+		cJSON_AddStringToObject(file, "filename", (*it)->m_filename.c_str() );
+		cJSON_AddStringToObject(file, "description", (*it)->m_description.c_str() );
+
+		std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
+		std::ostringstream minL; minL << "file" << i << "_minLayer";
+		std::ostringstream positionX; positionX << "file" << i << "_positionX";
+		std::ostringstream positionY; positionY << "file" << i << "_positionY";
+
+		cJSON *html = cJSON_CreateArray();
+		cJSON_AddItemToArray(html, jsonIntField(maxL.str().c_str(),
+					(*it)->m_minLayer, 0, (*it)->m_maxLayer, 10,m_printProp.m_lockTimes )
+				);
+		cJSON_AddItemToArray(html, jsonIntField(minL.str().c_str(),
+					(*it)->m_minLayer, (*it)->m_minLayer, (*it)->m_nmbrOfLayers-1, 10,m_printProp.m_lockTimes )
+				);
+		cJSON_AddItemToArray(html, jsonIntField(positionX.str().c_str(),
+					(*it)->m_position.x,
+					-(*it)->m_size.width,
+					1024+(*it)->m_size.width,
+					10, m_printProp.m_lockTimes )
+				);
+		cJSON_AddItemToArray(html, jsonIntField(positionY.str().c_str(),
+					(*it)->m_position.y,
+					-(*it)->m_size.height,
+					768+(*it)->m_size.height,
+					10, m_printProp.m_lockTimes )
+				);
+
+		cJSON_AddItemToObject(file, "html", html);
+		cJSON_AddItemToArray(fa, file );
+	}
+
+	cJSON_AddItemToObject(jsonf,"filearray", fa );
+
+	return jsonf;
+}
+
+/*
+ * Update files[i] with the i-th entry
+ * of the json struct. (There is no check
+ * if orders of the input the enties match)
+ * */
+/* See Header for generated structure of json struct */
+bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld, 
+		const char* id,
+		vector<JobFile*> &files ){
+
+	bool ret(false);
+
+	if( jsonNew == NULL ) return false;
+	if( jsonOld == NULL ) jsonOld = jsonNew;
+
+	/* The desired data are four levels under jsonNew.
+	 * Levels: 
+	 * 	json[New|Old],
+	 * 	jsonfiles[New|Old]
+	 *	jsonfile[New|Old]
+	 *	html[New|Old]
+	 * */
+
+	cJSON *jsonfilesNew = getArrayEntry(jsonNew,id);
+	cJSON *jsonfilesOld = getArrayEntry(jsonOld,id);
+	if( jsonfilesNew == NULL || jsonfilesOld == NULL ) return false;
+
+	cJSON *jsonfilearrayNew = cJSON_GetObjectItem(jsonfilesNew,"filearray");
+	cJSON *jsonfilearrayOld = cJSON_GetObjectItem(jsonfilesOld,"filearray");
+	if( jsonfilearrayNew == NULL || jsonfilearrayOld == NULL ) return false;
+
+	for( int i=0; i<files.size(); i++ ){
+		JobFile *file = files[i];
+		cJSON *jsonfileNew = cJSON_GetArrayItem(jsonfilearrayNew, i);
+		cJSON *jsonfileOld = cJSON_GetArrayItem(jsonfilearrayOld, i);
+		if( jsonfileNew == NULL || jsonfileOld == NULL ) continue;
+
+		cJSON *htmlNew = cJSON_GetObjectItem(jsonfilearrayNew, "html");
+		cJSON *htmlOld = cJSON_GetObjectItem(jsonfilearrayOld, "html");
+		if( htmlNew == NULL || htmlOld == NULL ) continue;
+
+		std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
+		std::ostringstream minL; minL << "file" << i << "_minLayer";
+		std::ostringstream positionX; positionX << "file" << i << "_positionX";
+		std::ostringstream positionY; positionY << "file" << i << "_positionY";
+
+		if( JsonConfig::update(jsonfileNew,jsonfileOld,maxL.str().c_str(),&file->m_maxLayer) ) ret=true;
+		if( JsonConfig::update(jsonfileNew,jsonfileOld,minL.str().c_str(),&file->m_minLayer) ) ret=true;
+		if( JsonConfig::update(jsonfileNew,jsonfileOld,positionX.str().c_str(),&file->m_position.x) ) ret=true;
+		if( JsonConfig::update(jsonfileNew,jsonfileOld,positionY.str().c_str(),&file->m_position.y) ) ret=true;
+
+		if( file->m_minLayer > file->m_maxLayer ) file->m_minLayer = 0;
+		std::cout << "Änderung!\n";
+	}
+
+	return ret;
 }

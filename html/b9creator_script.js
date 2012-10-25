@@ -23,8 +23,15 @@ TOKENS = {
 		2048 : "START_STATE",
 		4096 : "ERROR",
 		8192 : "WAIT_ON_ZERO_HEIGHT"
-	}
+	},
 
+	/* Label and Description for some property names */
+	"props" : {
+		"maxLayer" : { "label" : "Max Layer:", "desc" : "Lower this value to cut of slices." },
+		"minLayer" : { "label" : "Min Layer:", "desc" : "Raiser this value to cut of slices." },
+		"positionX" : { "label" : "Horizontal position:", "desc" : "" },
+		"positionY" : { "label" : "Vertical position:", "desc" : "" }
+	}
 }
 
 /* maximal number of lines in the messages 
@@ -69,7 +76,7 @@ function cu_fields(obj,prefix){
 					pnode.prop("json", o);
 					(window[prefix+"_"+o.type])(o, pnode );
 				}else{
-					alert("Can not "+prefix+" field "+o.id+".");
+					//alert("Can not "+prefix+" field "+o.id+".");
 				}
 		}
 }
@@ -323,6 +330,52 @@ function update_messagesField(obj){
 	}
 }
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+function create_filesField(obj, pnode){
+	var description = "List with all open files.";
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
+	//ret.addClass("json_input");
+	pnode.append(ret);
+
+	//loop throuth files-Array.
+	var i = 1;
+	for( var i in obj.filearray){
+		var file = obj.filearray[i];
+		var filespan = $("<div tite='"+file.filename+"' id='file_"+i+"'>");
+		filespan.append( $("<h2>"+file.filename+"</h2>") );
+		filespan.append( $("<p>"+file.description+"</p>") );
+		ret.append(filespan);
+
+		//create elements with the right ids.
+		for( var j in file.html ){
+			var prop = file.html[j];
+			//mod id to get unique values. Removed and now set on server side
+			//prop.id = "file"+i+"_"+prop.id;
+			var propType = prop.id.substr( prop.id.indexOf("_")+1 );
+			var text = TOKENS["props"][propType]["label"];
+			var desc = TOKENS["props"][propType]["desc"];
+			var propspan = $("<div id='"+prop.id+"' title='"+desc+"'>"+text+" </div>");
+			propspan.addClass("prop");
+			filespan.append(propspan);
+		}
+
+		//fill new element nodes
+		create_fields(file);
+
+		i++;
+	}
+
+}
+
+function update_filesField(obj){
+//Todo: Prüfe ob eine Änderung vorliegt, lösche alte Elemente
+//und rufe create neu auf... Update von prob nicht vergessen?!
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 /*
  * Convert json_files into drop down list
  */
@@ -425,6 +478,9 @@ function parse_mm(s){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
+	l = json_b9creator["html"].length;
+	//alert(	JSON.stringify (json_b9creator["html"][ l-1 ]) );
+	//alert(JSON.stringify (json_b9creator["html"][ json_b9creator["html"].length-1]["filesarray"] ));
 	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
 
 	if(false)

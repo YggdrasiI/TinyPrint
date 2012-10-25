@@ -59,6 +59,9 @@ int JobManager::loadJob(const std::string filename){
 	JobFile *jf = new JobFile(path.c_str());
 	m_b9CreatorSettings.m_files.push_back(jf);
 
+	//Substitute path with filename in jf
+	jf->m_filename = filename;
+
 	//Update the number layers which should
 	//printed.
 	updateMaxLayer();

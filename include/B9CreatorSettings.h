@@ -91,6 +91,30 @@ class B9CreatorSettings: public JsonConfig{
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val);
 
+		/* Generate json struct for m_files vector. */
+		/* Structure:
+		 * { 	type: "filesField", 
+		 * 		id	:	string,
+		 * 		format: string,
+		 * 		parse	: string,
+		 * 		filearray : array[
+		 * 			{ filename : string,
+		 * 				description : string,
+		 * 				html : array[
+		 * 					{ maxLayer : intField,
+		 * 						minLayer : intField,
+		 * 						positionX : intField,
+		 * 						positionY : intField
+		 * 					}
+		 * 				]
+		 * 			}
+		 * 		]
+		 * */
+		cJSON *jsonFilesField(const char* id, std::vector<JobFile*> files);
+
+		/* Update m_files with values of json struct. */
+		bool updateFiles(cJSON *jsonNew, cJSON *jsonOld, const char* id, std::vector<JobFile*> &files );
+
 };
 
 
