@@ -210,7 +210,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
 			changes|=YES;
 #ifdef VERBOSE
-			std::cout << "Updathe release cycle time to " << m_printProp.m_releaseCycleTime << std::endl;
+			std::cout << "Update release cycle time to " << m_printProp.m_releaseCycleTime << std::endl;
 #endif
 			std::ostringstream cmd_cycle;
 			cmd_cycle << "D" << (int)(1000*m_printProp.m_releaseCycleTime);
@@ -228,11 +228,18 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 
 			int c2;
-			if( c2 = B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ){
+
+			//unlock here because updateFiles can extend m_files vector.
+			unlock();
+			if( c2 = B9CreatorSettings::updateFiles(nhtml,ohtml,"files",
+						m_files, (changes & CONFIG ) )
+				){
 				changes|=c2;
 				updateMaxLayer();
 				//m_redraw = true;
 			}
+			lock();
+
 		} 
 
 	}
@@ -366,12 +373,13 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 /* See Header for generated structure of json struct */
 int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld, 
 		const char* id,
-		vector<JobFile*> &files ){
+		vector<JobFile*> &files,
+		bool add ){
 
 	int ret=NO;//Combination of values of enum Changes
 
 	if( jsonNew == NULL ) return ret;
-	if( jsonOld == NULL ) jsonOld = jsonNew;
+	if( jsonOld == NULL || add ) jsonOld = jsonNew;
 
 	/* The desired data are four levels under jsonNew.
 	 * Levels: 
@@ -389,37 +397,88 @@ int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 	cJSON *jsonfilearrayOld = cJSON_GetObjectItem(jsonfilesOld,"filearray");
 	if( jsonfilearrayNew == NULL || jsonfilearrayOld == NULL ) return ret;
 
-	for( int i=0; i<files.size(); i++ ){
-		JobFile *file = files[i];
-		cJSON *jsonfileNew = cJSON_GetArrayItem(jsonfilearrayNew, i);
-		cJSON *jsonfileOld = cJSON_GetArrayItem(jsonfilearrayOld, i);
-		if( jsonfileNew == NULL || jsonfileOld == NULL ) continue;
 
-		cJSON *htmlNew = cJSON_GetObjectItem(jsonfileNew, "html");
-		cJSON *htmlOld = cJSON_GetObjectItem(jsonfileOld, "html");
-		if( htmlNew == NULL || htmlOld == NULL ) continue;
+	if( add ){
+		int nsize = cJSON_GetArraySize( jsonfilearrayNew );
+		printf("New files: %i\n",nsize);
+		for( int i=0; i<nsize; ++i ){
+			cJSON *jsonfileNew = cJSON_GetArrayItem(jsonfilearrayNew, i);
+			if( jsonfileNew == NULL ) continue;
 
-		std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
-		std::ostringstream minL; minL << "file" << i << "_minLayer";
-		std::ostringstream positionX; positionX << "file" << i << "_positionX";
-		std::ostringstream positionY; positionY << "file" << i << "_positionY";
-		std::ostringstream scaleId; scaleId << "file" << i << "_scale";
+			std::string filename  = JsonConfig::getString(jsonfileNew,"filename");
+			std::string description  = JsonConfig::getString(jsonfileNew,"description");
 
-		if( JsonConfig::update(htmlNew,htmlOld,maxL.str().c_str(),&file->m_maxLayer) ) ret|=YES;
-		if( JsonConfig::update(htmlNew,htmlOld,minL.str().c_str(),&file->m_minLayer) ) ret|=YES;
+			if( loadJob( filename.c_str() ) != 0){
+				//loading failed
+				continue;
+			}
 
-		// position shift need no evaluation of layer. It just moved the displayed sprites.
-		if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret|=REDRAW;
-		if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret|REDRAW;
-	
-		double scale = file->getScale();
-		if( JsonConfig::update(htmlNew,htmlOld,scaleId.str().c_str(),&scale ) ){
-			file->setScale(scale);
-			ret|=LAYER;
+			//get new element
+			JobFile *jf = m_files.back();
+
+			ret|=REDRAW|YES;
+
+			//replace the default position, scale, ... with the
+			//values in the json struct.
+			jf->m_description = description;
+			cJSON *htmlNew = cJSON_GetObjectItem(jsonfileNew, "html");
+
+			if( htmlNew == NULL ) continue;
+
+			std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
+			std::ostringstream minL; minL << "file" << i << "_minLayer";
+			std::ostringstream positionX; positionX << "file" << i << "_positionX";
+			std::ostringstream positionY; positionY << "file" << i << "_positionY";
+			std::ostringstream scaleId; scaleId << "file" << i << "_scale";
+
+			double scale;
+			JsonConfig::update(htmlNew,NULL,maxL.str().c_str(),&jf->m_maxLayer);
+			JsonConfig::update(htmlNew,NULL,minL.str().c_str(),&jf->m_minLayer);
+
+			// position shift need no evaluation of layer. It just moved the displayed sprites.
+			JsonConfig::update(htmlNew,NULL,positionX.str().c_str(),&jf->m_position.x);
+			JsonConfig::update(htmlNew,NULL,positionY.str().c_str(),&jf->m_position.y);
+
+			if( JsonConfig::update(htmlNew,NULL,scaleId.str().c_str(),&scale ) ){
+				if( scale != jf->getScale() )
+					jf->setScale(scale);
+			}
 		}
 
-		//for data consistency
-		if( file->m_minLayer > file->m_maxLayer ) file->m_minLayer = 0;
+	}else{
+
+		for( int i=0; i<files.size(); ++i ){
+			JobFile *file = files[i];
+			cJSON *jsonfileNew = cJSON_GetArrayItem(jsonfilearrayNew, i);
+			cJSON *jsonfileOld = cJSON_GetArrayItem(jsonfilearrayOld, i);
+			if( jsonfileNew == NULL || jsonfileOld == NULL ) continue;
+
+			cJSON *htmlNew = cJSON_GetObjectItem(jsonfileNew, "html");
+			cJSON *htmlOld = cJSON_GetObjectItem(jsonfileOld, "html");
+			if( htmlNew == NULL || htmlOld == NULL ) continue;
+
+			std::ostringstream maxL; maxL << "file" << i << "_maxLayer";
+			std::ostringstream minL; minL << "file" << i << "_minLayer";
+			std::ostringstream positionX; positionX << "file" << i << "_positionX";
+			std::ostringstream positionY; positionY << "file" << i << "_positionY";
+			std::ostringstream scaleId; scaleId << "file" << i << "_scale";
+
+			if( JsonConfig::update(htmlNew,htmlOld,maxL.str().c_str(),&file->m_maxLayer) ) ret|=YES;
+			if( JsonConfig::update(htmlNew,htmlOld,minL.str().c_str(),&file->m_minLayer) ) ret|=YES;
+
+			// position shift need no evaluation of layer. It just moved the displayed sprites.
+			if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret|=REDRAW;
+			if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret|REDRAW;
+
+			double scale = file->getScale();
+			if( JsonConfig::update(htmlNew,htmlOld,scaleId.str().c_str(),&scale ) ){
+				file->setScale(scale);
+				ret|=LAYER;
+			}
+
+			//for data consistency
+			if( file->m_minLayer > file->m_maxLayer ) file->m_minLayer = 0;
+		}
 	}
 
 	return ret;
@@ -439,4 +498,39 @@ int B9CreatorSettings::updateMaxLayer(){
 		m_printProp.m_currentLayer = nmbrOfLayers;
 	//unlock();
 
+}
+
+
+int B9CreatorSettings::loadJob(const std::string filename){
+
+	lock();
+
+	std::string path(m_b9jDir);
+	path.append("/");
+	path.append(filename);
+
+	JobFile *jf;
+	try{
+		jf = new JobFile(path.c_str());
+	}catch( Exceptions e){
+		//only possible exception here: load failed
+		//std::cerr << "Can not load file '" << path << "'." << std::endl;
+		unlock();
+		return -1;	
+	}
+
+	m_files.push_back(jf);
+
+	//Substitute path with filename in jf
+	jf->m_filename = filename;
+
+	//Update the number layers which should
+	//printed.
+	updateMaxLayer();
+	//update json
+	regenerateConfig();
+
+	unlock();
+
+	return 0;
 }

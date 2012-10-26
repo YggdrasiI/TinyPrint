@@ -61,32 +61,9 @@ int JobManager::loadJob(const std::string filename){
 
 	m_job_mutex.lock();
 
-	std::string path(m_b9CreatorSettings.m_b9jDir);
-	path.append("/");
-	path.append(filename);
-
-	JobFile *jf;
-	try{
-	jf = new JobFile(path.c_str());
-	}catch( Exceptions e){
-		//only possible exception here: load failed
-		m_job_mutex.unlock();
-		return -1;	
-	}
-
-	m_b9CreatorSettings.m_files.push_back(jf);
-
-	//Substitute path with filename in jf
-	jf->m_filename = filename;
-
-	//Update the number layers which should
-	//printed.
-	m_b9CreatorSettings.updateMaxLayer();
-	//update json
-	m_b9CreatorSettings.regenerateConfig();
-
-	//(re)gen showd slice
-	show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+	/* Most lines moved to B9CreatorSettings */
+	if( m_b9CreatorSettings.loadJob(filename) == 0)
+		show( m_b9CreatorSettings.m_printProp.m_currentLayer );
 
 	m_job_mutex.unlock();
 	return 0;

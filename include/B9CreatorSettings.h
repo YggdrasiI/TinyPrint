@@ -99,6 +99,8 @@ class B9CreatorSettings: public JsonConfig{
 		/* Update signal. Will send at the end of update(...) */
 		boost::signal<void (int changes)> updateSettings;
 
+		int loadJob(const std::string filename);
+
 	private:
 		//similar to updateIntField in JsonConfig.
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
@@ -125,8 +127,11 @@ class B9CreatorSettings: public JsonConfig{
 		 * */
 		cJSON *jsonFilesField(const char* id, std::vector<JobFile*> files);
 
-		/* Update m_files with values of json struct. */
-		int updateFiles(cJSON *jsonNew, cJSON *jsonOld, const char* id, std::vector<JobFile*> &files );
+		/* Update m_files with values of json struct.
+		 * For add==true will m_files expand with
+		 * the given files.
+		 * */
+		int updateFiles(cJSON *jsonNew, cJSON *jsonOld, const char* id, std::vector<JobFile*> &files, bool add );
 };
 
 
