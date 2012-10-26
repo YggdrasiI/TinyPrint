@@ -5,6 +5,7 @@
 TOKENS = {
 	"projectorStatus" : {2 : "?" , 0 : "Off" , 1 : "On" },
 	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
+	"displayStatus" : {0 : "Off." , 1 : "On." },
 
 	//s/\([^ \t]*\)=\([^,]*\)\(,*\)/\2 : "\1"\3
 	"jobState" : {
