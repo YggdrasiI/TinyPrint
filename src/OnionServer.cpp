@@ -24,7 +24,6 @@
 //#include <sys/types.h>
 
 #include <boost/bind.hpp>
-#include <boost/regex.hpp> 
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include "boost/filesystem.hpp" 
@@ -35,21 +34,6 @@ namespace fs = boost::filesystem;
 #include "B9CreatorSettings.h"
 #include "OnionServer.h"
 
-
-int check_filename(const char *filename){
-	boost::regex re;
-	std::string pattern("^[[:alnum:]]*\\.b9j$");
-	std::string s(filename);
-	try {
-		re.assign(pattern, boost::regex_constants::icase);
-	} catch (boost::regex_error& e) {
-		std::cout << pattern << " is not a valid regular expression: \""
-			<< e.what() << "\"" << std::endl;
-	}
-
-	if (boost::regex_match(s, re)) return true;
-	return false;
-}
 
 // This has to be extern, as we are compiling C++
 extern "C"{
@@ -247,7 +231,8 @@ int index_html(void *data, onion_request *req, onion_response *res, void* foo, v
  //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
 onion_dict *d=onion_dict_new();
 if( data != NULL){
-	onion_dict_add(d, "LAST_SETTING_FILENAME",((JsonConfig*)data)->getString("lastSetting"),0);
+	//onion_dict_add(d, "LAST_SETTING_FILENAME",((JsonConfig*)data)->getString("lastSetting"),0);
+	onion_dict_add(d, "LAST_SETTING_FILENAME",((B9CreatorSettings*)data)->m_configFilename.c_str(),0);
 }
 
 return index_html_template(d, req, res);

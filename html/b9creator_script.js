@@ -5,6 +5,7 @@
 TOKENS = {
 	"projectorStatus" : {2 : "?" , 0 : "Off" , 1 : "On" },
 	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
+	"displayStatus" : {0 : "Off." , 1 : "On." },
 
 	//s/\([^ \t]*\)=\([^,]*\)\(,*\)/\2 : "\1"\3
 	"jobState" : {
@@ -433,6 +434,25 @@ function loadFile(){
 	send("update?actionid=7","job_file="+filename,
 			function(data){
 				if( data == "ok" ) window.location.reload();
+			}
+			);
+}
+
+function loadConfig(){
+	var configFilename = $('#configFilename').val();
+	send("update?actionid=1","configFilename="+configFilename,
+			function(data){
+				if( data == "ok" ) window.location.reload();
+				else /*if( data == "error" )*/ alert("Loading failed");
+			}
+			);
+}
+
+function saveConfig(){
+	var configFilename = $('#configFilename').val();
+	send("update?actionid=2","configFilename="+configFilename,
+			function(data){
+				if( data == "error" ) alert("Saveing failed");
 			}
 			);
 }

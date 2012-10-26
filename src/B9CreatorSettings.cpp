@@ -48,7 +48,11 @@ B9CreatorSettings::B9CreatorSettings() :
 };
 
 B9CreatorSettings::~B9CreatorSettings(){
+	clearJobs();
+}
 
+
+void B9CreatorSettings::clearJobs(){
 	//clear job file vector.
 	vector<JobFile*>::iterator it = m_files.begin();
 	const vector<JobFile*>::const_iterator it_end = m_files.end();
@@ -57,6 +61,8 @@ B9CreatorSettings::~B9CreatorSettings(){
 	}
 	m_files.clear();
 }
+
+
 /*
  * Special properties. This values can modified with the web interface.
  * I.e. angle of kinect, nmbr of areas, position of areas, minimal blob size.
@@ -101,6 +107,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
 	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"token","token") );
+	cJSON_AddItemToArray(html, jsonStateField("displayStatus",m_display,"token","token") );
 
 	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
 
@@ -435,14 +442,15 @@ int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 			JsonConfig::update(htmlNew,NULL,maxL.str().c_str(),&jf->m_maxLayer);
 			JsonConfig::update(htmlNew,NULL,minL.str().c_str(),&jf->m_minLayer);
 
-			// position shift need no evaluation of layer. It just moved the displayed sprites.
-			JsonConfig::update(htmlNew,NULL,positionX.str().c_str(),&jf->m_position.x);
-			JsonConfig::update(htmlNew,NULL,positionY.str().c_str(),&jf->m_position.y);
-
 			if( JsonConfig::update(htmlNew,NULL,scaleId.str().c_str(),&scale ) ){
 				if( scale != jf->getScale() )
 					jf->setScale(scale);
 			}
+
+			// position shift need no evaluation of layer. It just moved the displayed sprites.
+			JsonConfig::update(htmlNew,NULL,positionX.str().c_str(),&jf->m_position.x);
+			JsonConfig::update(htmlNew,NULL,positionY.str().c_str(),&jf->m_position.y);
+
 		}
 
 	}else{
