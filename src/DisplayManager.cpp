@@ -238,12 +238,15 @@ void DisplayManager::initFB(){
 	char foo[] = { "arg1" };
 	char no_cur[] = { "--dfb:no-cursor" };
 	char mode[] = { "--dfb:mode=1024x768" };
-	int argc2 = /*argc+*/3;
+	char pixelformat[] = { "--dfb:pixelformat=RGB16" };
+	//char pixelformat[] = { "--dfb:pixelformat=RGB32" };
+	int argc2 = /*argc+*/4;
 	char** argv2 = (char**) malloc( (argc2)*sizeof(char*));
 	//memcpy( argv2, argv, argc*sizeof(char*) );
 	argv2[0] = foo;
 	argv2[1] = no_cur;
 	argv2[2] = mode;
+	argv2[3] = pixelformat;
 	DFBCHECK (DirectFBInit (&argc2, &argv2));
 
 	//A surface description is needed to create a surface.
@@ -251,7 +254,7 @@ void DisplayManager::initFB(){
 
 	DFBCHECK (DirectFBCreate (&m_pDfb));
 
-	if( false ){
+	if( true ){
 		//this made problems on my laptop?! I assume you can set
 		//the value on your system.
 		DFBCHECK (m_pDfb->SetCooperativeLevel (m_pDfb, DFSCL_FULLSCREEN));
