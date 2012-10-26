@@ -5,7 +5,11 @@
 #include <iostream>
 #include <cstring>
 #include <queue>
+
 #include <onion/onion.h>
+#include <boost/signal.hpp>
+//#include <boost/bind.hpp>
+
 #include "JsonConfig.h"
 #include "JsonMessage.h"
 
@@ -60,7 +64,7 @@ class B9CreatorSettings: public JsonConfig{
 		int m_comBaudrate;
 		bool m_gridShow; //show grid
 		bool m_display; //display used
-		bool m_redraw; //displayed image require redraw.
+//		bool m_redraw; //displayed image require redraw.
 		bool m_shutterEquipped;
 		bool m_projectorEquipped;
 		bool m_readyForNextCycle; // Set on true if "F" recieved.
@@ -92,6 +96,9 @@ class B9CreatorSettings: public JsonConfig{
 		 * Set numberOfLayers on 10 if list of files is empty.*/
 		int updateMaxLayer();
 
+		/* Update signal. Will send at the end of update(...) */
+		boost::signal<void (int changes)> updateSettings;
+
 	private:
 		//similar to updateIntField in JsonConfig.
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
@@ -119,8 +126,7 @@ class B9CreatorSettings: public JsonConfig{
 		cJSON *jsonFilesField(const char* id, std::vector<JobFile*> files);
 
 		/* Update m_files with values of json struct. */
-		bool updateFiles(cJSON *jsonNew, cJSON *jsonOld, const char* id, std::vector<JobFile*> &files );
-
+		int updateFiles(cJSON *jsonNew, cJSON *jsonOld, const char* id, std::vector<JobFile*> &files );
 };
 
 

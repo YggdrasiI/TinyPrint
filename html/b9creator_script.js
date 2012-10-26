@@ -30,7 +30,8 @@ TOKENS = {
 		"maxLayer" : { "label" : "Max Layer:", "desc" : "Lower this value to cut of slices." },
 		"minLayer" : { "label" : "Min Layer:", "desc" : "Raiser this value to cut of slices." },
 		"positionX" : { "label" : "Horizontal position:", "desc" : "" },
-		"positionY" : { "label" : "Vertical position:", "desc" : "" }
+		"positionY" : { "label" : "Vertical position:", "desc" : "" },
+		"scale" : { "label" : "Scale factor:", "desc" : "Scale of vector based svg image." }
 	}
 }
 

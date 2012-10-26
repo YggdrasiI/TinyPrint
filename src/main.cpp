@@ -7,7 +7,7 @@
 //#include <highgui.h>
 
 //#include <boost/signal.hpp>
-//#include <boost/bind.hpp>
+#include <boost/bind.hpp>
 
 //for usleep
 #include <unistd.h>

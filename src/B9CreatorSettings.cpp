@@ -10,7 +10,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_spr(200), m_tpi(20),
 	m_gridShow(true),
 	m_display(false),
-	m_redraw(false),
+//	m_redraw(false),
 	m_vatOpen(-100),
 	m_projectorStatus(2), m_resetStatus(1),
 	m_zHeight(-1),
@@ -152,7 +152,9 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 	cJSON *nhtml = cJSON_GetObjectItem(jsonNew,"html");
 	cJSON *ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 
+	std::cout << "Changes (A): " << changes << std::endl;
 	lock();
+	std::cout << "Changes (B): " << changes << std::endl;
 
 	/*load values outside of the html node. This valus should only
 	* read from config files.
@@ -195,19 +197,12 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			m_gridColor[0] = max(0,min( (color>>16) & 0xFF  ,255));//red bits
 			m_gridColor[1] = max(0,min( (color>>8) & 0xFF  ,255));//green bits
 			m_gridColor[2] = max(0,min( (color>>0) & 0xFF  ,255));//blue bits
-			/*printf("Color in file: %s %i %X,%X,%X\n", 
-					JsonConfig::getString(jsonNew,"gridColor"),
-					color,
-					m_gridColor[0],
-					m_gridColor[1],
-					m_gridColor[2]);
-					*/
 			
 		}
 
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ){
-			m_redraw = true;
-			changes|=YES;
+			//m_redraw = true;
+			changes|=REDRAW;
 		}
 
 		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
@@ -226,25 +221,26 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"nmbrOfAttachedLayers",&m_printProp.m_nmbrOfAttachedLayers) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"currentLayer",&m_printProp.m_currentLayer) ){
-				m_redraw = true;
-				changes|=YES;
+				//m_redraw = true;
+				changes|=LAYER; //should force redraw by JobManager
 			}
 			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 
-
-			if( B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ){
-				unlock();
+			int c2;
+			if( c2 = B9CreatorSettings::updateFiles(nhtml,ohtml,"files", m_files) ){
+				changes|=c2;
 				updateMaxLayer();
-				lock();
-				changes|=YES;
-				m_redraw = true;
+				//m_redraw = true;
 			}
 		} 
 
 	}
 	unlock();
-	//start some signal handler (removed)
+
+	//call update signal
+	std::cout << "Changes(C): " << changes << std::endl;
+	updateSettings(changes);	
 
 	return changes!=NO?1:0;
 }
@@ -320,6 +316,7 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 		std::ostringstream minL; minL << "file" << i << "_minLayer";
 		std::ostringstream positionX; positionX << "file" << i << "_positionX";
 		std::ostringstream positionY; positionY << "file" << i << "_positionY";
+		std::ostringstream scaleId; scaleId << "file" << i << "_scale";
 
 		cJSON *html = cJSON_CreateArray();
 		cJSON_AddItemToArray(html, jsonIntField(maxL.str().c_str(),
@@ -346,6 +343,12 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 					768+(*it)->m_size.height,
 					10, m_printProp.m_lockTimes )
 				);
+		cJSON_AddItemToArray(html, jsonDoubleField(scaleId.str().c_str(),
+					(*it)->getScale(),
+					0.01,
+					1000.0,
+					10, m_printProp.m_lockTimes )
+				);
 
 		cJSON_AddItemToObject(file, "html", html);
 		cJSON_AddItemToArray(fa, file );
@@ -361,13 +364,13 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
  * if orders of the input the enties match)
  * */
 /* See Header for generated structure of json struct */
-bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld, 
+int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld, 
 		const char* id,
 		vector<JobFile*> &files ){
 
-	bool ret(false);
+	int ret=NO;//Combination of values of enum Changes
 
-	if( jsonNew == NULL ) return false;
+	if( jsonNew == NULL ) return ret;
 	if( jsonOld == NULL ) jsonOld = jsonNew;
 
 	/* The desired data are four levels under jsonNew.
@@ -380,11 +383,11 @@ bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 
 	cJSON *jsonfilesNew = getArrayEntry(jsonNew,id);
 	cJSON *jsonfilesOld = getArrayEntry(jsonOld,id);
-	if( jsonfilesNew == NULL || jsonfilesOld == NULL ) return false;
+	if( jsonfilesNew == NULL || jsonfilesOld == NULL ) return ret;
 
 	cJSON *jsonfilearrayNew = cJSON_GetObjectItem(jsonfilesNew,"filearray");
 	cJSON *jsonfilearrayOld = cJSON_GetObjectItem(jsonfilesOld,"filearray");
-	if( jsonfilearrayNew == NULL || jsonfilearrayOld == NULL ) return false;
+	if( jsonfilearrayNew == NULL || jsonfilearrayOld == NULL ) return ret;
 
 	for( int i=0; i<files.size(); i++ ){
 		JobFile *file = files[i];
@@ -400,12 +403,22 @@ bool B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 		std::ostringstream minL; minL << "file" << i << "_minLayer";
 		std::ostringstream positionX; positionX << "file" << i << "_positionX";
 		std::ostringstream positionY; positionY << "file" << i << "_positionY";
+		std::ostringstream scaleId; scaleId << "file" << i << "_scale";
 
-		if( JsonConfig::update(htmlNew,htmlOld,maxL.str().c_str(),&file->m_maxLayer) ) ret=true;
-		if( JsonConfig::update(htmlNew,htmlOld,minL.str().c_str(),&file->m_minLayer) ) ret=true;
-		if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret=true;
-		if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret=true;
+		if( JsonConfig::update(htmlNew,htmlOld,maxL.str().c_str(),&file->m_maxLayer) ) ret|=YES;
+		if( JsonConfig::update(htmlNew,htmlOld,minL.str().c_str(),&file->m_minLayer) ) ret|=YES;
 
+		// position shift need no evaluation of layer. It just moved the displayed sprites.
+		if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret|=REDRAW;
+		if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret|REDRAW;
+	
+		double scale = file->getScale();
+		if( JsonConfig::update(htmlNew,htmlOld,scaleId.str().c_str(),&scale ) ){
+			file->setScale(scale);
+			ret|=LAYER;
+		}
+
+		//for data consistency
 		if( file->m_minLayer > file->m_maxLayer ) file->m_minLayer = 0;
 	}
 
@@ -420,10 +433,10 @@ int B9CreatorSettings::updateMaxLayer(){
 		nmbrOfLayers = max(nmbrOfLayers,
 				(*it)->m_maxLayer - (*it)->m_minLayer + 1 ); 
 	}
-	lock();
+	//lock();
 	m_printProp.m_nmbrOfLayers = nmbrOfLayers;
 	if( m_printProp.m_currentLayer  > nmbrOfLayers )
 		m_printProp.m_currentLayer = nmbrOfLayers;
-	unlock();
+	//unlock();
 
 }

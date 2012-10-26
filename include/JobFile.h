@@ -30,9 +30,10 @@ class JobFile{
 		RsvgHandle *m_pRsvgHandle;
 		//RsvgDimensionData m_dimensions;
 		int m_layer;
+		double m_scale;
 		cv::Mat m_slice;
 	public:
-		JobFile(const char* filename);
+		JobFile(const char* filename, double scale=1.0f);
 		~JobFile();
 
 		/* Return reference to cv::Mat 
@@ -43,6 +44,11 @@ class JobFile{
 		 * value is independed from m_minLayer.
 		 * */
 		cv::Mat &getSlice(int layer);
+		void setScale(double scale);
+		double getScale() const{  
+			return m_scale;
+		}
+
 
 };
 

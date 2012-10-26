@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 
+#include <boost/bind.hpp>
+
 #include "JobManager.h"
 #include "JobFile.h"
 #include "B9CreatorSettings.h"
@@ -18,7 +20,7 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 	m_die(false),
 	m_b9CreatorSettings(b9CreatorSettings),
 	m_displayManager(displayManager),
-	m_showedLayer(b9CreatorSettings.m_printProp.m_currentLayer),
+	//m_showedLayer(b9CreatorSettings.m_printProp.m_currentLayer),
 	m_state(START_STATE),
 	m_pauseInState(IDLE),
 	m_job_mutex(),
@@ -38,6 +40,12 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 			<< std::endl ;
 		exit(1) ;
 	}
+	
+	//connect B9CreatorSettings update signal
+	m_b9CreatorSettings.updateSettings.connect(
+					boost::bind(&JobManager::updateSignalHandler,this, _1 )
+					);
+
 }
 
 JobManager::~JobManager(){
@@ -76,6 +84,9 @@ int JobManager::loadJob(const std::string filename){
 	m_b9CreatorSettings.updateMaxLayer();
 	//update json
 	m_b9CreatorSettings.regenerateConfig();
+
+	//(re)gen showd slice
+	show( m_b9CreatorSettings.m_printProp.m_currentLayer );
 
 	m_job_mutex.unlock();
 	return 0;
@@ -494,16 +505,18 @@ void JobManager::run(){
 		}
 		m_b9CreatorSettings.lock();
 		m_b9CreatorSettings.m_jobState = m_state;
+		m_b9CreatorSettings.unlock();
 
 		//check change external change of current layer
+		/*
 		if( m_b9CreatorSettings.m_display && 
 				(m_b9CreatorSettings.m_printProp.m_currentLayer != m_showedLayer)
 			){
 			RUNPRINT("(Job) Change of layer detected. Show new layer.\n");
 			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
 		}
+		*/
 
-		m_b9CreatorSettings.unlock();
 
 		m_job_mutex.unlock();
 		usleep(50000); //.05s
@@ -580,18 +593,22 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 		if( disp != NULL ){
 
 			m_b9CreatorSettings.lock();
-			int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
-
 			if( disp[0] == '2' )
 				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
 			else 
 				m_b9CreatorSettings.m_display = (disp[0] == '1');
-			reply = m_b9CreatorSettings.m_display?"1":"0";
 			m_b9CreatorSettings.unlock();
 
 			if( m_b9CreatorSettings.m_display ){
+				//wait second on creation of display
+				usleep(1000000);
+				VPRINT("Show!\n");
+				int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 				show(l);
 			}
+
+			reply = m_b9CreatorSettings.m_display?"1":"0";
+
 		}
 
 	}
@@ -618,7 +635,7 @@ void JobManager::show(int slice){
 		}
 	}
 
-	m_showedLayer = slice;
+	//m_showedLayer = slice;
 	//force redraw of screen
 #ifdef VERBOSE
 	std::cout << "(Job) Show sprites of slice " << slice << "."  << std::endl;
@@ -628,3 +645,12 @@ void JobManager::show(int slice){
 	//m_job_mutex.unlock();
 }
 
+
+void JobManager::updateSignalHandler(int changes){
+
+	if( changes & LAYER ){
+		if( m_b9CreatorSettings.m_display )
+			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+	}
+
+}

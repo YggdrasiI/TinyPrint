@@ -105,7 +105,7 @@ class JobManager {
 		Timer &m_tBreath;
 		Timer &m_tFWait;
 		Timer &m_tRWait;
-		int m_showedLayer; //save last displayed layer number.
+		//int m_showedLayer; //save last displayed layer number.
 
 	public:
 		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );	 
@@ -118,7 +118,7 @@ class JobManager {
 		/* Load image. (For testing) */
 		int loadImg(const std::string filename);
 
-		/* Init printer (read printer properties and set z-Table) */
+		/* Init printer (read printer properties and set z-Table). */
 		int initJob(bool withReset);
 		/* Start job if none running */
 		int startJob();
@@ -130,8 +130,10 @@ class JobManager {
 
 		//int nextStep();
 
-		/* Will called if website send data */
+		/* Will called if website send data. */
 		void webserverSetState(onion_request *req, int actionid, std::string &reply);
+		/* Will called if m_b9CreatorSettings propagate settings change. */
+		void updateSignalHandler(int changes);
 
 	private:
 		void show(int slice);

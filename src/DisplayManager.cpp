@@ -1,5 +1,8 @@
 #include <unistd.h>
+
 #include <directfb.h>
+#include <boost/bind.hpp>
+
 #include "DisplayManager.h"
 #include "B9CreatorSettings.h"
 
@@ -25,7 +28,7 @@ DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
 	m_gridShow(false),
 	m_die(false),
 	m_pause(true),
-	//m_redraw(false),
+	m_redraw(false),
 	m_screenWidth(0),
 	m_screenHeight(0),
 	m_pDfb(NULL),
@@ -38,6 +41,11 @@ DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
 			<< std::endl ;
 		exit(1) ;
 	}
+
+	//connect B9CreatorSettings update signal
+	m_b9CreatorSettings.updateSettings.connect(
+					boost::bind(&DisplayManager::updateSignalHandler,this, _1 )
+					);
 }
 
 DisplayManager::~DisplayManager(){
@@ -88,7 +96,7 @@ void DisplayManager::createGrid(){
 
 void DisplayManager::show(){
 	m_blank = false;
-	m_b9CreatorSettings.m_redraw = true; 
+	m_redraw = true; 
 }
 
 /*Release the images.
@@ -122,12 +130,9 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 		initFB();
 	}
 
-	m_img_mutex.lock();
 
 	Sprite *sprite = new Sprite(topLeftCorner);
 	sprite->cvmat = cv::Mat(cvimg.size().height,4*cvimg.size().width,CV_8UC1);
-	m_sprites.push_back( sprite );
-
 
 	/*Die Farben in opencv sind in slices organisiert,
 	 * bbbb,gggg,rrrr,aaaa,… , aber in directfb punktweise,
@@ -173,14 +178,18 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	
 	//printf("Test c. Pointer: %p\n", sprite->m_pSurface) ;
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite->m_pSurface)));
+
+	m_img_mutex.lock();
+	m_sprites.push_back( sprite );
 	m_img_mutex.unlock();
+
 	VPRINT("(DisplayManager) Sprite added\n") ;
 }
 
 /* Hide all displayed images. */
 void DisplayManager::blank(bool black){
 	m_blank = black;
-	m_b9CreatorSettings.m_redraw = true; 
+	m_redraw = true; 
 }
 
 void DisplayManager::redraw(){
@@ -211,7 +220,7 @@ void DisplayManager::redraw(){
 	//Flip the front and back buffer, but wait for the vertical retrace to avoid tearing.
 	DFBCHECK (m_pPrimary->Flip (m_pPrimary, NULL, DSFLIP_WAITFORSYNC));
 
-	m_b9CreatorSettings.m_redraw = false;
+	m_redraw = false;
 	m_img_mutex.unlock();
 }
 
@@ -256,14 +265,14 @@ void DisplayManager::initFB(){
 	DFBCHECK (m_pPrimary->SetBlittingFlags (m_pPrimary, DSBLIT_BLEND_ALPHACHANNEL));
 
 	createGrid();
-	m_b9CreatorSettings.m_redraw = true;
+	m_redraw = true;
 
 }
 
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
 	m_img_mutex.lock();
-	m_b9CreatorSettings.m_redraw = false;
+	m_redraw = false;
 	if( m_grid != NULL ) m_grid->Release (m_grid);
 	m_grid = NULL;
 
@@ -286,19 +295,19 @@ void DisplayManager::run(){
 		if( !m_pause ){
 			initFB();//start fb
 			//init red grid surface
-			m_b9CreatorSettings.m_redraw = true;
+			m_redraw = true;
 
 			while( !m_pause && !m_die ){
 
 				if( m_b9CreatorSettings.m_gridShow != m_gridShow ){
 					m_gridShow = m_b9CreatorSettings.m_gridShow;
-					m_b9CreatorSettings.m_redraw = true;
+					m_redraw = true;
 				}
 
-				if( m_b9CreatorSettings.m_redraw ){
+				if( m_redraw ){
 					std::cout << "Redraw\n";
 					redraw();
-					m_b9CreatorSettings.m_redraw = false;
+					m_redraw = false;
 				}
 
 				usleep(10000);
@@ -324,7 +333,10 @@ void DisplayManager::run(){
 }
 
 
-
+void DisplayManager::updateSignalHandler(int changes){
+	if( changes & REDRAW )
+		m_redraw = true;
+}
 
 
 

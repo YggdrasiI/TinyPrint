@@ -23,6 +23,7 @@
 #include <fstream>
 //#include <sys/types.h>
 
+#include <boost/bind.hpp>
 #include <boost/regex.hpp> 
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -261,7 +262,7 @@ OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 		{
 			//add default signal handler.
 			updateSignal.connect(
-					boost::bind(&OnionServer::updateSetting,this, _1, _2, _3)
+					boost::bind(&OnionServer::updateWebserver,this, _1, _2, _3)
 					);
 			//add signal handler of b9CreatorSettings.
 			updateSignal.connect(
@@ -323,7 +324,7 @@ int OnionServer::stop_server()
  *  0: data written into reply
  *  1: No data written into reply, but input processed successful.*/
 //TODO: Shift several cases of the switch into own signal handler.
-void OnionServer::updateSetting(onion_request *req, int actionid, std::string &reply){
+void OnionServer::updateWebserver(onion_request *req, int actionid, std::string &reply){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
 		case 4:

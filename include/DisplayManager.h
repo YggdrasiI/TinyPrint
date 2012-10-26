@@ -73,6 +73,9 @@ class DisplayManager {
 		/* Should only called by displayThread() */
 		void run();
 
+		/* Will called if m_b9CreatorSettings propagate settings change. */
+		void updateSignalHandler(int changes);
+
 	private:
 		//This is the super interface, it's the entry point to all functionality.
 		IDirectFB *m_pDfb;
@@ -87,7 +90,7 @@ class DisplayManager {
 		B9CreatorSettings &m_b9CreatorSettings;
 		bool m_die; // quit frame buffer thread loop.
 		bool m_pause; // pause frame buffer loop.
-		//bool m_redraw; //mark if redraw is ness.
+		bool m_redraw; //mark if redraw is ness.
 		bool m_blank; //mark if slices are not shown.
 		pthread_t m_pthread;
 		Mutex m_img_mutex;
