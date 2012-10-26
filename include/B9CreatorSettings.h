@@ -79,6 +79,7 @@ class B9CreatorSettings: public JsonConfig{
 			This could cause deadlocks if some mutexes will enwinded... 
 			*/
 		Messages m_queues; 
+		std::string m_configFilename;
 
 	public:
 		B9CreatorSettings();
@@ -100,6 +101,18 @@ class B9CreatorSettings: public JsonConfig{
 		boost::signal<void (int changes)> updateSettings;
 
 		int loadJob(const std::string filename);
+		void clearJobs();
+
+		/* Overwrite two methodes to save filename */
+		int loadConfigFile(const char* filename){
+			m_configFilename = filename;	
+			return JsonConfig::loadConfigFile(filename);
+		};
+		int init(const char* filename="")
+		{
+			m_configFilename = filename;
+			return JsonConfig::init(filename);
+		};
 
 	private:
 		//similar to updateIntField in JsonConfig.

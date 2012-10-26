@@ -505,90 +505,146 @@ void JobManager::run(){
 void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
 	
 	reply = "error";
-	if( actionid == 7 ){ /* load Job */
-		std::string job_file ( onion_request_get_post(req,"job_file") );
+	switch( actionid ){
+		case 7:
+			{  /* load Job */
+				std::string job_file ( onion_request_get_post(req,"job_file") );
 #ifdef VERBOSE
-		std::cout << "Load '"<< job_file << "'" << std::endl;
+				std::cout << "Load '"<< job_file << "'" << std::endl;
 #endif
-		if( loadJob( job_file.c_str() ) == 0){
-			reply = "ok";
-		}else{
-			reply = "failed";
-		}
+				if( loadJob( job_file.c_str() ) == 0){
+					reply = "ok";
+				}else{
+					reply = "failed";
+				}
 
-	}
-
-	if( actionid == 6 ){ /* control JobManager */
-		std::string print_cmd ( onion_request_get_post(req,"print") );
+			}
+			break;
+	case 6: /* control JobManager */
+			{
+				std::string print_cmd ( onion_request_get_post(req,"print") );
 #ifdef VERBOSE
-		std::cout << "'"<< print_cmd << "'" << std::endl;
+				std::cout << "'"<< print_cmd << "'" << std::endl;
 #endif
-		if( 0 == print_cmd.compare("init") ){
-			if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
-			reply = "idle";
+				if( 0 == print_cmd.compare("init") ){
+					if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
+					reply = "idle";
 
-		}else if( 0 == print_cmd.compare("start") || 0 == print_cmd.compare("toggle")){
-			if( m_state == START_STATE){
-				//we can not start job. Init at first.
-				if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
-				reply = "idle";
-				return;
-			}
-			if( m_state == IDLE ){
-				if( 0 != startJob() ) return ;
-				reply = "print";
-			}else{
-				//can not start. Reply error message or just send idle.
-				reply = "idle";
-			}
-		}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
-			if( m_state == PAUSE ){
-				if( 0 != pauseJob() ) return ;
-				reply = "pause";
-			}
-			//can not resume without pause state.
-		}else if( 0 == print_cmd.compare("resume") ){
-			if( 0 != resumeJob() ) return  ;
-			reply = "print";
+				}else if( 0 == print_cmd.compare("start") || 0 == print_cmd.compare("toggle")){
+					if( m_state == START_STATE){
+						//we can not start job. Init at first.
+						if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
+						reply = "idle";
+						return;
+					}
+					if( m_state == IDLE ){
+						if( 0 != startJob() ) return ;
+						reply = "print";
+					}else{
+						//can not start. Reply error message or just send idle.
+						reply = "idle";
+					}
+				}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
+					if( m_state == PAUSE ){
+						if( 0 != pauseJob() ) return ;
+						reply = "pause";
+					}
+					//can not resume without pause state.
+				}else if( 0 == print_cmd.compare("resume") ){
+					if( 0 != resumeJob() ) return  ;
+					reply = "print";
 
-		}else if( 0 == print_cmd.compare("abort") ){
-			if( 0 != stopJob() ){
-				if( m_state == IDLE ){
-					//stop failed, but printer mode is idle. Thus,
-					//stopping produce no error.
+				}else if( 0 == print_cmd.compare("abort") ){
+					if( 0 != stopJob() ){
+						if( m_state == IDLE ){
+							//stop failed, but printer mode is idle. Thus,
+							//stopping produce no error.
+							reply = "idle";
+						}
+						return  ;
+					}
 					reply = "idle";
 				}
-				return  ;
+
+				//print_cmd unknown
 			}
-			reply = "idle";
-		}
+			break;
+	case 5: /* Toggle Display */
+			{
 
-		//print_cmd unknown
-	}else if ( actionid == 5){ /* Toggle Display */
-		const char* disp = onion_request_get_post(req,"display");
+				const char* disp = onion_request_get_post(req,"display");
 
-		if( disp != NULL ){
+				if( disp != NULL ){
 
-			m_b9CreatorSettings.lock();
-			if( disp[0] == '2' )
-				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
-			else 
-				m_b9CreatorSettings.m_display = (disp[0] == '1');
-			m_b9CreatorSettings.unlock();
+					m_b9CreatorSettings.lock();
+					if( disp[0] == '2' )
+						m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+					else 
+						m_b9CreatorSettings.m_display = (disp[0] == '1');
+					m_b9CreatorSettings.unlock();
 
-			if( m_b9CreatorSettings.m_display ){
-				//wait second on creation of display
-				usleep(1000000);
-				VPRINT("Show!\n");
-				int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
-				show(l);
+					if( m_b9CreatorSettings.m_display ){
+						//wait second on creation of display
+						usleep(1000000);
+						VPRINT("Show!\n");
+						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+						show(l);
+					}
+
+					reply = m_b9CreatorSettings.m_display?"1":"0";
+
+				}
 			}
+			break;
+	case 2: /* Save config */
+			{
 
-			reply = m_b9CreatorSettings.m_display?"1":"0";
+				const char* configFilename = onion_request_get_post(req,"configFilename");
+				if( configFilename == NULL ) break;
+				if( check_configFilename(configFilename ) == 1){
 
-		}
+					printf("Save config: %s\n",configFilename);
 
+					//Saveconfig
+					m_b9CreatorSettings.saveConfigFile(configFilename);
+
+					reply = "ok";
+				}else{
+					reply = "error";
+					printf("Filename not allowed\n");
+				}
+
+			}
+			break;
+	case 1: /* Load config */
+			{
+
+				const char* configFilename = onion_request_get_post(req,"configFilename");
+				if( configFilename == NULL ) break;
+				if( check_configFilename(configFilename ) == 1){
+
+					printf("Load config: %s\n",configFilename);
+
+					//Free references to m_files elements from display.
+					m_displayManager.clear();
+
+					//Release m_files
+					m_b9CreatorSettings.clearJobs();
+
+					//Load config
+					m_b9CreatorSettings.loadConfigFile(configFilename);
+
+					reply = "ok";
+				}else{
+					reply = "error";
+					printf("Filename not allowed\n");
+				}
+			}
+	default:
+			{
+			}
 	}
+
 }
 
 void JobManager::show(int slice){

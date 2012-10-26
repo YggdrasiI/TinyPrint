@@ -437,6 +437,25 @@ function loadFile(){
 			);
 }
 
+function loadConfig(){
+	var configFilename = $('#configFilename').val();
+	send("update?actionid=1","configFilename="+configFilename,
+			function(data){
+				if( data == "ok" ) window.location.reload();
+				else /*if( data == "error" )*/ alert("Loading failed");
+			}
+			);
+}
+
+function saveConfig(){
+	var configFilename = $('#configFilename').val();
+	send("update?actionid=2","configFilename="+configFilename,
+			function(data){
+				if( data == "error" ) alert("Saveing failed");
+			}
+			);
+}
+
 /**
  * Format functions.
  * Use functions with the name pattern "format_[style]" to convert
