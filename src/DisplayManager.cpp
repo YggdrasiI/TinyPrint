@@ -1,9 +1,64 @@
 #include <unistd.h>
+
+#include <directfb.h>
+#include <boost/bind.hpp>
+
 #include "DisplayManager.h"
 #include "B9CreatorSettings.h"
 
 using namespace cv;
 using namespace std;
+
+/* Definiton of elements with dependenies to directfb */
+class Sprite{
+	public:
+		IDirectFBSurface* m_pSurface; 
+		cv::Point &m_position;
+		cv::Mat cvmat; //cv struture with same data array as pSurface.
+		Sprite(cv::Point &p):
+			m_position(p),
+			m_pSurface(NULL){
+			}
+};
+
+
+/* ++++++++++ DisplayManager class functions +++++++++++++*/
+DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
+	m_b9CreatorSettings( b9CreatorSettings ),
+	m_gridShow(false),
+	m_die(false),
+	m_pause(true),
+	m_redraw(false),
+	m_screenWidth(0),
+	m_screenHeight(0),
+	m_pDfb(NULL),
+	m_grid(NULL),
+	m_pPrimary(NULL)
+{
+	if( pthread_create( &m_pthread, NULL, &displayThread, this) ){
+		std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
+			<< "Error: Could not create thread for frame buffer display."
+			<< std::endl ;
+		exit(1) ;
+	}
+
+	//connect B9CreatorSettings update signal
+	m_b9CreatorSettings.updateSettings.connect(
+					boost::bind(&DisplayManager::updateSignalHandler,this, _1 )
+					);
+}
+
+DisplayManager::~DisplayManager(){
+
+			// kill loop in other thread
+			m_die = true;
+			//wait on other thread
+	    pthread_join( m_pthread, NULL);
+			//now, freeFB was already
+			//called in the other thread
+			//do not release this data again.
+			freeFB();
+		}
 
 void DisplayManager::start(){
 	m_pause = false;
@@ -50,25 +105,34 @@ void DisplayManager::show(){
  * */
 void DisplayManager::clear(){
 			m_img_mutex.lock();
-			std::vector<Sprite>::iterator it = m_sprites.begin();
-			const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
-			for ( ; it < it_end ; it++ )
+			std::vector<Sprite*>::iterator it = m_sprites.begin();
+			const std::vector<Sprite*>::const_iterator it_end = m_sprites.end();
+			for ( ; it < it_end ; ++it )
 			{
-				if( (*it).pSurface != NULL ) (*it).pSurface->Release( (*it).pSurface );
+				if( (*it)->m_pSurface != NULL ){
+					VPRINT("(DisplayManager) Remove sprite\n");
+					(*it)->m_pSurface->Release( (*it)->m_pSurface );
+				}else{
+					VPRINT("(DisplayManager) Sprite is null?!\n");
+				}
+				delete (*it);
 			}
 			m_sprites.clear();
 
 			m_img_mutex.unlock();
 }
 
-void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
-	//bad idea: do not use local var as data container....
-	//Mat dfbimg(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
-	
-	Sprite sprite;
-	sprite.pSurface = NULL;
-	sprite.position = topLeftCorner;
-	sprite.cvmat = cv::Mat(4*cvimg.size().width,cvimg.size().height,CV_8UC1);
+void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
+	// Omit call m_pDfb->CreateSurface(...) for null pointer.
+	if( m_pDfb == NULL ){
+		VPRINT("(DisplayManager) m_pDfb is null. Abort add\n");
+		return;
+		initFB();
+	}
+
+
+	Sprite *sprite = new Sprite(topLeftCorner);
+	sprite->cvmat = cv::Mat(cvimg.size().height,4*cvimg.size().width,CV_8UC1);
 
 	/*Die Farben in opencv sind in slices organisiert,
 	 * bbbb,gggg,rrrr,aaaa,… , aber in directfb punktweise,
@@ -82,7 +146,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 
 	MatConstIterator_<VT> it1 = cvimg.begin<VT>(),
 		it1_end = cvimg.end<VT>();
-	MatIterator_<uchar> dst_it = sprite.cvmat.begin<uchar>();
+	MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
   for( ; it1 != it1_end; ++it1, ++dst_it ) {
 		VT pix1 = *it1;
 		/**dst_it = (*it1.val[3] << 24) 
@@ -105,17 +169,21 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point topLeftCorner ){
 	dsc.flags = (DFBSurfaceDescriptionFlags) 
 		( DSDESC_HEIGHT | DSDESC_WIDTH | DSDESC_PREALLOCATED | DSDESC_PIXELFORMAT );
 	dsc.pixelformat = DSPF_ARGB;
-	dsc.preallocated[0].data = sprite.cvmat.data;      
+	dsc.preallocated[0].data = sprite->cvmat.data;      
 	dsc.preallocated[0].pitch = dsc.width*4;
 	dsc.preallocated[1].data = NULL;
 	dsc.preallocated[1].pitch = 0;
 
-	IDirectFBSurface *imageSurface = NULL;
-	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.pSurface) ));
+	//DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite.m_pSurface) ));
 	
+	//printf("Test c. Pointer: %p\n", sprite->m_pSurface) ;
+	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite->m_pSurface)));
+
 	m_img_mutex.lock();
 	m_sprites.push_back( sprite );
 	m_img_mutex.unlock();
+
+	VPRINT("(DisplayManager) Sprite added\n") ;
 }
 
 /* Hide all displayed images. */
@@ -136,13 +204,14 @@ void DisplayManager::redraw(){
 	}
 
 	if( !m_blank ){
-		std::vector<Sprite>::iterator it = m_sprites.begin();
-		const std::vector<Sprite>::const_iterator it_end = m_sprites.end();
-		for ( ; it < it_end ; it++ )
+		std::vector<Sprite*>::iterator it = m_sprites.begin();
+		const std::vector<Sprite*>::const_iterator it_end = m_sprites.end();
+		for ( ; it < it_end ; ++it )
 		{
-			if( (*it).pSurface != NULL ){
+			VPRINT("(DiplayManager) Draw sprite\n");
+			if( (*it)->m_pSurface != NULL ){
 				DFBCHECK (m_pPrimary->Blit(m_pPrimary,
-							(*it).pSurface, NULL, (*it).position.x , (*it).position.y ));
+							(*it)->m_pSurface, NULL, (*it)->m_position.x , (*it)->m_position.y ));
 			}
 		}
 
@@ -157,6 +226,13 @@ void DisplayManager::redraw(){
 
 /* Start thread with framebuffer loop */
 void DisplayManager::initFB(){
+	if( m_pDfb != NULL ){
+		VPRINT("(DisplayManager) initFB() called twice.\n");
+		return;
+	}else{
+		VPRINT("(DisplayManager) initFB() called.\n");
+	}
+
 
 	//create arg to disable cursor
 	char foo[] = { "arg1" };
@@ -196,12 +272,19 @@ void DisplayManager::initFB(){
 
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
-	clear();
-	//m_img_mutex.lock();
-	if( m_pPrimary != NULL ) m_pPrimary->Release (m_pPrimary);
+	m_img_mutex.lock();
+	m_redraw = false;
 	if( m_grid != NULL ) m_grid->Release (m_grid);
+	m_grid = NULL;
+
+	if( m_pPrimary != NULL ) m_pPrimary->Release (m_pPrimary);
+	m_pPrimary = NULL;
+
 	if( m_pDfb != NULL ) m_pDfb->Release (m_pDfb);
-	//m_img_mutex.unlock();
+	m_pDfb  = NULL;
+
+	m_img_mutex.unlock();
+	clear();
 }
 
 /* Should only called by displayThread() */
@@ -223,6 +306,7 @@ void DisplayManager::run(){
 				}
 
 				if( m_redraw ){
+					std::cout << "Redraw\n";
 					redraw();
 					m_redraw = false;
 				}
@@ -244,5 +328,33 @@ void DisplayManager::run(){
 			m_pause = false;
 	}
 
+	freeFB();
+
 	//quit of thread loop function
 }
+
+
+void DisplayManager::updateSignalHandler(int changes){
+	if( changes & REDRAW )
+		m_redraw = true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

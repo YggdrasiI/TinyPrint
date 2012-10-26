@@ -23,8 +23,16 @@ TOKENS = {
 		2048 : "START_STATE",
 		4096 : "ERROR",
 		8192 : "WAIT_ON_ZERO_HEIGHT"
-	}
+	},
 
+	/* Label and Description for some property names */
+	"props" : {
+		"maxLayer" : { "label" : "Max Layer:", "desc" : "Lower this value to cut of slices." },
+		"minLayer" : { "label" : "Min Layer:", "desc" : "Raiser this value to cut of slices." },
+		"positionX" : { "label" : "Horizontal position:", "desc" : "" },
+		"positionY" : { "label" : "Vertical position:", "desc" : "" },
+		"scale" : { "label" : "Scale factor:", "desc" : "Scale of vector based svg image." }
+	}
 }
 
 /* maximal number of lines in the messages 
@@ -69,7 +77,7 @@ function cu_fields(obj,prefix){
 					pnode.prop("json", o);
 					(window[prefix+"_"+o.type])(o, pnode );
 				}else{
-					alert("Can not "+prefix+" field "+o.id+".");
+					//alert("Can not "+prefix+" field "+o.id+".");
 				}
 		}
 }
@@ -323,7 +331,111 @@ function update_messagesField(obj){
 	}
 }
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+function create_filesField(obj, pnode){
+	var description = "List with all open files.";
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
+	//ret.addClass("json_input");
+	pnode.append(ret);
+
+	//loop throuth files-Array.
+	for( var i in obj.filearray){
+		var file = obj.filearray[i];
+		var filespan = $("<div tite='"+file.filename+"' id='file_"+i+"'>");
+		filespan.append( $("<h2>"+file.filename+"</h2>") );
+		filespan.append( $("<p>"+file.description+"</p>") );
+		ret.append(filespan);
+
+		//create elements with the right ids.
+		for( var j in file.html ){
+			var prop = file.html[j];
+			//mod id to get unique values. Removed and now set on server side
+			//prop.id = "file"+i+"_"+prop.id;
+			var propType = prop.id.substr( prop.id.indexOf("_")+1 );
+			var text = TOKENS["props"][propType]["label"];
+			var desc = TOKENS["props"][propType]["desc"];
+			var propspan = $("<div id='"+prop.id+"' title='"+desc+"'>"+text+" </div>");
+			propspan.addClass("prop");
+			filespan.append(propspan);
+		}
+
+		//fill new element nodes
+		create_fields(file);
+
+	}
+
+}
+
+function update_filesField(obj){
+
+	//loop throuth files-Array.
+	for( var i in obj.filearray){
+		var file = obj.filearray[i];
+
+		//fill new element nodes
+		update_fields(file);
+	}
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+/*
+ * Convert json_files into drop down list
+ */
+function create_jobFileList(){
+	pnode = $("#fileBrowserList");
+
+	var description = "List of job files. Edit the *.ini file to change the folder";
+	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	ret.addClass("json_input");
+
+	var selectfield = $('<select id="fileBrowserListSelection" size="1">'); 
+	selectfield.change( function(event){
+		//alert($(this).val());
+	});
+
+	ret.append( selectfield ); 
+	pnode.append( ret );
+
+	filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
+}
+
+function filling_jobFileList( id, objArr ){
+	selectfield =  $('#'+id);
+	$('#'+id+" option").remove();
+	if( objArr.length < 1 ){
+		$("<option/>").val("-1").text("No files.").appendTo(selectfield);
+	}else{
+		for(var i=0; i<objArr.length; i++){			
+			$("<option/>").val(objArr[i][""+i+""]).text(objArr[i][i]).appendTo(selectfield);
+		}
+	}
+}
+
+/*
+ * Update files list.
+ * */
+function update_jobFileList(){
+	send("files","",
+			function(data){
+				json_job_files = JSON.parse(data);//change global var
+				filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
+			}
+			);
+}
+
+/*
+ *
+ * */
+function loadFile(){
+	var filename = $('#fileBrowserListSelection').val();
+	send("update?actionid=7","job_file="+filename,
+			function(data){
+				if( data == "ok" ) window.location.reload();
+			}
+			);
+}
 
 /**
  * Format functions.
@@ -370,10 +482,13 @@ function parse_mm(s){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
+	//l = json_b9creator["html"].length;
+	//alert(JSON.stringify (json_b9creator["html"][l-1]["filearray"] ));
+	//alert(JSON.stringify (json_b9creator ));
 	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
 
 	if(false)
-		send("json","",
+		send("settings","",
 				function(data){
 					json_b9creator = JSON.parse(data);//change global var
 					update_fields(json_b9creator);
@@ -384,7 +499,7 @@ function send_setting(){
 /*
  * refresh raw message window */
 function refresh(){
-	send("json","",
+	send("settings","",
 			function(data){
 				json_b9creator = JSON.parse(data);//change global var
 				update_fields(json_b9creator);

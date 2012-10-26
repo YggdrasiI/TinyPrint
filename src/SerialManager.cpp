@@ -57,7 +57,7 @@ void SerialManager::writeLineFromQueue(){
 #ifdef VERBOSE
 	std::cout << "Send " << cmd << std::endl;
 #endif
-	
+
 	cmd.append("\n");
 	writeString(cmd);
 

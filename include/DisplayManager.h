@@ -12,13 +12,20 @@
 
 #include <pthread.h>
 
-#include <directfb.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+//#include <directfb.h>
+/* To remove the directfb dependency to directfb
+ * in this header a few Types are predefined here */
+#define DECLARE_INTERFACE( IFACE )                \
+	typedef struct _##IFACE IFACE;
+DECLARE_INTERFACE( IDirectFB )
+DECLARE_INTERFACE( IDirectFBSurface )
+
+
 #include "constants.h"
 #include "Mutex.h"
-//#include "B9CreatorSettings.h"
 class B9CreatorSettings;
 
 //	An error checking macro for a call to DirectFB.  It is suitable for very simple applications or tutorials.  In more sophisticated applications this general error checking should not be used.
@@ -35,53 +42,14 @@ class B9CreatorSettings;
 
 //#define DFBCHECK(x...)                                         
 
-struct Sprite{
-		IDirectFBSurface* pSurface; 
-		cv::Point position;
-		cv::Mat cvmat; //cv struture with same data array as pSurface.
-};
-
+class Sprite;
 static void* displayThread(void* arg);
 
 class DisplayManager {
 	public: 
 		bool m_gridShow;
-		DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
-			m_b9CreatorSettings( b9CreatorSettings ),
-			m_gridShow(false),
-			m_die(false),
-			m_pause(true),
-			m_redraw(false),
-			m_screenWidth(0),
-			m_screenHeight(0),
-			m_pDfb(NULL),
-			m_grid(NULL),
-			m_pPrimary(NULL)
-	{
-		if( pthread_create( &m_pthread, NULL, &displayThread, this) ){
-			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-				<< "Error: Could not create thread for frame buffer display."
-				<< std::endl ;
-			exit(1) ;
-		}
-	}
-
-		~DisplayManager(){
-
-			// kill loop in other thread
-			m_die = true;
-			//wait on other thread
-	    pthread_join( m_pthread, NULL);
-			//now, freeFB was already
-			//called in the other thread
-			//do not release this data again.
-
-			/*Release the images.
-			 * Attention: The vector contains pointers and
-			 * not the objects itself.
-			 * */
-			clear();
-		}
+		DisplayManager(B9CreatorSettings &b9CreatorSettings ); 
+		~DisplayManager();
 
 		// Init & Start framebuffer loop
 		void start();
@@ -93,7 +61,7 @@ class DisplayManager {
 		 * img should contain a rgb, rgba or
 		 * greyscaled image.
 		 */
-		void add(cv::Mat &img, cv::Point topLeftCorner=cv::Point(0,0) );
+		void add(cv::Mat &img, cv::Point &topLeftCorner );
 		/* Remove added images */
 		void clear();
 		/* Redraw images */
@@ -104,6 +72,9 @@ class DisplayManager {
 
 		/* Should only called by displayThread() */
 		void run();
+
+		/* Will called if m_b9CreatorSettings propagate settings change. */
+		void updateSignalHandler(int changes);
 
 	private:
 		//This is the super interface, it's the entry point to all functionality.
@@ -124,7 +95,7 @@ class DisplayManager {
 		pthread_t m_pthread;
 		Mutex m_img_mutex;
 		//std::vector<IDirectFBSurface*> m_imageSurfaces;
-		std::vector<Sprite> m_sprites;
+		std::vector<Sprite*> m_sprites;
 		IDirectFBSurface* m_grid; 
 		void createGrid();//init m_grid
 		/* Create directfb objects */

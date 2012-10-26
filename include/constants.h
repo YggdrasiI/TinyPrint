@@ -9,16 +9,50 @@
 #define VPRINT(...)
 #endif
 
+// Print mutex locks/unlocks.
+//#define VERBOSE_MUTEX 
+
 //#include <cv.h>
 
-/* PARSE_AGAIN: Indicates that json string should
- * parsed again.
- * WEB_INTERFACE: Indicates call of setConfig/update via web interface.
- * 	Parsing of some variables could omttid in this case.
+/* Most relevant properties are stored
+ * in a B9CreatorSettings object. To update these
+ * properties over the webinterface call
+ * B9CreatorSettings.update(..., [json-string],..., Changes)
+ * with Changes = WEB_INTERFACE.
+ * The update method analyse the json-string, update 
+ * the values, and extend the changes flag.
+ * 		Example: If the current layer was modified =>
+ * 			Changes = Changes | REDRAW
+ *
+ * At the end of the update, a signal with 'Changes'
+ * will propagate. This can used by other clases to 
+ * react on property changes.
+ * 		Example: The JobManager class should update the
+ * 			displayed layer if 'Changes & LAYER' is true.
+ *
+/* 
+ * NO:  No changes.
+ * YES: Mark general changes which not fit in below 
+ *      categories.
  * CONFIG: Indicates call by initial loading.
- *  Every variable should be parsed in this case.
+ * WEB_INTERFACE: Indicates call of setConfig/update via web interface.
+ *                Parsing of some variables could omited in this case.
+ * PARSE_AGAIN: Indicates that json string (which will
+ *              send by the webserver) should parsed again.
+ * REDRAW: DisplayManager should force redraw.
+ * LAYER: JobManager should regenerate LAYER (and force redraw).
  * */
-enum Changes {NO=0,YES=1,PARSE_AGAIN=2,CONFIG=4,WEB_INTERFACE=8, ALL=1023};
+enum Changes {
+	NO=0,
+	YES=1, /* If no other flag match. */
+	PARSE_AGAIN=2,
+	CONFIG=4,
+	WEB_INTERFACE=8,
+	REDRAW=16,
+	LAYER=32,
+	ALL=1023
+
+};
 
 /* List of possible states. If the serial manager recieve
  * error messages or unexpected messages it could
@@ -56,6 +90,10 @@ enum JobState {
 /* Remark: Mostly or all if-statements just checks one state at once. (No 'val & A|B' args)
  * It should be possible switch 1,2,3,4,5,... if #state numbers > #bits
  * */
+
+enum Exceptions {
+	JOB_LOAD_EXCEPTION
+};
 
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};

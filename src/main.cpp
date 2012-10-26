@@ -7,7 +7,7 @@
 //#include <highgui.h>
 
 //#include <boost/signal.hpp>
-//#include <boost/bind.hpp>
+#include <boost/bind.hpp>
 
 //for usleep
 #include <unistd.h>
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
 
 	//displayManager.start();
-	jobManager.loadImg("../test.png");
+	//jobManager.loadJob("puzzle.svg");
 
 	/* Local needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/

@@ -6,6 +6,9 @@
  * for a description of the printing loop.
  *
  * */
+#ifndef JOBMANAGER_H
+#define JOBMANAGER_H
+
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
@@ -14,6 +17,9 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <onion/onion.h>
+
+//#include <librsvg/rsvg.h>
+//#include <cairo/cairo-svg.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -24,9 +30,6 @@
 //#include "DisplayManager.h"
 class B9CreatorSettings;
 class DisplayManager;
-
-#ifndef JOBMANAGER_H
-#define JOBMANAGER_H
 
 // invoke thread loop.
 static void* jobThread(void* arg);
@@ -78,15 +81,6 @@ struct Timer{
 		}
 };
 
-/* Should be filled by loadJob */
-struct JobFile{
-		std::vector<cv::Mat> slices;
-		int zResolution; //unit: 10μm.
-		int xyResolution; //unit: 10μm.
-		cv::Point position;
-};
-
-
 class JobManager {
 		static const long long MaxWaitR = 12E7; //120s. Maximal waiting time on 'Ri' in ns.
 		//static const long long MaxWaitF = 5E6; //5s. Maximal waiting time on 'F' in ns.
@@ -111,41 +105,11 @@ class JobManager {
 		Timer &m_tBreath;
 		Timer &m_tFWait;
 		Timer &m_tRWait;
-		std::vector<JobFile> m_files;
+		//int m_showedLayer; //save last displayed layer number.
 
 	public:
-		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
-			m_pthread(),
-			m_die(false),
-			m_b9CreatorSettings(b9CreatorSettings),
-			m_displayManager(displayManager),
-			m_state(START_STATE),
-			m_pauseInState(IDLE),
-			m_job_mutex(),
-			m_tTimer(),
-			m_tPause(),
-			m_tCuring(m_tTimer),
-			m_tCloseSlider(m_tTimer),
-			m_tProjectImage(m_tTimer),
-			m_tBreath(m_tTimer),
-			m_tFWait(m_tTimer),
-			m_tRWait(m_tTimer),
-			m_files()
-	{
-		if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
-			std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
-				<< "Error: Could not create thread for job manager."
-				<< std::endl ;
-			exit(1) ;
-		}
-	}
-
-	~JobManager(){
-			// kill loop in other thread
-			m_die = true;
-			//wait on other thread
-	    pthread_join( m_pthread, NULL);
-		}
+		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );	 
+		~JobManager();
 
 		JobState getState() { return m_state; };
 
@@ -154,7 +118,7 @@ class JobManager {
 		/* Load image. (For testing) */
 		int loadImg(const std::string filename);
 
-		/* Init printer (read printer properties and set z-Table) */
+		/* Init printer (read printer properties and set z-Table). */
 		int initJob(bool withReset);
 		/* Start job if none running */
 		int startJob();
@@ -166,8 +130,10 @@ class JobManager {
 
 		//int nextStep();
 
-		/* Will called if website send data */
+		/* Will called if website send data. */
 		void webserverSetState(onion_request *req, int actionid, std::string &reply);
+		/* Will called if m_b9CreatorSettings propagate settings change. */
+		void updateSignalHandler(int changes);
 
 	private:
 		void show(int slice);

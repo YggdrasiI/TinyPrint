@@ -3,41 +3,74 @@
 #include <sstream>
 #include <string>
 
+#include <boost/bind.hpp>
+
 #include "JobManager.h"
+#include "JobFile.h"
 #include "B9CreatorSettings.h"
 #include "DisplayManager.h"
+
+#define RUNPRINT 
 
 using namespace std;
 using namespace cv;
 
-int JobManager::loadJob(const std::string filename){
-	m_job_mutex.lock();
-	m_job_mutex.unlock();
+JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager ) :
+	m_pthread(),
+	m_die(false),
+	m_b9CreatorSettings(b9CreatorSettings),
+	m_displayManager(displayManager),
+	//m_showedLayer(b9CreatorSettings.m_printProp.m_currentLayer),
+	m_state(START_STATE),
+	m_pauseInState(IDLE),
+	m_job_mutex(),
+	m_tTimer(),
+	m_tPause(),
+	m_tCuring(m_tTimer),
+	m_tCloseSlider(m_tTimer),
+	m_tProjectImage(m_tTimer),
+	m_tBreath(m_tTimer),
+	m_tFWait(m_tTimer),
+	m_tRWait(m_tTimer)
+{
+
+	if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
+		std::cerr << "[" << __FILE__ << ":" << __LINE__ << "] "
+			<< "Error: Could not create thread for job manager."
+			<< std::endl ;
+		exit(1) ;
+	}
+	
+	//connect B9CreatorSettings update signal
+	m_b9CreatorSettings.updateSettings.connect(
+					boost::bind(&JobManager::updateSignalHandler,this, _1 )
+					);
+
 }
 
-int JobManager::loadImg(const std::string filename){
-	m_job_mutex.lock();
-	JobFile tmp;
-	m_files.push_back(tmp); // store copy of jf
-	JobFile &jf = m_files[m_files.size()-1];//reference of new entry
-	jf.position = cv::Point(0,0);
-	jf.zResolution = 50;
-	jf.xyResolution = 100;
+JobManager::~JobManager(){
+	// kill loop in other thread
+	m_die = true;
+	//wait on other thread
+	pthread_join( m_pthread, NULL);
 
-	for( int i=0;i<m_b9CreatorSettings.m_printProp.m_maxLayer; i++){
-		printf("Load image for slice %i\n",i+1);
-		Mat m = imread(filename, CV_LOAD_IMAGE_COLOR);//set second arg to 0 for greyscale.
-		if( !m.data ) // Check for invalid input
-		{
-			m_job_mutex.unlock();
-			cout <<  "Could not open or find the image '" << filename << "'." << std::endl ;
-			return -1;
-		}
-		jf.slices.push_back(m);//store copy of m
-	}
+
+}
+
+int JobManager::loadJob(const std::string filename){
+
+	m_job_mutex.lock();
+
+	/* Most lines moved to B9CreatorSettings */
+	if( m_b9CreatorSettings.loadJob(filename) == 0)
+		show( m_b9CreatorSettings.m_printProp.m_currentLayer );
 
 	m_job_mutex.unlock();
 	return 0;
+}
+
+int JobManager::loadImg(const std::string filename){
+	return -1;
 }
 
 int JobManager::initJob(bool withReset){
@@ -194,13 +227,13 @@ void JobManager::run(){
 					std::string cmd_reset("R"); 
 					q.add_command(cmd_reset);	
 
-					VPRINT("Reset requested. Now wait on 'R0' Message.\n");
+					RUNPRINT("Reset requested. Now wait on 'R0' Message.\n");
 					m_state = WAIT_ON_R_MESS;
 				}
 				break;
 			case WAIT_ON_R_MESS:
 				{
-					VPRINT("Wait on 'R' message...\n");
+					RUNPRINT("Wait on 'R' message...\n");
 					if( m_b9CreatorSettings.m_resetStatus == 0  ){
 						m_state = INIT;
 					}
@@ -234,7 +267,7 @@ void JobManager::run(){
 					q.add_command(cmd_info);	
 
 					// Set layer number to base layer index.
-					m_b9CreatorSettings.m_printProp.m_currentLayer = 1;
+					m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
 					// Set display framebuffer on
 					m_b9CreatorSettings.m_display = true;
 					
@@ -242,7 +275,7 @@ void JobManager::run(){
 					// reset pause state to default value
 					m_pauseInState = IDLE;
 
-					VPRINT("Init done. Idle in JobManager.\n");
+					RUNPRINT("Init done. Idle in JobManager.\n");
 
 					//m_state = FIRST_LAYER;
 					m_state = IDLE;
@@ -256,7 +289,7 @@ void JobManager::run(){
 					//wait on shutter opening.
 					/* Thats not possible. 'F' message is send on shutter opening and not
 					 * after table movement.
-					VPRINT("First layer state. Wait on 'F' message\n");
+					RUNPRINT("First layer state. Wait on 'F' message\n");
 					gettimeofday( &(m_tFWait.begin), NULL );
 					m_tFWait.diff = MaxWaitFfrist; 
 					m_state = WAIT_ON_F_MESS;
@@ -265,7 +298,7 @@ void JobManager::run(){
 					/* Wait on zHeight = 0 */
 					gettimeofday( &(m_tFWait.begin), NULL );
 					m_tFWait.diff = MaxWaitF; 
-					VPRINT("Move Table to base position.\n");
+					RUNPRINT("Move Table to base position.\n");
 
 					m_state = WAIT_ON_ZERO_HEIGHT;
 
@@ -274,13 +307,13 @@ void JobManager::run(){
 			case WAIT_ON_ZERO_HEIGHT:
 				{
 					if( !m_b9CreatorSettings.m_connected ){
-						VPRINT("(Job) Printer not connected. Set height manually to 0.\n");
+						RUNPRINT("(Job) Printer not connected. Set height manually to 0.\n");
 						m_b9CreatorSettings.m_zHeight = 0;
 					}
 					if( m_b9CreatorSettings.m_zHeight == 0 ){
 						m_state = WAIT_ON_F_MESS; // or BREATH
 					}else{
-						VPRINT("Wait till base position reached...\n");
+						RUNPRINT("Wait till base position reached...\n");
 					}
 				}
 				break;
@@ -293,7 +326,7 @@ void JobManager::run(){
 					int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
 					//int zHeight2 = 100*( zRes )/pu + zHeight; //sum up rounding errors
-					int zHeight2 = 100*( (l-1)*zRes )/pu; //require zHeight(layer 1)=0
+					int zHeight2 = 100*( l*zRes )/pu; //require zHeight(layer 0)=0
 					if( zHeight2 > zHeightLimit ){
 						std::ostringstream zError;
 						zError << "(Job) Height of next layer lower as current height. Abort job."
@@ -301,7 +334,7 @@ void JobManager::run(){
 						<< std::endl << "Height limit: " << zHeightLimit
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
-						VPRINT("%s", zErrorStr.c_str() );
+						RUNPRINT("%s", zErrorStr.c_str() );
 						q.add_message( zErrorStr );	
 						m_state = ERROR;
 						break;
@@ -312,7 +345,7 @@ void JobManager::run(){
 						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
-						VPRINT("%s", zErrorStr.c_str() );
+						RUNPRINT("%s", zErrorStr.c_str() );
 						q.add_message( zErrorStr );	
 						m_state = ERROR;
 						break;
@@ -326,7 +359,7 @@ void JobManager::run(){
 					cmd_next << "N" << zHeight2 ;
 					std::string cmd_nextStr = cmd_next.str();
 					q.add_command( cmd_nextStr );	
-					VPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
+					RUNPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
 
 					//hm, should I wait on release cycle here?!
 
@@ -342,17 +375,16 @@ void JobManager::run(){
 							break;*/
 			case WAIT_ON_F_MESS:
 				{	
-					VPRINT("Wait on 'F' message...\n");
+					RUNPRINT("Wait on 'F' message...\n");
 					bool & r = m_b9CreatorSettings.m_readyForNextCycle;
 					if( r || m_tFWait.timePassed() ){
-					//if( r ){
 						// unset the ready flag
 						r = false;
 
 						gettimeofday( &m_tBreath.begin, NULL );
 						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime*1000000;
 
-						VPRINT("Begin breath for layer %i.\n",
+						RUNPRINT("Begin breath for layer %i.\n",
 								m_b9CreatorSettings.m_printProp.m_currentLayer);
 						m_state = BREATH;
 					}else
@@ -373,12 +405,12 @@ void JobManager::run(){
 				break;
 			case BREATH:
 				{
-					VPRINT("Breathing...\n");
+					RUNPRINT("Breathing...\n");
 					if( m_tBreath.timePassed() ){
 						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
 						gettimeofday( &m_tCuring.begin, NULL );
-						if( l <= m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTimeAL*1000000;
 						}else{
 							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_exposureTime*1000000;
@@ -390,20 +422,20 @@ void JobManager::run(){
 						//m_job_mutex.lock();
 
 						m_state = CURING;
-						VPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
+						RUNPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
 					}
 				}
 				break;
 			case CURING:
 				{
-					VPRINT("Curing...\n");
+					RUNPRINT("Curing...\n");
 					if( m_tCuring.timePassed() ){
 						//hide slice on projector image.
 						m_displayManager.blank();
 
 						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 						l++;
-						if( l <= m_b9CreatorSettings.m_printProp.m_maxLayer ){
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfLayers ){
 							m_state = NEXT_LAYER;
 						}else {
 							m_state = FINISH;
@@ -414,7 +446,7 @@ void JobManager::run(){
 				break;
 			case PAUSE:
 				{
-					VPRINT("Pause...\n");
+					RUNPRINT("Pause...\n");
 				}
 				break;
 			case ERROR:
@@ -424,7 +456,7 @@ void JobManager::run(){
 					//TODO?! Power of Projector?!
 
 					std::string cmd_finished;
-					VPRINT("Send F%i. Job finished\n",9000 );
+					RUNPRINT("Send F%i. Job finished\n",9000 );
 					cmd_finished = "F9000" ; 
 					q.add_command(cmd_finished);
 
@@ -437,7 +469,7 @@ void JobManager::run(){
 				break;
 		case IDLE:
 				{
-					VPRINT("Idle...\n");
+					RUNPRINT("Idle...\n");
 				}
 				break;
 		case START_STATE:
@@ -452,17 +484,41 @@ void JobManager::run(){
 		m_b9CreatorSettings.m_jobState = m_state;
 		m_b9CreatorSettings.unlock();
 
+		//check change external change of current layer
+		/*
+		if( m_b9CreatorSettings.m_display && 
+				(m_b9CreatorSettings.m_printProp.m_currentLayer != m_showedLayer)
+			){
+			RUNPRINT("(Job) Change of layer detected. Show new layer.\n");
+			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+		}
+		*/
+
+
 		m_job_mutex.unlock();
 		usleep(50000); //.05s
 		//usleep(2000000); //2s
 	}
+	
 }
 
 void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
 	
 	reply = "error";
+	if( actionid == 7 ){ /* load Job */
+		std::string job_file ( onion_request_get_post(req,"job_file") );
+#ifdef VERBOSE
+		std::cout << "Load '"<< job_file << "'" << std::endl;
+#endif
+		if( loadJob( job_file.c_str() ) == 0){
+			reply = "ok";
+		}else{
+			reply = "failed";
+		}
 
-	if(actionid == 6){ /* control JobManager */
+	}
+
+	if( actionid == 6 ){ /* control JobManager */
 		std::string print_cmd ( onion_request_get_post(req,"print") );
 #ifdef VERBOSE
 		std::cout << "'"<< print_cmd << "'" << std::endl;
@@ -481,6 +537,9 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 			if( m_state == IDLE ){
 				if( 0 != startJob() ) return ;
 				reply = "print";
+			}else{
+				//can not start. Reply error message or just send idle.
+				reply = "idle";
 			}
 		}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
 			if( m_state == PAUSE ){
@@ -505,6 +564,30 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 		}
 
 		//print_cmd unknown
+	}else if ( actionid == 5){ /* Toggle Display */
+		const char* disp = onion_request_get_post(req,"display");
+
+		if( disp != NULL ){
+
+			m_b9CreatorSettings.lock();
+			if( disp[0] == '2' )
+				m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
+			else 
+				m_b9CreatorSettings.m_display = (disp[0] == '1');
+			m_b9CreatorSettings.unlock();
+
+			if( m_b9CreatorSettings.m_display ){
+				//wait second on creation of display
+				usleep(1000000);
+				VPRINT("Show!\n");
+				int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+				show(l);
+			}
+
+			reply = m_b9CreatorSettings.m_display?"1":"0";
+
+		}
+
 	}
 }
 
@@ -512,20 +595,39 @@ void JobManager::show(int slice){
 	//m_job_mutex.lock();
 
 	//remove old displayed images
+	VPRINT("Clear \n");
 	m_displayManager.clear();
 
 	//add new slices
-	vector<JobFile>::iterator it = m_files.begin();
-	const vector<JobFile>::const_iterator it_end = m_files.end();
-	for( ; it<it_end ; it++ ){
-		m_displayManager.add( (*it).slices[slice-1], (*it).position );
+	vector<JobFile*>::iterator it = m_b9CreatorSettings.m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_b9CreatorSettings.m_files.end();
+	for( ; it<it_end ; ++it ){
+		// shift slice by local m_minLayer
+		int local_slice = slice + (*it)->m_minLayer;
+		if( local_slice <= (*it)->m_maxLayer &&
+				local_slice >=  (*it)->m_minLayer ){
+			cv::Mat &s = (*it)->getSlice(local_slice);
+			cv::Point &p = (*it)->m_position;
+			m_displayManager.add( s, p );
+		}
 	}
 
+	//m_showedLayer = slice;
 	//force redraw of screen
 #ifdef VERBOSE
-	std::cout << "(Job) Show sprites of slicer " << slice << "."  << std::endl;
+	std::cout << "(Job) Show sprites of slice " << slice << "."  << std::endl;
 #endif
 	m_displayManager.show();
 
 	//m_job_mutex.unlock();
+}
+
+
+void JobManager::updateSignalHandler(int changes){
+
+	if( changes & LAYER ){
+		if( m_b9CreatorSettings.m_display )
+			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+	}
+
 }

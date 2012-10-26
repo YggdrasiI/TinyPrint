@@ -12,7 +12,7 @@
 //#include <onion/extras/png.h>
 
 #include <boost/signal.hpp>
-#include <boost/bind.hpp>
+//#include <boost/bind.hpp>
 
 #include "JsonConfig.h"
 //#include "B9CreatorSettings.h"
@@ -59,7 +59,7 @@ class OnionServer{
 		boost::signal<void (onion_request *req,int actionid, std::string &reply)> updateSignal;
 
 		/* Update signal handler of this class.*/
-		void updateSetting(onion_request *req, int actionid, std::string &reply);
+		void updateWebserver(onion_request *req, int actionid, std::string &reply);
 };
 
 #endif
