@@ -8,7 +8,7 @@ i) OpenCV
 ii) Directfb
 iii) Boost
 iv) Onion 
-v) librsvg2 (later)
+v) Cairo and librsvg2 
 
 ----------------------------------------------------------------
 
@@ -16,7 +16,7 @@ Installation of required libraries on Debian based systems (State Oct 2012 ):
 
 i) sudo apt-get install libopencv-dev libopencv-core-dev libopencv-highgui-dev
 ii) sudo apt-get install libdirectfb-dev
-iii) sudo apt-get install libboost-signals-dev libboost-iostreams-dev libboost-system-dev
+iii) sudo apt-get install libboost-signals-dev libboost-iostreams-dev libboost-system-dev libboost-filesystem-dev
 iv) This lib has to be installed manually.
 	I.e.:
 	cd TinyPrint
@@ -28,7 +28,7 @@ iv) This lib has to be installed manually.
 	make
 	make install
 
-v) sudo apt-get install librsvg2-dev 
+v) sudo apt-get install librsvg2-dev libcairo2-dev
 
 
 ================================================================

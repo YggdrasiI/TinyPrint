@@ -64,8 +64,8 @@ void B9CreatorSettings::clearJobs(){
 
 
 /*
- * Special properties. This values can modified with the web interface.
- * I.e. angle of kinect, nmbr of areas, position of areas, minimal blob size.
+ * Generate json struct of properties. Use the subnode 'html'
+ * for values which can be modified on the web interface.
  */
 cJSON *B9CreatorSettings::genJson()
 {
@@ -447,7 +447,6 @@ int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 					jf->setScale(scale);
 			}
 
-			// position shift need no evaluation of layer. It just moved the displayed sprites.
 			JsonConfig::update(htmlNew,NULL,positionX.str().c_str(),&jf->m_position.x);
 			JsonConfig::update(htmlNew,NULL,positionY.str().c_str(),&jf->m_position.y);
 
@@ -476,7 +475,7 @@ int B9CreatorSettings::updateFiles(cJSON *jsonNew, cJSON *jsonOld,
 
 			// position shift need no evaluation of layer. It just moved the displayed sprites.
 			if( JsonConfig::update(htmlNew,htmlOld,positionX.str().c_str(),&file->m_position.x) ) ret|=REDRAW;
-			if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret|REDRAW;
+			if( JsonConfig::update(htmlNew,htmlOld,positionY.str().c_str(),&file->m_position.y) ) ret|=REDRAW;
 
 			double scale = file->getScale();
 			if( JsonConfig::update(htmlNew,htmlOld,scaleId.str().c_str(),&scale ) ){

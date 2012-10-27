@@ -32,7 +32,7 @@ TOKENS = {
 		"minLayer" : { "label" : "Min Layer:", "desc" : "Raiser this value to cut of slices." },
 		"positionX" : { "label" : "Horizontal position:", "desc" : "" },
 		"positionY" : { "label" : "Vertical position:", "desc" : "" },
-		"scale" : { "label" : "Scale factor:", "desc" : "Scale of vector based svg image." }
+		"scale" : { "label" : "Scale factor (xy):", "desc" : "Scale of vector based svg image.\nAttention! This scale will NOT applied in z-Direction." }
 	}
 }
 

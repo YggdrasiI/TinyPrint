@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <pthread.h>
@@ -48,7 +49,7 @@ static void* displayThread(void* arg);
 class DisplayManager {
 	public: 
 		bool m_gridShow;
-		DisplayManager(B9CreatorSettings &b9CreatorSettings ); 
+		DisplayManager(B9CreatorSettings &b9CreatorSettings, std::vector<std::string> &dfbOptions ); 
 		~DisplayManager();
 
 		// Init & Start framebuffer loop
@@ -81,6 +82,7 @@ class DisplayManager {
 		IDirectFB *m_pDfb;
 		//	The primary surface, i.e. the "screen".  In cooperative level DFSCL_FULLSCREEN it's the surface of the primary layer.
 		IDirectFBSurface *m_pPrimary;
+		std::vector<std::string> &m_dfbOptions;
 
 		//	Store the width and height of the primary surface here to support all resolutions.
 		int m_screenWidth;
