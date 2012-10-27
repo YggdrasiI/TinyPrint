@@ -23,8 +23,9 @@ class Sprite{
 
 
 /* ++++++++++ DisplayManager class functions +++++++++++++*/
-DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings ) :
+DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings, vector<std::string> &dfbOptions ) :
 	m_b9CreatorSettings( b9CreatorSettings ),
+	m_dfbOptions(dfbOptions),
 	m_gridShow(false),
 	m_die(false),
 	m_pause(true),
@@ -234,29 +235,43 @@ void DisplayManager::initFB(){
 	}
 
 
-	//create arg to disable cursor
-	char foo[] = { "arg1" };
-	char no_cur[] = { "--dfb:no-cursor" };
-	char mode[] = { "--dfb:mode=1024x768" };
-	char pixelformat[] = { "--dfb:pixelformat=RGB16" };
+	
+	/* Create options for directfb window. This depends
+	 * on your system.
+	 * */
+	//char foo[] = { "ignored first arg" };
+	//char no_cur[] = { "--dfb:no-cursor" };
+	//char mode[] = { "--dfb:mode=1024x768" };
+	//char pixelformat[] = { "--dfb:pixelformat=RGB16" };
 	//char pixelformat[] = { "--dfb:pixelformat=RGB32" };
-	int argc2 = /*argc+*/4;
+
+	int argc2 = m_dfbOptions.size()/*+2*/;
 	char** argv2 = (char**) malloc( (argc2)*sizeof(char*));
-	//memcpy( argv2, argv, argc*sizeof(char*) );
-	argv2[0] = foo;
-	argv2[1] = no_cur;
-	argv2[2] = mode;
-	argv2[3] = pixelformat;
+
+	for( int i=0; i<argc2; ++i ){
+		argv2[i] = (char*) m_dfbOptions[i].c_str();//points into char array in std::string obj.
+	}
 	DFBCHECK (DirectFBInit (&argc2, &argv2));
+	free(argv2);
+
+	//search for 'nofullscreen' flag
+	bool fullscreen(true);
+	for( int i=0; i<argc2; ++i ){
+		if( m_dfbOptions[i].compare("nofullscreen") == 0 ){
+			fullscreen = false;
+		}
+	}
+
 
 	//A surface description is needed to create a surface.
 	DFBSurfaceDescription dsc;
 
 	DFBCHECK (DirectFBCreate (&m_pDfb));
 
-	if( true ){
-		//this made problems on my laptop?! I assume you can set
-		//the value on your system.
+	if( fullscreen ){
+		// This was problematic on one of my systems.
+		// Do not know why and add an argument to disable
+		// line.
 		DFBCHECK (m_pDfb->SetCooperativeLevel (m_pDfb, DFSCL_FULLSCREEN));
 	}
 
@@ -275,6 +290,7 @@ void DisplayManager::initFB(){
 
 /* Inverse operation of initFB */
 void DisplayManager::freeFB(){
+	clear();
 	m_img_mutex.lock();
 	m_redraw = false;
 	if( m_grid != NULL ) m_grid->Release (m_grid);
@@ -287,7 +303,6 @@ void DisplayManager::freeFB(){
 	m_pDfb  = NULL;
 
 	m_img_mutex.unlock();
-	clear();
 }
 
 /* Should only called by displayThread() */

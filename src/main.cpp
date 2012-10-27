@@ -28,8 +28,18 @@ int main(int argc, char **argv) {
 	bool die(false);
 	int k(0);
 
-	if( argc > 1){
+	//Create arguments for DisplayManager.
+	std::vector<std::string> dfbOptions;
+
+	/* DirectFBInit ignores first arg. Thus
+	 * the program name should added, too */
+	for( int i=0; i<argc; ++i){
+		std::string s(argv[i]);
+		dfbOptions.push_back(s);
 	}
+	//Add no cursor option.
+	std::string nocur("--dfb:no-cursor");
+	dfbOptions.push_back(nocur);
 
 	//Load & Create settings
 	//B9CreatorSettings *b9CreatorSettings = new B9CreatorSettings();
@@ -46,7 +56,7 @@ int main(int argc, char **argv) {
 
 	SerialManager serialManager(b9CreatorSettings);
 
-	DisplayManager displayManager(b9CreatorSettings);
+	DisplayManager displayManager(b9CreatorSettings, dfbOptions);
 	JobManager jobManager(b9CreatorSettings, displayManager);
 
 	//connect signals
