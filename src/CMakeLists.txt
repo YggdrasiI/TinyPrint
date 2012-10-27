@@ -92,10 +92,19 @@ install(TARGETS main
 
 ## Create job_files folder
 # TODO: Does not work
-set(JOB_FILES_CREATE_FOLDER "mkdir ${CMAKE_ROOT}/job_files" )
-add_custom_target(job_files
-	COMMAND "${JOB_FILES_CREATE_FOLDER}"
-	#	DEPENDS main
+set(JOB_FILES_CREATE_FOLDER "mkdir ${PROJECT_BINARY_DIR}/job_files" )
+add_custom_command(
+	TARGET main
+	COMMAND ${JOB_FILES_CREATE_FOLDER}
 	COMMENT "Create default folder for job files."
 	)
 ## End create job_files folder
+
+## Link start script into build dir
+set(LINK_SCRIPT_INTO_BIN "ln -s ${CMAKE_SOURCE_DIR}/script.sh ${PROJECT_BINARY_DIR}/script.sh" )
+add_custom_command(
+	TARGET main
+	COMMAND ${LINK_SCRIPT_INTO_BIN}
+	COMMENT "Create symbolic link to start.sh."
+	)
+
