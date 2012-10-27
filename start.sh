@@ -26,6 +26,7 @@ case "$1" in
 		;;
 	x11)
 		bin/main nofullscreen --system=x11 
+		;;
 	*)
 		# Default values
 		bin/main 
