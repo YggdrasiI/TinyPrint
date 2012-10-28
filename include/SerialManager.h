@@ -134,7 +134,7 @@ class SerialManager {
 				const boost::system::error_code &error,
 				std::size_t bytes_transferred)
 		{
-			return true;
+			return false;
 		}
 
 
