@@ -85,7 +85,7 @@ struct Timer{
 class JobManager {
 		static const long long MaxWaitR = 12E7; //120s. Maximal waiting time on 'Ri' in ns.
 		//static const long long MaxWaitF = 5E6; //5s. Maximal waiting time on 'F' in ns.
-		static const long long MaxWaitF = 20E6; //20s. 5s was to low. It limit maximal release cycle timeout! 
+		static const long long MaxWaitF = 40E6; //40s. 5s was to low. It limit maximal release cycle timeout! 
 		//static const long long MaxWaitFfrist = MaxWaitR; // Maximal waiting time on 'F' for base layer.
 	private:
 		pthread_t m_pthread;
