@@ -40,6 +40,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
+	m_printProp.m_overcureTime = 2;
 	m_printProp.m_currentLayer = 0;
 	m_printProp.m_nmbrOfLayers = 10;
 	m_printProp.m_lockTimes = false;
@@ -97,6 +98,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,0 ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("overcureTime",m_printProp.m_overcureTime,0.1,300,10,0 ) );
 	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
@@ -143,6 +145,7 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
+	m_printProp.m_overcureTime = 2;
 	m_printProp.m_currentLayer = 0;
 	m_printProp.m_nmbrOfLayers = 10;
 	m_printProp.m_zResolution = 50;
@@ -214,6 +217,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 
 		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"overcureTime",&m_printProp.m_overcureTime) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
 			changes|=YES;
 #ifdef VERBOSE

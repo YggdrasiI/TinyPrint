@@ -29,7 +29,7 @@ class ImageCache{
 		long m_bytes;
 
 		/*inline*/ int hash(int i, SliceType t){
-			return i<<4 + t;
+			return (i<<4) + t;
 		}
 
 	public:
@@ -51,7 +51,7 @@ class ImageCache{
 			cv::Mat empty;
 
 			if( it == it_end ) return empty;
-			VPRINT("Return cached image");
+			VPRINT("(JobFile) Return cached image\n");
 			return it->second;
 		}
 

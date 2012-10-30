@@ -99,6 +99,7 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 
 				ret = tmp;
 			}
+			break;
 		case RAW:
 		default:
 			{

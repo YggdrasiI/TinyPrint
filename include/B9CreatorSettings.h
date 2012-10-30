@@ -20,6 +20,7 @@ struct PrintProperties{
 		double m_releaseCycleTime;
 		double m_exposureTime;
 		double m_exposureTimeAL;
+		double m_overcureTime;
 		int m_nmbrOfAttachedLayers;
 		int m_currentLayer;
 		int m_nmbrOfLayers; //chaged after file loading
