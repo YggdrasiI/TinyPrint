@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #include "constants.h"
 #include "JobFile.h"
@@ -92,10 +93,48 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 	switch( type ){
 		case OVERCURE1:
 			{
+				/* This algorithm blur the slice and take the intensity of the pixel
+				 * as border indicator.
+				 * Pixel without any color change will set to black and only pixels
+				 * at the border will left.
+				 *
+				 */
+				int blurwidth = 9;
+				int bwbw = blurwidth*blurwidth;
+				int mins = 0.7*255;
+				int maxs = 1*255;
+
+				uchar colmap[256];
+				for( int a=0; a<256; ++a ){
+					if( a < mins ) colmap[a] = 255;
+					else if( a > maxs ) colmap[a] = 0;
+					else{
+						//map linear from [maxs,mins] on [0,255].
+						colmap[a] = 255* sqrt(sqrt( (float)((maxs-a))/(maxs-mins)));
+					}
+				}
+
 				const cv::Mat raw = getSlice(layer, RAW);
 				cv::Mat tmp;
-				cv::Size ksize(5,5);
-				cv::blur(raw, tmp, ksize);
+				cv::Size ksize(blurwidth, blurwidth);
+				cv::blur(raw, tmp, ksize, cv::Point(-1,-1), cv::BORDER_CONSTANT);
+
+				typedef cv::Vec<uchar, 4> VT;
+				cv::MatConstIterator_<VT> itRaw = raw.begin<VT>(),
+					itRaw_end = raw.end<VT>();
+				cv::MatIterator_<VT> itTmp = tmp.begin<VT>();
+				for( ; itRaw != itRaw_end; ++itRaw, ++itTmp ) { 
+					VT pixRaw = *itRaw;
+					VT pixTmp = *itTmp;
+					if( pixRaw[0] == 0 ){
+						*itTmp = VT(0,0,0, 255 );
+					}else{
+						*itTmp = VT(colmap[ pixTmp[0]],
+								colmap[ pixTmp[1]],
+								colmap[ pixTmp[2]],
+								255 );
+					}
+				}  
 
 				ret = tmp;
 			}
@@ -118,6 +157,10 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 						CV_8UC4,
 						(void*) cairo_image_surface_get_data(m_pSurface)
 						);
+
+				//convert to grayscale image
+				ret.convertTo( ret, CV_8UC1 );
+				
 			}
 			break;
 	}
