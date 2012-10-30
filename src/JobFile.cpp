@@ -5,7 +5,7 @@
 #include "JobFile.h"
 
 JobFile::JobFile(const char* filename, double scale):
-	m_layer(-1),
+	m_cache(),
 	m_minLayer(0),
 	m_maxLayer(-1),
 	m_nmbrOfLayers(0),
@@ -83,47 +83,55 @@ JobFile::~JobFile(){
  * or m_maxLayer. Moreover, the returned
  * value is independed from m_minLayer.
  * */
-cv::Mat &JobFile::getSlice(int layer){
+cv::Mat JobFile::getSlice(int layer, SliceType type){
 
-	if( layer == m_layer ) return m_slice;
+	// check cache.
+	cv::Mat ret = m_cache.getImage(layer, type);
+	if( !ret.empty() ) return ret;
 
-	//clear cairo context
-	cairo_set_source_rgb (m_pCairo, 0, 0, 0);
-	cairo_paint (m_pCairo);
+	switch( type ){
+		case OVERCURE1:
+			{
+				const cv::Mat raw = getSlice(layer, RAW);
+				cv::Mat tmp;
+				cv::Size ksize(5,5);
+				cv::blur(raw, tmp, ksize);
 
-	std::ostringstream id;
-	id << "#layer" << layer;//filter with group name
-	printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
-	rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
+				ret = tmp;
+			}
+		case RAW:
+		default:
+			{
+				//clear cairo context
+				cairo_set_source_rgb (m_pCairo, 0, 0, 0);
+				cairo_paint (m_pCairo);
 
-	//m_slice.release();
-	m_slice = cv::Mat(
-			cairo_image_surface_get_height(m_pSurface),
-			cairo_image_surface_get_width(m_pSurface),
-			CV_8UC4,
-			(void*) cairo_image_surface_get_data(m_pSurface)
-			);
+				std::ostringstream id;
+				id << "#layer" << layer;//filter with group name
+				printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
+				rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
 
-	/*
-		 std::string test("job_files/");
-		 test.append( id.str() );
-		 test.append(".png");
-		 imwrite(test.c_str(), m_slice);
-		 */
+				ret = cv::Mat(
+						cairo_image_surface_get_height(m_pSurface),
+						cairo_image_surface_get_width(m_pSurface),
+						CV_8UC4,
+						(void*) cairo_image_surface_get_data(m_pSurface)
+						);
+			}
+			break;
+	}
 
-	m_layer = layer;
-	return m_slice;
+	m_cache.putImage(layer, type, ret);
+	return ret;
 }
 
 void JobFile::setScale(double scale){
 	if( scale == m_scale ) return;
 	m_scale = scale;
-	//Set current layerindex to -1.
-	//This force the generation of
-	//a new image on the next call
-	//of getSlice().
-	m_layer = -1;
 
+	//Flush cache of images
+	m_cache.clear();
+	
 	//save current midpoint
 	cv::Point mid(
 			m_position.x + m_size.width/2,

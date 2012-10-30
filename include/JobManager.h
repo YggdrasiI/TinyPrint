@@ -137,7 +137,7 @@ class JobManager {
 		void updateSignalHandler(int changes);
 
 	private:
-		void show(int slice);
+		void show(int slice, SliceType type=RAW);
 };
 
 /* wrapper function for job thread.*/

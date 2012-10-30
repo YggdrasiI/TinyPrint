@@ -429,6 +429,12 @@ void JobManager::run(){
 			case CURING:
 				{
 					RUNPRINT("Curing...\n");
+
+				}
+				break;
+			case OVERCURING:
+				{
+					RUNPRINT("Overcuring...\n");
 					if( m_tCuring.timePassed() ){
 						//hide slice on projector image.
 						m_displayManager.blank();
@@ -647,7 +653,7 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 
 }
 
-void JobManager::show(int slice){
+void JobManager::show(int slice, SliceType type){
 	//m_job_mutex.lock();
 
 	//remove old displayed images
@@ -662,7 +668,7 @@ void JobManager::show(int slice){
 		int local_slice = slice + (*it)->m_minLayer;
 		if( local_slice <= (*it)->m_maxLayer &&
 				local_slice >=  (*it)->m_minLayer ){
-			cv::Mat &s = (*it)->getSlice(local_slice);
+			cv::Mat s = (*it)->getSlice(local_slice, type);
 			cv::Point &p = (*it)->m_position;
 			m_displayManager.add( s, p );
 		}
