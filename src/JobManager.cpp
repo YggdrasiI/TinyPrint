@@ -453,7 +453,8 @@ void JobManager::run(){
 					if( m_tCuring.timePassed() ){
 
 						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
-						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ||
+								m_b9CreatorSettings.m_printProp.m_overcureTime <= 0 ){
 							l++;
 							m_displayManager.blank();
 							m_state = NEXT_LAYER;
