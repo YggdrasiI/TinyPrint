@@ -10,7 +10,12 @@
 #include "B9CreatorSettings.h"
 #include "DisplayManager.h"
 
-#define RUNPRINT 
+//#define RUNPRINT VPRINT
+static JobState runprint_state=IDLE;
+#define RUNPRINT(...) if(runprint_state!=m_state){ \
+	runprint_state = m_state; \
+	VPRINT( __VA_ARGS__ ); \
+}
 
 using namespace std;
 using namespace cv;
@@ -31,7 +36,8 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 	m_tProjectImage(m_tTimer),
 	m_tBreath(m_tTimer),
 	m_tFWait(m_tTimer),
-	m_tRWait(m_tTimer)
+	m_tRWait(m_tTimer),
+	m_force_preload(false)
 {
 
 	if( pthread_create( &m_pthread, NULL, &jobThread, this) ){
@@ -63,7 +69,7 @@ int JobManager::loadJob(const std::string filename){
 
 	/* Most lines moved to B9CreatorSettings */
 	if( m_b9CreatorSettings.loadJob(filename) == 0)
-		show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+		show( m_b9CreatorSettings.m_printProp.m_currentLayer, RAW );
 
 	m_job_mutex.unlock();
 	return 0;
@@ -166,12 +172,14 @@ int JobManager::resumeJob(){
 			}
 			break;
 		case CURING:
+		case OVERCURING:
 			{
 				// Substract elapsed time before job was stoped.
 				m_tCuring.diff = m_tCuring.diff
 					- Timer::timeval_diff( &m_tPause.begin ,&m_tCuring.begin );
 				gettimeofday( &m_tCuring.begin, NULL );
-				show( m_b9CreatorSettings.m_printProp.m_currentLayer ); 
+				show( m_b9CreatorSettings.m_printProp.m_currentLayer,
+						(m_state==OVERCURING?OVERCURE1:RAW)  ); 
 			}
 			break;
 		case WAIT_ON_R_MESS:
@@ -181,6 +189,8 @@ int JobManager::resumeJob(){
 			break;
 		case WAIT_ON_F_MESS:
 			{
+				m_force_preload = true;
+
 				m_b9CreatorSettings.lock();
 				m_b9CreatorSettings.m_readyForNextCycle = true;
 				m_b9CreatorSettings.unlock();
@@ -311,6 +321,7 @@ void JobManager::run(){
 						m_b9CreatorSettings.m_zHeight = 0;
 					}
 					if( m_b9CreatorSettings.m_zHeight == 0 ){
+						m_force_preload = true;
 						m_state = WAIT_ON_F_MESS; // or BREATH
 					}else{
 						RUNPRINT("Wait till base position reached...\n");
@@ -366,6 +377,8 @@ void JobManager::run(){
 					//wait on shutter opening.
 					gettimeofday( &m_tFWait.begin, NULL );
 					m_tFWait.diff = MaxWaitF; 
+
+					m_force_preload = true;
 					m_state = WAIT_ON_F_MESS;
 				}
 				break;
@@ -376,6 +389,14 @@ void JobManager::run(){
 			case WAIT_ON_F_MESS:
 				{	
 					RUNPRINT("Wait on 'F' message...\n");
+
+					if( m_force_preload ){
+						VPRINT("Preload images\n");
+						preload(m_b9CreatorSettings.m_printProp.m_currentLayer, RAW);
+						preload(m_b9CreatorSettings.m_printProp.m_currentLayer, OVERCURE1);
+						m_force_preload = false;
+					}
+
 					bool & r = m_b9CreatorSettings.m_readyForNextCycle;
 					if( r || m_tFWait.timePassed() ){
 						// unset the ready flag
@@ -418,17 +439,39 @@ void JobManager::run(){
 
 						//update and display slice
 						//m_job_mutex.unlock();
-						show(l);
+						show(l, RAW);
 						//m_job_mutex.lock();
 
 						m_state = CURING;
-						RUNPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
+						//RUNPRINT("Start curing of layer %i with %is.\n",l, (int) (m_tCuring.diff/1000000) );
 					}
 				}
 				break;
 			case CURING:
 				{
 					RUNPRINT("Curing...\n");
+					if( m_tCuring.timePassed() ){
+
+						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
+						if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfAttachedLayers ){
+							l++;
+							m_displayManager.blank();
+							m_state = NEXT_LAYER;
+						}else {
+							// Init Overcuring
+							gettimeofday( &m_tCuring.begin, NULL );
+							m_tCuring.diff = m_b9CreatorSettings.m_printProp.m_overcureTime*1000000;
+
+							show(l, OVERCURE1);
+							m_state = OVERCURING;
+						}
+					}
+
+				}
+				break;
+			case OVERCURING:
+				{
+					RUNPRINT("Overcuring...\n");
 					if( m_tCuring.timePassed() ){
 						//hide slice on projector image.
 						m_displayManager.blank();
@@ -588,7 +631,7 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 						usleep(1000000);
 						VPRINT("Show!\n");
 						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
-						show(l);
+						show(l, RAW);
 					}
 
 					reply = m_b9CreatorSettings.m_display?"1":"0";
@@ -647,8 +690,22 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 
 }
 
-void JobManager::show(int slice){
-	//m_job_mutex.lock();
+
+void JobManager::preload(int slice, SliceType type){
+	vector<JobFile*>::iterator it = m_b9CreatorSettings.m_files.begin();
+	const vector<JobFile*>::const_iterator it_end = m_b9CreatorSettings.m_files.end();
+	for( ; it<it_end ; ++it ){
+		// shift slice by local m_minLayer
+		int local_slice = slice + (*it)->m_minLayer;
+		if( local_slice <= (*it)->m_maxLayer &&
+				local_slice >=  (*it)->m_minLayer ){
+			(*it)->getSlice(local_slice, type);
+		}
+	}
+}
+
+
+void JobManager::show(int slice, SliceType type){
 
 	//remove old displayed images
 	VPRINT("Clear \n");
@@ -662,20 +719,17 @@ void JobManager::show(int slice){
 		int local_slice = slice + (*it)->m_minLayer;
 		if( local_slice <= (*it)->m_maxLayer &&
 				local_slice >=  (*it)->m_minLayer ){
-			cv::Mat &s = (*it)->getSlice(local_slice);
+			cv::Mat s = (*it)->getSlice(local_slice, type);
 			cv::Point &p = (*it)->m_position;
 			m_displayManager.add( s, p );
 		}
 	}
 
-	//m_showedLayer = slice;
 	//force redraw of screen
 #ifdef VERBOSE
 	std::cout << "(Job) Show sprites of slice " << slice << "."  << std::endl;
 #endif
 	m_displayManager.show();
-
-	//m_job_mutex.unlock();
 }
 
 
@@ -683,7 +737,7 @@ void JobManager::updateSignalHandler(int changes){
 
 	if( changes & LAYER ){
 		if( m_b9CreatorSettings.m_display )
-			show( m_b9CreatorSettings.m_printProp.m_currentLayer );
+			show( m_b9CreatorSettings.m_printProp.m_currentLayer, RAW );
 	}
 
 }

@@ -107,6 +107,7 @@ class JobManager {
 		Timer &m_tFWait;
 		Timer &m_tRWait;
 		//int m_showedLayer; //save last displayed layer number.
+		bool m_force_preload; //preload image of next layer
 
 	public:
 		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );	 
@@ -137,7 +138,14 @@ class JobManager {
 		void updateSignalHandler(int changes);
 
 	private:
-		void show(int slice);
+		/* call getSlice for Jobfile. This call fill the
+		 * generated image into the intern cache.
+		 * The image generation is not threaded. Thus, it
+		 * should call in idle states like 'BREATH', 'WAIT_*'.
+		 * */
+		void preload(int slice, SliceType type=RAW);
+
+		void show(int slice, SliceType type=RAW);
 };
 
 /* wrapper function for job thread.*/

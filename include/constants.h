@@ -75,7 +75,7 @@ enum JobState {
 	INIT=1,
 	FIRST_LAYER=1<<1,
 	NEXT_LAYER=1<<2,
-	NEXT_LAYER_OVERCURING=1<<3, /* not used */
+	OVERCURING=1<<3, /* not used */
 	BREATH=1<<4,
 	WAIT_ON_F_MESS=1<<5,
 	WAIT_ON_R_MESS=1<<6,
@@ -90,6 +90,21 @@ enum JobState {
 /* Remark: Mostly or all if-statements just checks one state at once. (No 'val & A|B' args)
  * It should be possible switch 1,2,3,4,5,... if #state numbers > #bits
  * */
+
+// maximal number of images into the cache. (independent of image size)
+static const int JOBFILE_CACHE_MAX_NMBR_OF_IMAGES = 10;
+// maximal number of bytes (not used)
+static const long JOBFILE_CACHE_SIZE = -1;
+
+/* This type will used to distict different images of
+ * the same slice in the cache.
+ * Map of (slicenr, slicetype): slicenr<<4 + slicetype.
+ * */
+enum SliceType{
+	RAW=0, /* raw svg/b9j pixel data */
+	OVERCURE1=1 /* first type of overcuring */
+};
+
 
 enum Exceptions {
 	JOB_LOAD_EXCEPTION

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #include "constants.h"
 #include "JobFile.h"
 
 JobFile::JobFile(const char* filename, double scale):
-	m_layer(-1),
+	m_cache(),
 	m_minLayer(0),
 	m_maxLayer(-1),
 	m_nmbrOfLayers(0),
@@ -83,47 +84,98 @@ JobFile::~JobFile(){
  * or m_maxLayer. Moreover, the returned
  * value is independed from m_minLayer.
  * */
-cv::Mat &JobFile::getSlice(int layer){
+cv::Mat JobFile::getSlice(int layer, SliceType type){
 
-	if( layer == m_layer ) return m_slice;
+	// check cache.
+	cv::Mat ret = m_cache.getImage(layer, type);
+	if( !ret.empty() ) return ret;
 
-	//clear cairo context
-	cairo_set_source_rgb (m_pCairo, 0, 0, 0);
-	cairo_paint (m_pCairo);
+	switch( type ){
+		case OVERCURE1:
+			{
+				/* This algorithm blur the slice and take the intensity of the pixel
+				 * as border indicator.
+				 * Pixel without any color change will set to black and only pixels
+				 * at the border will left.
+				 *
+				 */
+				int blurwidth = 9;
+				int bwbw = blurwidth*blurwidth;
+				int mins = 0.7*255;
+				int maxs = 1*255;
 
-	std::ostringstream id;
-	id << "#layer" << layer;//filter with group name
-	printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
-	rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
+				uchar colmap[256];
+				for( int a=0; a<256; ++a ){
+					if( a < mins ) colmap[a] = 255;
+					else if( a > maxs ) colmap[a] = 0;
+					else{
+						//map linear from [maxs,mins] on [0,255].
+						colmap[a] = 255* sqrt(sqrt( (float)((maxs-a))/(maxs-mins)));
+					}
+				}
 
-	//m_slice.release();
-	m_slice = cv::Mat(
-			cairo_image_surface_get_height(m_pSurface),
-			cairo_image_surface_get_width(m_pSurface),
-			CV_8UC4,
-			(void*) cairo_image_surface_get_data(m_pSurface)
-			);
+				const cv::Mat raw = getSlice(layer, RAW);
+				cv::Mat tmp;
+				cv::Size ksize(blurwidth, blurwidth);
+				cv::blur(raw, tmp, ksize, cv::Point(-1,-1), cv::BORDER_CONSTANT);
 
-	/*
-		 std::string test("job_files/");
-		 test.append( id.str() );
-		 test.append(".png");
-		 imwrite(test.c_str(), m_slice);
-		 */
+				typedef cv::Vec<uchar, 4> VT;
+				cv::MatConstIterator_<VT> itRaw = raw.begin<VT>(),
+					itRaw_end = raw.end<VT>();
+				cv::MatIterator_<VT> itTmp = tmp.begin<VT>();
+				for( ; itRaw != itRaw_end; ++itRaw, ++itTmp ) { 
+					VT pixRaw = *itRaw;
+					VT pixTmp = *itTmp;
+					if( pixRaw[0] == 0 ){
+						*itTmp = VT(0,0,0, 255 );
+					}else{
+						*itTmp = VT(colmap[ pixTmp[0]],
+								colmap[ pixTmp[1]],
+								colmap[ pixTmp[2]],
+								255 );
+					}
+				}  
 
-	m_layer = layer;
-	return m_slice;
+				ret = tmp;
+			}
+			break;
+		case RAW:
+		default:
+			{
+				//clear cairo context
+				cairo_set_source_rgb (m_pCairo, 0, 0, 0);
+				cairo_paint (m_pCairo);
+
+				std::ostringstream id;
+				id << "#layer" << layer;//filter with group name
+				printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
+				rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
+
+				ret = cv::Mat(
+						cairo_image_surface_get_height(m_pSurface),
+						cairo_image_surface_get_width(m_pSurface),
+						CV_8UC4,
+						(void*) cairo_image_surface_get_data(m_pSurface)
+						);
+
+				//convert to grayscale image
+				ret.convertTo( ret, CV_8UC1 );
+				
+			}
+			break;
+	}
+
+	m_cache.putImage(layer, type, ret);
+	return ret;
 }
 
 void JobFile::setScale(double scale){
 	if( scale == m_scale ) return;
 	m_scale = scale;
-	//Set current layerindex to -1.
-	//This force the generation of
-	//a new image on the next call
-	//of getSlice().
-	m_layer = -1;
 
+	//Flush cache of images
+	m_cache.clear();
+	
 	//save current midpoint
 	cv::Point mid(
 			m_position.x + m_size.width/2,

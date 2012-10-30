@@ -563,6 +563,7 @@ function toggleDisplay(button){
 	 * */
 	send("update?actionid=5","display=2",
 			function(data){
+				return;
 				if( data == 1 ){
 					button.value = "Hide Display"
 				}else{
