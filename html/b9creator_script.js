@@ -13,7 +13,7 @@ TOKENS = {
 		1 : "INIT",
 		2 : "FIRST_LAYER",
 		4 : "NEXT_LAYER",
-		8 : "NEXT_LAYER_OVERCURING", /* not used */
+		8 : "OVERCURING",
 		16 : "BREATH",
 		32 : "WAIT_ON_F_MESS",
 		64 : "WAIT_ON_R_MESS",

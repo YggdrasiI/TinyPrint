@@ -75,7 +75,7 @@ enum JobState {
 	INIT=1,
 	FIRST_LAYER=1<<1,
 	NEXT_LAYER=1<<2,
-	OVERCURING=1<<3, /* not used */
+	OVERCURING=1<<3, 
 	BREATH=1<<4,
 	WAIT_ON_F_MESS=1<<5,
 	WAIT_ON_R_MESS=1<<6,
