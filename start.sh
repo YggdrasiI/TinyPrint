@@ -25,7 +25,7 @@ case "$1" in
 		bin/main nofullscreen 
 		;;
 	x11)
-		bin/main nofullscreen --system=x11 
+		bin/main nofullscreen --dfb:system=x11 --dfb:force-windowed
 		;;
 	*)
 		# Default values

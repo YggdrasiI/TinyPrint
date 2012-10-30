@@ -26,10 +26,12 @@ vi) This lib has to be installed manually.
 	cd onion
 	mkdir build
 	cd build
-	cmake -DCMAKE_INSTALL_PREFIX=../../lib/onion ..
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../lib/onion ..
 	make
 	make install
 
+Note: If make failed with '[-Wunused-result]' message open CMakeLists.txt
+and remove '-Werror' from the CMAKE_C_FLAGS.
 
 ----------------------------------------------------------------
 
