@@ -101,7 +101,7 @@ add_custom_command(
 ## End create job_files folder
 
 ## Link start script into build dir
-set(LINK_SCRIPT_INTO_BIN test -d "${EXECUTABLE_OUTPUT_PATH}/start.sh" || ln -s "${CMAKE_SOURCE_DIR}/start.sh" "${EXECUTABLE_OUTPUT_PATH}/start.sh" )
+set(LINK_SCRIPT_INTO_BIN test -f "${EXECUTABLE_OUTPUT_PATH}/start.sh" || ln -s "${CMAKE_SOURCE_DIR}/start.sh" "${EXECUTABLE_OUTPUT_PATH}/start.sh" )
 add_custom_command(
 	TARGET main
 	COMMAND ${LINK_SCRIPT_INTO_BIN}
