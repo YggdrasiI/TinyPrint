@@ -50,30 +50,4 @@ Configuration and Compiling:
 		cmake ..
 		make
 
-=================================================================
 
-Start and setup software:
-
-If the compiling went successful, the build directory contains
-the executable 'bin/main'. To setup the correct DirectFB parameter
-you could append arguments of the type '--dfb:[option]'.
-Satisfying values depend on your system and you should extend
-'bin/start.sh' with your desired argument tuple.
-Some example settings are already included in bin/start.sh. 
-
-Go into the build dir, and call 'bin/start.sh' one-time
-to generate the configuration file 'b9CreatorSettings.json'.
-Quit the first run with Ctrl+C.
-Open the configuration file and  replace the value of 'comPort'
-with the serial port of the printer on your system. In most cases,
-the default value, /dev/ttyACMO, are already correct.
-
-As final step, restart the executable and try to open
-http://[your machine]:9090.
-
-=================================================================
-
-Remark:
-Unfortunately, I do not know how to use Directfb without
-super user rights. I assume you need to start it with
-'sudo'. Help would be appreciated. 

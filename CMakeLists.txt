@@ -58,7 +58,7 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 ## Copy html folder to build directory. (On configuation time)
-file(COPY html/ DESTINATION html PATTERN kinectgrid_settings.js EXCLUDE )
+file(COPY html/ DESTINATION html PATTERN b9creator_settings.js EXCLUDE )
 
 macro(copy_files GLOBPAT DESTINATION)
   file(GLOB COPY_FILES

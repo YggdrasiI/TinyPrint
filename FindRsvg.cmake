@@ -20,6 +20,7 @@ find_path(Rsvg_LIBRARY_DIR
 	/usr/local/lib
 	/usr/lib
 	/usr/lib/i386-linux-gnu
+	/usr/lib/x86_64-linux-gnu
 	/usr/lib/arm-linux-gnueabihf
 	/usr/lib/arm-linux-gnueabi
 	/sw/lib

@@ -1,3 +1,61 @@
 Control software for the DPL based 3D printer 'B9Creator'. 
 
 Installation: See INSTALL
+
+Start and example usage on Raspberry PI:
+
+	If the compiling went successful, the build directory contains
+	the executable 'bin/main'. You could append arguments
+	of the type '--dfb:[option]' to change the DirectFB settings.
+	Satisfying DirectFB values depend on your system. If the default
+	values does not work you should extend
+	'bin/start.sh' with your desired argument tuple.
+	Some example settings are already included in bin/start.sh. 
+
+  Open a SSH connection and go into the build directory of
+	TinyPrint. Call 'bin/start.sh pi' one-time
+	to generate the configuration file 'b9CreatorSettings.json'.
+	Quit the first run with Ctrl+C.
+	Open the configuration file and  replace the value of 'comPort'
+	with the serial port of the printer on your system. In most cases,
+	the default value, /dev/ttyACMO, is already correct.
+
+	As final step, restart the executable and try to open
+	http://[raspberry pi IP]:9090.
+
+	I suggest the usage of GNU Screen to detach TinyPrint 
+	from the SSH connecion.
+
+
+
+Start and example usage on your Desktop PC:
+
+	If the compiling went successful, the build directory contains
+	the executable 'bin/main'. You could append arguments
+	of the type '--dfb:[option]' to change the DirectFB settings.
+	Satisfying DirectFB values depend on your system. If the default
+	values does not work you should extend
+	'bin/start.sh' with your desired argument tuple.
+	Some example settings are already included in bin/start.sh. 
+
+  Go into the build directory of TinyPrint and call
+	'bin/start.sh' one-time to generate the configuration file
+	'b9CreatorSettings.json'.	Quit the first run with Ctrl+C.
+	Open the configuration file and  replace the value of 'comPort'
+	with the serial port of the printer on your system. In most cases,
+	the default value, /dev/ttyACMO, is already correct.
+
+	As final step, restart the executable and try to open
+	http://localhost:9090.
+
+	Click on "Show Display" to start the framebuffer on the next
+	free virtual console. Use Ctrl+Alt+F7 and Ctrl+Alt+F8 (or other Fx keys)
+	to switch between your normal graphical interface and TinyPrint.
+
+=================================================================
+
+Remark:
+Unfortunately, I do not know how to use Directfb without
+super user rights. I assume you need to start it with
+'sudo'. Or you use the parameter --dfb:system=x11.
+Help would be appreciated. 
