@@ -8,6 +8,7 @@
 
 #include <onion/onion.h>
 #include <boost/signal.hpp>
+#include <boost/regex.hpp> 
 //#include <boost/bind.hpp>
 
 #include "JsonConfig.h"
@@ -15,6 +16,7 @@
 
 class JobFile;
 
+/* Wrapper struct for some properties. */
 struct PrintProperties{
 		double m_breathTime;
 		double m_releaseCycleTime;
@@ -30,6 +32,59 @@ struct PrintProperties{
 		int m_zResolution; // in μm.
 		int m_xyResolution; // in μm.
 };
+
+
+
+/* Helper functions */
+static bool check_regex(const std::string &s, const std::string &pattern){
+	boost::regex re;
+	//std::string pattern("^[[:alnum:]]*\\.b9j$");
+	//std::string s(filename);
+	//std::cout << "String: " << s << std::endl << "Pattern: " << pattern << std::endl;
+	try {
+		re.assign(pattern, boost::regex_constants::icase);
+	} catch (boost::regex_error& e) {
+		std::cout << pattern << " is not a valid regular expression: \""
+			<< e.what() << "\"" << std::endl;
+	}
+
+	if (boost::regex_match(s, re)) return true;
+	return false;
+}
+
+static bool check_filename(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^[[:alnum:]]*\\.\\(svg|b9j|list\\)$");
+	return check_regex(s,pattern);
+}
+
+static bool check_configFilename(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^.*\\.json$");
+	return check_regex(s,pattern);
+}
+
+static bool check_b9jExtension(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^.*\\.b9j$");
+	return check_regex(s,pattern);
+}
+
+static bool check_svgExtension(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^.*\\.svg$");
+	return check_regex(s,pattern);
+}
+
+static bool check_listExtension(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^.*\\.list$");
+	return check_regex(s,pattern);
+}
+
+
+
+
 
 class B9CreatorSettings: public JsonConfig{
 	private:

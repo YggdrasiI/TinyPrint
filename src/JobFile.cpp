@@ -2,6 +2,12 @@
 #include <string>
 #include <cmath>
 
+#include <boost/bind.hpp>
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/stream.hpp>
+#include "boost/filesystem.hpp" 
+namespace fs = boost::filesystem; 
+
 #include "constants.h"
 #include "JobFile.h"
 
@@ -13,68 +19,17 @@ JobFile::JobFile(const char* filename, double scale):
 	m_zResolution(-1),
 	m_xyResolution(-1),
 	m_scale(scale),
-	m_pCairo(NULL),
-	m_pSurface(NULL),
 	m_position(cv::Point(0,0)),
 	m_size(cv::Size(0,0)),
 	m_description("No description."),
-	m_filename(filename),
-	m_pRsvgHandle(NULL) {
+	m_filename(filename)
+	{
 
-		float dpi=254.0;
-		GError *error = NULL;
-		RsvgDimensionData dimensions;
-		g_type_init();
-		rsvg_set_default_dpi_x_y (dpi,dpi);//no reaction?
-		m_pRsvgHandle = rsvg_handle_new_from_file (filename, &error);
-		if( m_pRsvgHandle != NULL ){
-			rsvg_handle_get_dimensions (m_pRsvgHandle, &dimensions);
-			//m_position.x = (1024-dimensions.width)/2;
-			//m_position.y = (768-dimensions.height)/2;
-
-			m_pSurface = (cairo_surface_t *)cairo_image_surface_create(
-					CAIRO_FORMAT_ARGB32,
-					m_scale*dimensions.width, m_scale*dimensions.height
-					//1024, 768
-					);
-			m_pCairo = cairo_create(m_pSurface);
-			cairo_scale( m_pCairo, m_scale, m_scale);
-
-			m_size.width = m_scale*dimensions.width;
-			m_size.height = m_scale*dimensions.height;
-			m_position.x = (1024- m_size.width)/2;
-			m_position.y = (768- m_size.height)/2;
-
-			/* Check existens of layers "#layer0","#layer1",...
-			 * to get number of layers and the guarantee that
-			 * no inner layer is missed.
-			 * */
-			m_nmbrOfLayers = 0;
-			while( true ){
-				std::ostringstream layerid;
-				layerid << "#layer" << m_nmbrOfLayers;
-				if( !rsvg_handle_has_sub( m_pRsvgHandle, layerid.str().c_str() )){
-					break;
-				}
-				m_nmbrOfLayers++;
-				//std::cout << "Found layer " << layerid.str() << std::endl;
-			}
-			std::cout << "Found layers: " << m_nmbrOfLayers << std::endl;
-			m_maxLayer = m_nmbrOfLayers-1;
-
-		}else{
-			std::cout << "Error while loading file '"
-				<< filename << "'." << std::endl;
-			throw JOB_LOAD_EXCEPTION;
-		}
-
-
+	
 	}
 
 JobFile::~JobFile(){
-	cairo_destroy (m_pCairo);
-	cairo_surface_destroy (m_pSurface);
-	g_object_unref (G_OBJECT (m_pRsvgHandle));
+
 }
 
 /* Return reference to cv::Mat 
@@ -142,25 +97,7 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 		case RAW:
 		default:
 			{
-				//clear cairo context
-				cairo_set_source_rgb (m_pCairo, 0, 0, 0);
-				cairo_paint (m_pCairo);
-
-				std::ostringstream id;
-				id << "#layer" << layer;//filter with group name
-				printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
-				rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
-
-				ret = cv::Mat(
-						cairo_image_surface_get_height(m_pSurface),
-						cairo_image_surface_get_width(m_pSurface),
-						CV_8UC4,
-						(void*) cairo_image_surface_get_data(m_pSurface)
-						);
-
-				//convert to grayscale image
-				ret.convertTo( ret, CV_8UC1 );
-				
+				ret = loadSlice(layer);
 			}
 			break;
 	}
@@ -170,6 +107,104 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 }
 
 void JobFile::setScale(double scale){
+	if( scale == m_scale ) return;
+
+	std::cout << "Can not scale in abstract parent class 'JobFile'." << std::endl; 
+}
+
+
+
+//+++++++++++++++++++++++++++++ JobFileSvg
+
+JobFileSvg::JobFileSvg(const char* filename, double scale):
+	JobFile(filename,scale),
+	m_pCairo(NULL),
+	m_pSurface(NULL),
+	m_pRsvgHandle(NULL) {
+
+		float dpi=254.0;
+		GError *error = NULL;
+		RsvgDimensionData dimensions;
+		g_type_init();
+		rsvg_set_default_dpi_x_y (dpi,dpi);//no reaction?
+		m_pRsvgHandle = rsvg_handle_new_from_file (filename, &error);
+		if( m_pRsvgHandle != NULL ){
+			rsvg_handle_get_dimensions (m_pRsvgHandle, &dimensions);
+			//m_position.x = (1024-dimensions.width)/2;
+			//m_position.y = (768-dimensions.height)/2;
+
+			m_pSurface = (cairo_surface_t *)cairo_image_surface_create(
+					CAIRO_FORMAT_ARGB32,
+					m_scale*dimensions.width, m_scale*dimensions.height
+					//1024, 768
+					);
+			m_pCairo = cairo_create(m_pSurface);
+			cairo_scale( m_pCairo, m_scale, m_scale);
+
+			m_size.width = m_scale*dimensions.width;
+			m_size.height = m_scale*dimensions.height;
+			m_position.x = (1024- m_size.width)/2;
+			m_position.y = (768- m_size.height)/2;
+
+			/* Check existens of layers "#layer0","#layer1",...
+			 * to get number of layers and the guarantee that
+			 * no inner layer is missed.
+			 * */
+			m_nmbrOfLayers = 0;
+			while( true ){
+				std::ostringstream layerid;
+				layerid << "#layer" << m_nmbrOfLayers;
+				if( !rsvg_handle_has_sub( m_pRsvgHandle, layerid.str().c_str() )){
+					break;
+				}
+				m_nmbrOfLayers++;
+				//std::cout << "Found layer " << layerid.str() << std::endl;
+			}
+			std::cout << "Found layers: " << m_nmbrOfLayers << std::endl;
+			m_maxLayer = m_nmbrOfLayers-1;
+
+		}else{
+			std::cout << "Error while loading file '"
+				<< filename << "'." << std::endl;
+			throw JOB_LOAD_EXCEPTION;
+		}
+
+
+	}
+
+JobFileSvg::~JobFileSvg(){
+	cairo_destroy (m_pCairo);
+	cairo_surface_destroy (m_pSurface);
+	g_object_unref (G_OBJECT (m_pRsvgHandle));
+}
+
+
+cv::Mat JobFileSvg::loadSlice(int layer){
+	cv::Mat ret;
+
+	//clear cairo context
+	cairo_set_source_rgb (m_pCairo, 0, 0, 0);
+	cairo_paint (m_pCairo);
+
+	std::ostringstream id;
+	id << "#layer" << layer;//filter with group name
+	printf("(JobFile) Extract layer %s from svg\n",id.str().c_str() );
+	rsvg_handle_render_cairo_sub(m_pRsvgHandle, m_pCairo, id.str().c_str() ); 
+
+	ret = cv::Mat(
+			cairo_image_surface_get_height(m_pSurface),
+			cairo_image_surface_get_width(m_pSurface),
+			CV_8UC4,
+			(void*) cairo_image_surface_get_data(m_pSurface)
+			);
+
+	//convert to grayscale image
+	ret.convertTo( ret, CV_8UC1 );
+
+	return ret;
+}
+
+void JobFileSvg::setScale(double scale){
 	if( scale == m_scale ) return;
 	m_scale = scale;
 
@@ -202,4 +237,73 @@ void JobFile::setScale(double scale){
 	m_position.x = mid.x - m_size.width/2;
 	m_position.y = mid.y - m_size.height/2;
 }
+
+
+//+++++++++++++++++++++++++++++ JobFileList
+
+JobFileList::JobFileList(const char* filename, const char* pathPrefix):
+	JobFile(filename,1.0),
+	m_filelist() {
+
+		// load list and check if each file exists.
+		std::ifstream file(filename);
+		std::string line;
+		bool findAllFiles(true);
+		int foundFiles=0;
+		int notFoundFiles=0;
+
+		if( file.is_open()){
+			try{
+				while (std::getline(file, line)) { 
+					std::string imagepath(pathPrefix);
+					imagepath.append("/");
+					imagepath.append(line);
+					if ( fs::exists(imagepath) ){
+						m_filelist.push_back( imagepath );
+						++foundFiles;
+					}else{
+						std::cerr << "Error while reading " << imagepath << std::endl;
+						findAllFiles = false;
+						++notFoundFiles;
+					}
+				}
+			}
+			catch ( const std::exception & ex ){
+				std::cerr << "Error while reading " << filename << std::endl;
+				throw JOB_LOAD_EXCEPTION;
+			}
+		}else{
+			std::cerr << "Can not read " << filename << std::endl;
+			throw JOB_LOAD_EXCEPTION;
+		}
+
+		std::cout << "Load " << filename << "." << std::endl;
+		std::cout << "Number of found images: " << foundFiles << std::endl;
+		std::cout << "Number of missing images: " << notFoundFiles << std::endl;
+
+		if( notFoundFiles > 0 ){
+				throw JOB_LOAD_EXCEPTION;
+		}
+
+		m_nmbrOfLayers = foundFiles;
+		m_maxLayer = m_nmbrOfLayers-1;
+		m_size = cv::Size(1024,768);
+	}
+
+JobFileList::~JobFileList(){
+}
+
+
+cv::Mat JobFileList::loadSlice(int layer){
+	cv::Mat ret;
+
+	//ret = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
+	ret = cv::imread( m_filelist[layer], 1 ); 
+	ret.convertTo( ret, CV_8UC1 );
+
+	return ret;
+}
+
+
+
 

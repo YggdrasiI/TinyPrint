@@ -77,8 +77,12 @@ class ImageCache{
 
 };
 
-
-
+/* Abstract class for JobFiles
+ * There should be children for the possible cases
+ * 1. Loading svg files
+ * 2. Loading raw layers from folders.
+ * 3. Loading b9j files
+ * */
 class JobFile{
 	public:
 		int m_zResolution; //unit: 10μm.
@@ -90,11 +94,7 @@ class JobFile{
 		int m_nmbrOfLayers;
 		std::string m_description;
 		std::string m_filename;
-	private:
-		cairo_t *m_pCairo;
-		cairo_surface_t *m_pSurface;
-		RsvgHandle *m_pRsvgHandle;
-		//RsvgDimensionData m_dimensions;
+	protected:
 		double m_scale;
 		ImageCache m_cache;
 	public:
@@ -113,6 +113,51 @@ class JobFile{
 		double getScale() const{  
 			return m_scale;
 		}
+
+	protected:
+		/* Load raw image data. */
+		virtual cv::Mat loadSlice(int layer) = 0;
+
+
+};
+
+class JobFileSvg : public JobFile {
+	private:
+		cairo_t *m_pCairo;
+		cairo_surface_t *m_pSurface;
+		RsvgHandle *m_pRsvgHandle;
+	public:
+		JobFileSvg(const char* filename, double scale=1.0f);
+		~JobFileSvg();
+		void setScale(double scale);
+
+	protected:
+		/* Load raw image data. */
+		cv::Mat loadSlice(int layer);
+
+
+};
+
+/*
+ * Use list of filenames to load
+ * image for each layer.
+ * Filenames are relative to job_files folder.
+ * This JobFile type allows no scaling.
+ * */
+class JobFileList : public JobFile {
+	private:
+		std::vector<std::string> m_filelist;
+	public:
+		/*
+		 * Filename: Path to list of images.
+		 * Pathprefix: Parent dir for relative paths in list 'filename'
+		 * */
+		JobFileList(const char* filename, const char* pathPrefix);
+		~JobFileList();
+
+	protected:
+		/* Load raw image data. */
+		cv::Mat loadSlice(int layer);
 
 
 };

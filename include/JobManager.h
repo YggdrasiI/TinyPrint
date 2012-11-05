@@ -18,10 +18,6 @@
 #include <sys/time.h>
 #include <onion/onion.h>
 
-#include <boost/regex.hpp> 
-//#include <librsvg/rsvg.h>
-//#include <cairo/cairo-svg.h>
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -154,37 +150,5 @@ static void* jobThread(void* arg){
 	((JobManager*)arg)->run();
 	VPRINT("Quit job thread\n");
 }
-
-
-
-/* Helper functions */
-
-static int check_regex(const std::string &s, const std::string &pattern){
-	boost::regex re;
-	//std::string pattern("^[[:alnum:]]*\\.b9j$");
-	//std::string s(filename);
-	try {
-		re.assign(pattern, boost::regex_constants::icase);
-	} catch (boost::regex_error& e) {
-		std::cout << pattern << " is not a valid regular expression: \""
-			<< e.what() << "\"" << std::endl;
-	}
-
-	if (boost::regex_match(s, re)) return true;
-	return false;
-}
-
-static int check_filename(const char *filename){
-	const std::string s(filename);
-	const std::string pattern("^[[:alnum:]]*\\.\\(svg|b9j\\)$");
-	return check_regex(s,pattern);
-}
-
-static int check_configFilename(const char *filename){
-	const std::string s(filename);
-	const std::string pattern("^[[:alnum:]]*\\.json$");
-	return check_regex(s,pattern);
-}
-
 
 #endif

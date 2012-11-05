@@ -520,14 +520,24 @@ int B9CreatorSettings::loadJob(const std::string filename){
 	path.append("/");
 	path.append(filename);
 
-	JobFile *jf;
+	JobFile *jf = NULL;
+
 	try{
-		jf = new JobFile(path.c_str());
-	}catch( Exceptions e){
-		//only possible exception here: load failed
-		//std::cerr << "Can not load file '" << path << "'." << std::endl;
+		if( check_svgExtension(filename.c_str()) ){
+			jf = new JobFileSvg(path.c_str());
+		} else if( check_listExtension(filename.c_str()) ){
+			jf = new JobFileList(path.c_str(), m_b9jDir.c_str() );
+		} else if( check_b9jExtension(filename.c_str()) ){
+			//TODO
+		}
+	}catch( Exceptions e){ //only possible exception here: load failed
 		unlock();
 		return -1;	
+	}
+	//check if loading failed
+	if( jf == NULL ){
+		unlock();
+		return -1;
 	}
 
 	m_files.push_back(jf);
