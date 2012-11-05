@@ -156,12 +156,20 @@ int getPrinterMessages(void *p, onion_request *req, onion_response *res){
 		Messages &q = ((OnionServer*)p)->m_b9CreatorSettings.m_queues;
 		//VPRINT("Messages: %i\n", q.m_messageQueue.size() );
 		cJSON* tmp = jsonMessages("serialMessages", q.m_messageQueue);
-		const char* json_serialMessages = cJSON_Print( tmp );
-		if( tmp != NULL ) cJSON_Delete(tmp);
+		if( tmp != NULL ){
+			const char* json_serialMessages = cJSON_Print( tmp );
+			size_t len = strlen( json_serialMessages );
+			//onion_response_set_length(res, (int) len);
+			onion_response_write(res, json_serialMessages, (int) len); 
 
-		size_t len = strlen( json_serialMessages );
-		//onion_response_set_length(res, (int) len);
-		onion_response_write(res, json_serialMessages, (int) len); 
+			cJSON_Delete(tmp);
+			tmp = NULL;
+		}else{
+			const char* json_serialMessages = "(OnionServer) Serial Messages Error";
+			size_t len = strlen( json_serialMessages );
+			//onion_response_set_length(res, (int) len);
+			onion_response_write(res, json_serialMessages, (int) len); 
+		}
 
 	return OCS_PROCESSED;
 }

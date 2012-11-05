@@ -42,8 +42,10 @@ JobFile::~JobFile(){
 cv::Mat JobFile::getSlice(int layer, SliceType type){
 
 	// check cache.
-	cv::Mat ret = m_cache.getImage(layer, type);
-	if( !ret.empty() ) return ret;
+	cv::Mat cache = m_cache.getImage(layer, type);
+	if( !cache.empty() ) return cache;
+
+	cv::Mat ret;
 
 	switch( type ){
 		case OVERCURE1:
@@ -106,11 +108,6 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 	return ret;
 }
 
-void JobFile::setScale(double scale){
-	if( scale == m_scale ) return;
-
-	std::cout << "Can not scale in abstract parent class 'JobFile'." << std::endl; 
-}
 
 
 
@@ -297,7 +294,7 @@ JobFileList::~JobFileList(){
 cv::Mat JobFileList::loadSlice(int layer){
 	cv::Mat ret;
 
-	//ret = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
+	ret = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
 	ret = cv::imread( m_filelist[layer], 1 ); 
 	ret.convertTo( ret, CV_8UC1 );
 
@@ -305,5 +302,8 @@ cv::Mat JobFileList::loadSlice(int layer){
 }
 
 
-
+void JobFileList::setScale(double scale){
+	//No scale of pixel data
+	return;
+}
 

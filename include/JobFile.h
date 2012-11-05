@@ -37,43 +37,46 @@ class ImageCache{
 
 		}
 
-	/* Returns empty matrix if no image is found.
-	 * cv:Mat objects are cheap. Thus it is
-	 * not ness. to operate with pointers or
-	 * references.
-	 * */
+		/* Returns empty matrix if no image is found.
+		 * cv:Mat objects are cheap. Thus it is
+		 * not ness. to operate with pointers or
+		 * references.
+		 * */
 		cv::Mat getImage(int slice, SliceType type){
+			cv::Mat empty;
+
 			const std::map<int, cv::Mat>::iterator it =
 				m_map.find( hash(slice, type) );
 			const std::map<int, cv::Mat>::iterator it_end =
 				m_map.end();
 
-			cv::Mat empty;
 
 			if( it == it_end ) return empty;
 			VPRINT("(JobFile) Return cached image\n");
 			return it->second;
 		}
 
-	/* Add image to cache. */
-	bool putImage(int slice, SliceType type, cv::Mat mat){
-		int index = hash(slice,type);
-		m_map[ index  ] = mat;
-		m_queue.push( index );
-		m_bytes += mat.elemSize() * mat.size().area();
+		/* Add image to cache. */
+		bool putImage(const int slice, const SliceType type, const cv::Mat mat){
+			int index = hash(slice,type);
+			m_map[ index  ] = mat;
+			m_queue.push( index );
+			m_bytes += mat.elemSize() * mat.size().area();
 
-		while( m_queue.size() > JOBFILE_CACHE_MAX_NMBR_OF_IMAGES ){
-			m_map.erase( m_queue.front() );
-			m_queue.pop();
+			while( m_queue.size() > JOBFILE_CACHE_MAX_NMBR_OF_IMAGES ){
+				const std::map<int, cv::Mat>::iterator it = m_map.find( m_queue.front() );
+
+				m_map.erase( m_queue.front() );
+				m_queue.pop();
+			}
+
 		}
 
-	}
-
-	void clear(){
-		m_map.clear();
-		while(! m_queue.empty() )	m_queue.pop();
-		m_bytes = 0;
-	}
+		void clear(){
+			m_map.clear();
+			while(! m_queue.empty() )	m_queue.pop();
+			m_bytes = 0;
+		}
 
 };
 
@@ -109,7 +112,7 @@ class JobFile{
 		 * value is independed from m_minLayer.
 		 * */
 		cv::Mat getSlice(int layer, SliceType=RAW);
-		void setScale(double scale);
+		virtual void setScale(double scale) = 0;
 		double getScale() const{  
 			return m_scale;
 		}
@@ -154,11 +157,11 @@ class JobFileList : public JobFile {
 		 * */
 		JobFileList(const char* filename, const char* pathPrefix);
 		~JobFileList();
+		void setScale(double scale);
 
 	protected:
 		/* Load raw image data. */
 		cv::Mat loadSlice(int layer);
-
 
 };
 

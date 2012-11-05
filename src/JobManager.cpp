@@ -700,7 +700,7 @@ void JobManager::preload(int slice, SliceType type){
 		int local_slice = slice + (*it)->m_minLayer;
 		if( local_slice <= (*it)->m_maxLayer &&
 				local_slice >=  (*it)->m_minLayer ){
-			(*it)->getSlice(local_slice, type);
+			cv::Mat tmp = (*it)->getSlice(local_slice, type);
 		}
 	}
 }

@@ -43,7 +43,7 @@ int JsonConfig::setConfig(const char* json_str, int changes)
 	if( changes & PARSE_AGAIN ){
 		//pNewRoot can not be used if other threads changed a variable.
 		cJSON_Delete( pNewRoot );
-		regenerateConfig();
+		regenerateConfig();//calls clearConfig(), too.
 	}else{
 		clearConfig();//delete m_pjson_root
 		m_json_mutex.lock();
