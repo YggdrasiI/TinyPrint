@@ -86,6 +86,7 @@ function cu_fields(obj,prefix){
 
 function create_intField(obj, pnode){
 	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	//var description = description + " Diff: "+obj.diff;
 	var ret = $("<span title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
@@ -124,6 +125,38 @@ function create_intField(obj, pnode){
 			this.value = inputfield.prop("prevvalue");
 			pnode.removeClass("red");
 		}
+	});
+
+	inputfield.hover( function(event){
+		this.focus();
+	},
+	function(event){
+		//this.blur();//unfocus element
+		
+		var o = pnode.prop("json"); 
+		if( o.val != parse(o,this.value) ) inputfield.trigger('change');
+	});
+
+	inputfield.bind('mousewheel', function(event, delta) {
+
+		var dir = delta>0?1:-1;
+		var o = pnode.prop("json"); 
+		if(o.readonly) return false;
+
+		var prevVal = parse(o,this.value);
+		var nextVal = prevVal + parseInt(dir*o.diff);
+
+		//cut low and high values
+		nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+		var nextValStr = format(o,nextVal);
+
+		//check if new value is valid.
+		if(check_intField(o, nextValStr)){
+			this.value = nextValStr;
+		}
+
+		return false;
 	});
 
 	ret.append( inputfield ); 
@@ -166,6 +199,7 @@ function check_intField(o, val){
 
 function create_doubleField(obj, pnode){
 	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	//var description = description + " Diff: "+obj.diff;
 	var ret = $("<span title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
@@ -201,6 +235,37 @@ function create_doubleField(obj, pnode){
 		}
 	});
 
+	inputfield.hover( function(event){
+		this.focus();
+	},
+	function(event){
+		//this.blur();//unfocus element
+		
+		var o = pnode.prop("json"); 
+		if( o.val != parse(o,this.value) ) inputfield.trigger('change');
+	});
+
+	inputfield.bind('mousewheel', function(event, delta) {
+
+		var dir = delta>0?1:-1;
+		var o = pnode.prop("json"); 
+		if(o.readonly) return false;
+
+		var prevVal = parse(o,this.value);
+		var nextVal = Math.round( 100*(prevVal + dir*o.diff) )/100;
+
+		//cut low and high values
+		nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+		var nextValStr = format(o,nextVal);
+
+		//check if new value is valid.
+		if(check_doubleField(o, nextValStr)){
+			this.value = nextValStr;
+		}
+
+		return false;
+	});
 	ret.append( inputfield ); 
 	pnode.append( ret );
 
@@ -429,11 +494,18 @@ function update_jobFileList(){
 /*
  *
  * */
-function loadFile(){
+function loadFile(button){
 	var filename = $('#fileBrowserListSelection').val();
+
+	//block load button
+	$(button).prop("disabled",true);
+
+
 	send("update?actionid=7","job_file="+filename,
 			function(data){
 				if( data == "ok" ) window.location.reload();
+				else alert("Loading of file failed.\nReturn value of server:\n"+data);
+				$(button).prop("disabled",false);
 			}
 			);
 }
@@ -465,7 +537,7 @@ function saveConfig(){
  * the operation. Readonly values do not require parse functionality.
  * */
 /*identities */
-function format_(o,val){ return val; }
+function format_(o,val){ return ""+val; }
 function parse_(o,s){ p=parseFloat(s); return isNaN(p)?s:p; }
 
 /* Use format_token to generate string */

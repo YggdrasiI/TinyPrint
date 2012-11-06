@@ -93,12 +93,12 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
 
-	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,10,0 ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,10, 0/*m_printProp.m_lockTimes*/ ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,10,0 ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,10,m_printProp.m_lockTimes ) );
-	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,10,m_printProp.m_lockTimes ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("overcureTime",m_printProp.m_overcureTime,0.0,100,10,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,0.2, 0/*m_printProp.m_lockTimes*/ ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,0.2,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,1,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("overcureTime",m_printProp.m_overcureTime,0.0,100,0.2,0 ) );
 	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
@@ -341,13 +341,13 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 					(*it)->m_maxLayer,
 					(*it)->m_minLayer,
 					(*it)->m_nmbrOfLayers-1,
-					10,m_printProp.m_lockTimes )
+					1,m_printProp.m_lockTimes )
 				);
 		cJSON_AddItemToArray(html, jsonIntField(minL.str().c_str(),
 					(*it)->m_minLayer,
 					0,
 					(*it)->m_maxLayer,
-					10,m_printProp.m_lockTimes )
+					1,m_printProp.m_lockTimes )
 				);
 		cJSON_AddItemToArray(html, jsonIntField(positionX.str().c_str(),
 					(*it)->m_position.x,
@@ -365,7 +365,7 @@ cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> f
 					(*it)->getScale(),
 					0.01,
 					1000.0,
-					10, m_printProp.m_lockTimes )
+					1, m_printProp.m_lockTimes )
 				);
 
 		cJSON_AddItemToObject(file, "html", html);

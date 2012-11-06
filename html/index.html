@@ -25,6 +25,7 @@
 	.json_input { color:green; width:7em; /*display:inline-block;*/ padding-right:1em; };
 </style>
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
+<script type="text/javascript" src="jquery.mousewheel.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
 <script type="text/javascript" src="files.js"></script>
 <script type="text/javascript" src="b9creator_settings.js"></script>
@@ -64,7 +65,7 @@
 		<div class="prop" id="xyResolution">XY Resolution: </div>
 		<h1>File Browser</h1>
 		<span class="prop" id="fileBrowserList">Files: </span><br />
-		<input type="button" onclick="loadFile()" value="Open" />
+		<input type="button" onclick="loadFile(this)" value="Open" />
 		<input type="button" onclick="update_jobFileList()" value="⟳" title="Refresh file list." />
 		<h1>Files</h1>
 		<div class="prop" id="files"></div>

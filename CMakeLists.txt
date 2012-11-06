@@ -57,27 +57,12 @@ link_directories (
 add_subdirectory(lib)
 add_subdirectory(src)
 
-## Copy html folder to build directory. (On configuation time)
-file(COPY html/ DESTINATION html PATTERN b9creator_settings.js EXCLUDE )
+# Copy htlm folder content to build dir
+add_custom_target(htmlfolder)
+add_custom_command(
+	TARGET htmlfolder
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/html ${CMAKE_CURRENT_BINARY_DIR}/html
+	)
 
-macro(copy_files GLOBPAT DESTINATION)
-  file(GLOB COPY_FILES
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    ${GLOBPAT})
-  add_custom_target(copy ALL
-    COMMENT "Copying files: ${GLOBPAT}")
-
-  foreach(FILENAME ${COPY_FILES})
-    set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}")
-    set(DST "${DESTINATION}/${FILENAME}")
-
-    add_custom_command(
-      TARGET copy
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC} ${DST}
-      )
-  endforeach(FILENAME)
-endmacro(copy_files)
-## end TODO
-
-#add_dependencies(main copy_files "html/*.js" "${CMAKE_CURRENT_BINARY_DIR}/html" )
+add_dependencies(main htmlfolder) 
 
