@@ -285,6 +285,13 @@ JobFileList::JobFileList(const char* filename, const char* pathPrefix):
 		m_nmbrOfLayers = foundFiles;
 		m_maxLayer = m_nmbrOfLayers-1;
 		m_size = cv::Size(1024,768);
+
+		//Load first slice to get correct size.
+		cv::Mat tmp = getSlice(0, RAW);	
+		m_size = tmp.size();
+		m_position.x = (1024- m_size.width)/2;
+		m_position.y = (768- m_size.height)/2;
+
 	}
 
 JobFileList::~JobFileList(){
