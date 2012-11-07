@@ -359,10 +359,42 @@ void DisplayManager::updateSignalHandler(int changes){
 
 
 
+/* Use Sprite data to generate png of current screen
+ *
+ * */
+bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_response *res){
+	switch(actionid){
+		case 10:
+			{ /* Generate png image */
 
+				int width=1024;
+				int height=768;
+				int channels=3;
 
+				unsigned char *image=new unsigned char[width*height*channels];
+				unsigned char *imagep=image;
 
+				for (int i = 0; i < height; i++) {
+					for (int j = 0; j < width; j++) {
+						for (int c = 0; c < channels; c++) {
+							*imagep= c*50;
+							++imagep;
+						}
+					}
+				}//--> Data struture is the same as in direcfb
 
+				onion_png_response(image, channels, width, height, res);
+				delete image;
+
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false; 
+}
 
 
 

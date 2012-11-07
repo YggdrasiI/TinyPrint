@@ -14,6 +14,9 @@
 #include "JsonConfig.h"
 #include "JsonMessage.h"
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 class JobFile;
 
 /* Wrapper struct for some properties. */
@@ -137,6 +140,8 @@ class B9CreatorSettings: public JsonConfig{
 		Messages m_queues; 
 		std::string m_configFilename;
 
+		cv::Mat m_currentDisplayedImage; //will be updated by DisplayManager
+
 	public:
 		B9CreatorSettings();
 		~B9CreatorSettings();
@@ -146,7 +151,8 @@ class B9CreatorSettings: public JsonConfig{
 		int update(cJSON* root, cJSON* update, int changes=NO);
 
 		/* Will called if website send data */
-		void webserverUpdateConfig(onion_request *req, int actionid, std::string &reply);
+		//void webserverUpdateConfig(onion_request *req, int actionid, std::string &reply);
+		bool webserverUpdateConfig(onion_request *req, int actionid, onion_response *res);
 
 		/* Call this method to eval the highest layer number
 		 * for current list of m_files.

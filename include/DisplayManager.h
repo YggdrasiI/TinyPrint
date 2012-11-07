@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <onion/onion.h>
+#include <onion/extras/png.h>
 
 #include <pthread.h>
 
@@ -76,6 +78,9 @@ class DisplayManager {
 
 		/* Will called if m_b9CreatorSettings propagate settings change. */
 		void updateSignalHandler(int changes);
+
+		/* Should return png with current displayed image */
+		bool getDisplayedImage(onion_request *req, int actionid, onion_response *res);
 
 	private:
 		//This is the super interface, it's the entry point to all functionality.

@@ -129,7 +129,9 @@ class JobManager {
 		//int nextStep();
 
 		/* Will called if website send data. */
-		void webserverSetState(onion_request *req, int actionid, std::string &reply);
+		//void webserverSetState(onion_request *req, int actionid, std::string &reply);
+		bool webserverSetState(onion_request *req, int actionid, onion_response *res);
+
 		/* Will called if m_b9CreatorSettings propagate settings change. */
 		void updateSignalHandler(int changes);
 

@@ -52,14 +52,17 @@ int update_data(void *p, onion_request *req, onion_response *res){
 	 * of complete website. In mosty cases this string will replaced 
 	 * by one of the signal handlers.
 	 */
-	std::string reply("reload");
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 
 	// Attention each signal handler wrote into the same string 'post_reply'
-	((OnionServer*)p)->updateSignal(req, actionid, reply);
+	//((OnionServer*)p)->updateSignal(req, actionid, reply);
+	if( ! ((OnionServer*)p)->updateSignal(req, actionid, res) ){
+		//signals did not write into response. Write default reply.
+		std::string reply("reload");
+		onion_response_write(res, reply.c_str(), reply.size() ); 
+	}
 
 	//onion_response_set_length(res, reply.size() );
-	onion_response_write(res, reply.c_str(), reply.size() ); 
 	return OCS_PROCESSED;
 }
 
@@ -171,6 +174,19 @@ int getPrinterMessages(void *p, onion_request *req, onion_response *res){
 			onion_response_write(res, json_serialMessages, (int) len); 
 		}
 
+	return OCS_PROCESSED;
+}
+
+
+int preview(void *p, onion_request *req, onion_response *res){
+
+//sendSignal with actionid=10 to get png image from
+//DisplayManager.
+	if( ! ((OnionServer*)p)->updateSignal(req, 10, res) ){
+		//signals did not write into response. Write default reply.
+		std::string reply("Could not generate Image.");
+		onion_response_write(res, reply.c_str(), reply.size() ); 
+	}
 	return OCS_PROCESSED;
 }
 
@@ -290,6 +306,8 @@ int OnionServer::start_server()
 	onion_url_add_with_data(url, "messages", (void*)getPrinterMessages, this, NULL); /* <-- Send data */
 	onion_url_add_with_data(url, "update", (void*)update_data, this, NULL); /* <-- Recive data */
 
+	onion_url_add_with_data(url, "preview.png", (void*)preview, this, NULL);//preview
+
 	//static content
 	onion_url_add(url, "^.*$", (void*)search_file);
 
@@ -317,12 +335,15 @@ int OnionServer::stop_server()
  *  0: data written into reply
  *  1: No data written into reply, but input processed successful.*/
 //TODO: Shift several cases of the switch into own signal handler.
-void OnionServer::updateWebserver(onion_request *req, int actionid, std::string &reply){
+//void OnionServer::updateWebserver(onion_request *req, int actionid, std::string &reply){
+bool OnionServer::updateWebserver(onion_request *req, int actionid, onion_response *res){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
 		case 4:
 			{ /* Command Message */
 				const char* json_str = onion_request_get_post(req,"cmd");
+				std::string reply;
+
 				if( json_str != NULL){
 					Messages &q = m_b9CreatorSettings.m_queues;
 					std::string cmd(json_str); 
@@ -331,6 +352,9 @@ void OnionServer::updateWebserver(onion_request *req, int actionid, std::string 
 				}else{
 					reply = "missing post variable 'cmd'";
 				}
+
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
 			break;
 		case 3:
@@ -339,20 +363,18 @@ void OnionServer::updateWebserver(onion_request *req, int actionid, std::string 
 				m_b9CreatorSettings.lock();
 				m_b9CreatorSettings.m_die = true;
 				m_b9CreatorSettings.unlock();
-				reply = "quit";
+
+				std::string reply("quit");
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
 			break;
-		case 0:
 		default:
-			{
-			}
 			break;
 	}
 
-	//return 1; 
+	return false; 
 }
-
-
 
 
 

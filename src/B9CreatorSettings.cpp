@@ -30,6 +30,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_jobState(IDLE),
 	m_connected(false),
 	m_files(),
+	m_currentDisplayedImage(),
 	m_die(false)
 {
 	//m_PU = 100 * 254 / (m_spr * m_tpi) ;
@@ -296,7 +297,8 @@ bool B9CreatorSettings::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* i
 }
 
 
-void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, std::string &reply){
+//void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, std::string &reply){
+bool B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, onion_response *res){
 	if( actionid == 0 ){
 		VPRINT("update b9CreatorSettings values\n");
 		const char* json_str = onion_request_get_post(req,"b9CreatorSettings");
@@ -304,8 +306,11 @@ void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, 
 			setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
 			//hm, send update signal here with some flags which mark changes?
 		}
-		reply = "ok";
+		std::string reply = "ok";
+		onion_response_write(res, reply.c_str(), reply.size() ); 
+		return true;
 	}
+return false;
 }
 
 /* See Header for generated structure of json struct */

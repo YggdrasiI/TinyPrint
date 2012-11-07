@@ -546,76 +546,82 @@ void JobManager::run(){
 	
 }
 
-void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
+//void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
+bool JobManager::webserverSetState(onion_request *req, int actionid, onion_response *res){
 	
-	reply = "error";
 	switch( actionid ){
 		case 7:
 			{  /* load Job */
+				std::string reply("failed");
+
 				std::string job_file ( onion_request_get_post(req,"job_file") );
 #ifdef VERBOSE
 				std::cout << "Load '"<< job_file << "'" << std::endl;
 #endif
 				if( loadJob( job_file.c_str() ) == 0){
 					reply = "ok";
-				}else{
-					reply = "failed";
 				}
 
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
 			break;
-	case 6: /* control JobManager */
+		case 6: /* control JobManager */
 			{
+				std::string reply("error");
 				std::string print_cmd ( onion_request_get_post(req,"print") );
 #ifdef VERBOSE
 				std::cout << "'"<< print_cmd << "'" << std::endl;
 #endif
 				if( 0 == print_cmd.compare("init") ){
-					if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
-					reply = "idle";
+					if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) )
+						reply = "idle";
 
 				}else if( 0 == print_cmd.compare("start") || 0 == print_cmd.compare("toggle")){
 					if( m_state == START_STATE){
 						//we can not start job. Init at first.
-						if( 0 != initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) return ;
-						reply = "idle";
-						return;
-					}
-					if( m_state == IDLE ){
-						if( 0 != startJob() ) return ;
-						reply = "print";
+						if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) 
+							reply = "idle";
+
+					}else if( m_state == IDLE ){
+						if( 0 == startJob() ) 
+							reply = "print";
+
 					}else{
 						//can not start. Reply error message or just send idle.
 						reply = "idle";
 					}
+
 				}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
 					if( m_state == PAUSE ){
-						if( 0 != pauseJob() ) return ;
-						reply = "pause";
+						if( 0 == pauseJob() )
+							reply = "pause";
 					}
 					//can not resume without pause state.
+
 				}else if( 0 == print_cmd.compare("resume") ){
-					if( 0 != resumeJob() ) return  ;
-					reply = "print";
+					if( 0 == resumeJob() ) 
+						reply = "print";
 
 				}else if( 0 == print_cmd.compare("abort") ){
-					if( 0 != stopJob() ){
+					if( 0 == stopJob() ){
+						reply = "idle";
+					}else{
 						if( m_state == IDLE ){
 							//stop failed, but printer mode is idle. Thus,
 							//stopping produce no error.
 							reply = "idle";
 						}
-						return  ;
 					}
-					reply = "idle";
 				}
 
-				//print_cmd unknown
+				//now, write "error","idle","print" or "pause" to response struct.
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
 			break;
-	case 5: /* Toggle Display */
+		case 5: /* Toggle Display */
 			{
-
 				const char* disp = onion_request_get_post(req,"display");
 
 				if( disp != NULL ){
@@ -635,15 +641,17 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 						show(l, RAW);
 					}
 
-					reply = m_b9CreatorSettings.m_display?"1":"0";
-
+					std::string reply = m_b9CreatorSettings.m_display?"1":"0";
+					onion_response_write(res, reply.c_str(), reply.size() ); 
+					return true;
 				}
 			}
 			break;
-	case 2: /* Save config */
+		case 2: /* Save config */
 			{
-
+				std::string reply;
 				const char* configFilename = onion_request_get_post(req,"configFilename");
+
 				if( configFilename == NULL ) break;
 				if( check_configFilename(configFilename ) == 1){
 
@@ -658,12 +666,15 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 					printf("Filename not allowed\n");
 				}
 
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
 			break;
-	case 1: /* Load config */
+		case 1: /* Load config */
 			{
-
+				std::string reply;
 				const char* configFilename = onion_request_get_post(req,"configFilename");
+
 				if( configFilename == NULL ) break;
 				if( check_configFilename(configFilename ) == 1){
 
@@ -683,12 +694,17 @@ void JobManager::webserverSetState(onion_request *req, int actionid, std::string
 					reply = "error";
 					printf("Filename not allowed\n");
 				}
+
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
 			}
-	default:
+		default:
 			{
 			}
+			break;
 	}
 
+	return false;
 }
 
 

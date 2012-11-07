@@ -2,9 +2,6 @@
 #include <vector>
 #include <cmath>
 #include <pthread.h>
-//#include <cv.h>
-//#include <cxcore.h>
-//#include <highgui.h>
 
 //#include <boost/signal.hpp>
 #include <boost/bind.hpp>
@@ -63,6 +60,10 @@ int main(int argc, char **argv) {
 	onion.updateSignal.connect(
 					boost::bind(&JobManager::webserverSetState,&jobManager, _1, _2, _3)
 					);
+	onion.updateSignal.connect(
+					boost::bind(&DisplayManager::getDisplayedImage, &displayManager, _1, _2, _3)
+					);
+
 
 
 	//displayManager.start();
