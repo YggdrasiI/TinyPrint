@@ -546,7 +546,6 @@ void JobManager::run(){
 	
 }
 
-//void JobManager::webserverSetState(onion_request *req, int actionid, std::string &reply){
 bool JobManager::webserverSetState(onion_request *req, int actionid, onion_response *res){
 	
 	switch( actionid ){

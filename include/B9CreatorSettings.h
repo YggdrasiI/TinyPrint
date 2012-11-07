@@ -151,7 +151,6 @@ class B9CreatorSettings: public JsonConfig{
 		int update(cJSON* root, cJSON* update, int changes=NO);
 
 		/* Will called if website send data */
-		//void webserverUpdateConfig(onion_request *req, int actionid, std::string &reply);
 		bool webserverUpdateConfig(onion_request *req, int actionid, onion_response *res);
 
 		/* Call this method to eval the highest layer number

@@ -87,7 +87,6 @@ class OnionServer{
 		boost::signal<bool (onion_request *req,int actionid, onion_response *res), maximum<bool> > updateSignal;
 
 		/* Update signal handler of this class.*/
-		//void updateWebserver(onion_request *req, int actionid, std::string &reply);
 		bool updateWebserver(onion_request *req, int actionid, onion_response *res);
 };
 

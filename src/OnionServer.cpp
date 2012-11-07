@@ -335,7 +335,6 @@ int OnionServer::stop_server()
  *  0: data written into reply
  *  1: No data written into reply, but input processed successful.*/
 //TODO: Shift several cases of the switch into own signal handler.
-//void OnionServer::updateWebserver(onion_request *req, int actionid, std::string &reply){
 bool OnionServer::updateWebserver(onion_request *req, int actionid, onion_response *res){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){

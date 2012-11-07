@@ -297,7 +297,6 @@ bool B9CreatorSettings::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* i
 }
 
 
-//void B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, std::string &reply){
 bool B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, onion_response *res){
 	if( actionid == 0 ){
 		VPRINT("update b9CreatorSettings values\n");

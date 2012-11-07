@@ -275,7 +275,8 @@ void DisplayManager::initFB(){
 		DFBCHECK (m_pDfb->SetCooperativeLevel (m_pDfb, DFSCL_FULLSCREEN));
 	}
 
-	dsc.flags = DSDESC_CAPS;
+	dsc.pixelformat = DSPF_ARGB;
+	dsc.flags = (DFBSurfaceDescriptionFlags) (DSDESC_CAPS | DSDESC_PIXELFORMAT);
 	dsc.caps  = (DFBSurfaceCapabilities)( DSCAPS_PRIMARY | DSCAPS_FLIPPING);
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &m_pPrimary ));
 	DFBCHECK (m_pPrimary->GetSize (m_pPrimary, &m_screenWidth, &m_screenHeight));
@@ -367,24 +368,30 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 		case 10:
 			{ /* Generate png image */
 
-				int width=1024;
-				int height=768;
-				int channels=3;
+				if( m_pDfb == NULL || m_pPrimary == NULL ){
+					//Display is not active
+					return false;
+				}
 
-				unsigned char *image=new unsigned char[width*height*channels];
-				unsigned char *imagep=image;
 
-				for (int i = 0; i < height; i++) {
-					for (int j = 0; j < width; j++) {
-						for (int c = 0; c < channels; c++) {
-							*imagep= c*50;
-							++imagep;
-						}
-					}
-				}//--> Data struture is the same as in direcfb
+				DFBSurfacePixelFormat format; // Should be DSPF_ARGB
+				int channels=1;//4=RGBA, -4=ABRG ?!
 
-				onion_png_response(image, channels, width, height, res);
-				delete image;
+				m_pPrimary->GetPixelFormat(m_pPrimary, &format);
+				if( format == DSPF_ARGB ) channels=-4;
+				else return false;
+
+				int width;
+				int height;
+				m_pPrimary->GetSize(m_pPrimary,&width,&height);
+
+				void *data_ptr;
+				int pitch;
+				m_pPrimary->Lock(m_pPrimary, DSLF_READ, &data_ptr, &pitch);
+
+				onion_png_response( (unsigned char*) data_ptr , channels, width, height, res);
+
+				m_pPrimary->Unlock(m_pPrimary);
 
 				return true;
 			}
