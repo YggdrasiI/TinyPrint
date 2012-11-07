@@ -379,7 +379,19 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 				m_pPrimary->GetPixelFormat(m_pPrimary, &format);
 				if( format == DSPF_ARGB ) channels=-4;
-				else return false;
+				else{
+					//generate 1x1 pixel
+					unsigned char *image=new unsigned char[4];
+					image[0] = 0;
+					image[0] = 255;
+					image[0] = 127;
+					image[0] = 127;
+					
+					onion_png_response( image, 4, 1, 1, res);
+					delete image;
+
+					return true;
+				}
 
 				int width;
 				int height;

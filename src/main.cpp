@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	B9CreatorSettings b9CreatorSettings;
 	if( b9CreatorSettings.init("b9CreatorSettings.json") ){
 		//Config file did not exist. Create it.
-		printf("Create b9CreatorSettings.ini\n");
+		printf("Create b9CreatorSettings.json\n");
 		b9CreatorSettings.saveConfigFile("b9CreatorSettings.json");
 	}
 

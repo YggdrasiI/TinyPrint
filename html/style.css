@@ -1,0 +1,31 @@
+@charset "UTF-8";
+/*@charset "ISO-8859-1";*/
+
+	body { background-color:#003264; }
+	h1 { font-size:120%; }
+
+	#div { border: 1px solid green; }
+
+	div.prop {
+		margin-right:1em;
+		width:22em;
+		text-align:right;
+		color:black;
+		font-weight:bold;
+		/*display:inline-block;*/
+	}
+	div.prop span { }
+
+	.containerL { 
+		float:left;
+		width:25em;
+		background-color:#DDDDDD;
+		padding:1em;
+		border:1px solid black;
+	}
+	.containerL input { text-align:center;}
+	.containerL input[type="button"] { width:10em; }
+
+	.red * input { background-color:red; }
+	.readonly * input { background-color:#CCCCCC; }
+	.json_input { color:green; width:7em; /*display:inline-block;*/ padding-right:1em; };

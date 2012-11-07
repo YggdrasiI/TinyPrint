@@ -193,7 +193,7 @@ int preview(void *p, onion_request *req, onion_response *res){
 /*
  Return raw file if found. Security risk?! Check of filename/path required?!
 */
-int search_file(onion_dict *context, onion_request *req, onion_response *res){
+int search_file(void *p, onion_request *req, onion_response *res){
 	//const char* path = onion_request_get_path(req);//empty?!
 	const char* path = onion_request_get_fullpath(req);
 #ifdef VERBOSE
@@ -201,15 +201,26 @@ int search_file(onion_dict *context, onion_request *req, onion_response *res){
 #endif
 	std::string filename("./html/");
 	filename.append(path);
-
-	if (context != NULL ) onion_dict_add(context,
-			"LANG", onion_request_get_language_code(req), OD_FREE_VALUE);
+	OnionServer *pOnionServer = (OnionServer*)p;
 
 	//boost::iostreams::stream<boost::iostreams::file_source> file(filename.c_str());//.is_open() does not react like ifstream variant.
 	std::ifstream file(filename.c_str());
 	std::string line;
 
 	if( file.is_open()){
+		
+		/* Create header with mime type and charset information for several file extensions.
+		 * This is just a workaround. There should be an automatic mechanicm
+		 * in libonion. */
+		int periodPos = filename.find_last_of('.');
+		std::string mime( onion_dict_get(pOnionServer->m_mimedict, filename.substr(periodPos+1).c_str() ) );
+		if( mime.size() > 0 ){
+			onion_response_set_header(res, "Content-Type", mime.c_str() );
+		}else{
+			onion_response_set_header(res, "Content-Type", "text/html; charset: utf-8" );
+		}
+		onion_response_write_headers(res);
+
 		try{
 			while (std::getline(file, line)) { 
 				onion_response_write(res, line.c_str(), line.size() ); 
@@ -225,8 +236,6 @@ int search_file(onion_dict *context, onion_request *req, onion_response *res){
 		//onion_response_set_length(res, 25);
 		onion_response_write(res, "<h1>File not found.</h1>", 25); 
 	}
-
-	if (context != NULL ) onion_dict_free(context);
 
 	return OCS_PROCESSED;
 	}
@@ -278,6 +287,18 @@ OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 					boost::bind(&B9CreatorSettings::webserverUpdateConfig,&b9CreatorSettings, _1, _2, _3)
 					);
 			//start_server();
+
+			//Set mime types dict
+			m_mimedict = onion_dict_new();
+			if( m_mimedict != NULL){
+				onion_dict_add(m_mimedict, "html","text/html; charset: utf-8",0);
+				onion_dict_add(m_mimedict, "css","text/css; charset: utf-8",0);
+				onion_dict_add(m_mimedict, "js","application/javascript; charset: utf-8",0);
+				onion_dict_add(m_mimedict, "png","image/png",0);
+				//onion_mime_set(m_mimedict);
+				//onion_mime_fill();
+			}
+
 		}
 
 int OnionServer::start_server()
@@ -309,7 +330,8 @@ int OnionServer::start_server()
 	onion_url_add_with_data(url, "preview.png", (void*)preview, this, NULL);//preview
 
 	//static content
-	onion_url_add(url, "^.*$", (void*)search_file);
+	//onion_url_add(url, "^.*$", (void*)search_file);
+	onion_url_add_with_data(url, "^.*$", (void*)search_file, this, NULL);
 
 	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
 	   the Extra thread is omitable. */

@@ -9,6 +9,7 @@
 #include <onion/log.h>
 #include <onion/onion.h>
 #include <onion/dict.h>
+//#include <onion/mime.h>
 //#include <onion/extras/png.h>
 
 #include <boost/signal.hpp>
@@ -64,11 +65,16 @@ class OnionServer{
 		pthread_t m_pthread;
 		//PrinterSetting* m_pprintSetting const;
 		B9CreatorSettings &m_b9CreatorSettings;
+		/* Store header with mime type and charset information for several file extensions.
+		 * This is just a workaround. There should be an automatic mechanicm
+		 * in libonion. */
+		onion_dict *m_mimedict;
 	public:
 		OnionServer(B9CreatorSettings &b9CreatorSettings );
 		
 		~OnionServer()
 		{
+			if(m_mimedict != NULL ) onion_dict_free(m_mimedict);
 			if(m_ponion != NULL) stop_server();
 		}
 
