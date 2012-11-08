@@ -12,7 +12,14 @@ case "$1" in
 	pi) 
 		# Setting for raspberry pi with
 		# rasbian os.
-		bin/main --dfb:mode=1024x768 --dfb:pixelformat=RGB16
+		sudo fbset -a -depth 16 
+		sudo bin/main --dfb:mode=1024x768 --dfb:pixelformat=RGB16
+		;;
+	pi32) 
+		# Setting for raspberry pi with
+		# rasbian os.
+		sudo fbset -a -depth 32
+		sudo bin/main --dfb:mode=1024x768 --dfb:pixelformat=RGB32
 		;;
 	igep)
 		# Setting for igep board with

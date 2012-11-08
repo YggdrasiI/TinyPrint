@@ -128,7 +128,7 @@ void DisplayManager::clear(){
 
 void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	// Omit call m_pDfb->CreateSurface(...) for null pointer.
-	if( m_pDfb == NULL ){
+	if( m_pDfb == NULL || m_pPrimary == NULL ){
 		VPRINT("(DisplayManager) m_pDfb is null. Abort add\n");
 		return;
 		initFB();
@@ -279,6 +279,7 @@ void DisplayManager::initFB(){
 		DFBCHECK (m_pDfb->SetCooperativeLevel (m_pDfb, DFSCL_FULLSCREEN));
 	}
 
+	//dsc.flags = (DFBSurfaceDescriptionFlags) (DSDESC_CAPS );//16bit as default on raspbian
 	dsc.pixelformat = DSPF_ARGB;
 	dsc.flags = (DFBSurfaceDescriptionFlags) (DSDESC_CAPS | DSDESC_PIXELFORMAT);
 	dsc.caps  = (DFBSurfaceCapabilities)( DSCAPS_PRIMARY | DSCAPS_FLIPPING);
@@ -407,6 +408,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				int channels=1;//4=RGBA, -4=ABRG ?!
 
 				m_pPrimary->GetPixelFormat(m_pPrimary, &format);
+				//printf("Pixelformat: %i", (int)format);
 				if( format == DSPF_ARGB ) channels=-4;
 				else{
 					//generate 1x1 pixel
