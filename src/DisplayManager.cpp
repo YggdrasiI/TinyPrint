@@ -239,6 +239,7 @@ void DisplayManager::initFB(){
 	}
 
 
+	m_img_mutex.lock();
 	
 	/* Create options for directfb window. This depends
 	 * on your system.
@@ -291,6 +292,7 @@ void DisplayManager::initFB(){
 
 	createGrid();
 	m_redraw = true;
+	m_img_mutex.unlock();
 
 }
 

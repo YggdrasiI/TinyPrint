@@ -545,7 +545,35 @@ function format_token(o,val){
 	var arr = TOKENS[o.id];
 	if( val in arr ) return arr[val];
 	return "undefined";
+
 }
+/* format_state will be called for
+ * job state string. Analyse this string
+ * and update Print buttons. */
+function format_state(o,val){
+	state = format_token(o,val);
+	switch( state ){
+		case "START_STATE":
+//		case "INIT":
+			$('#printButton').val("Print (Init)");
+			break;
+		case "PAUSE":
+			$('#printButton').val("Resume");
+			break;
+		case "IDLE":
+			$('#printButton').val("Print");
+			break;
+		case "BREATH":
+		case "CURING":
+		case "OVERCURING":
+		case "WAIT_ON_ZERO_HEIGHT":
+			$('#printButton').val("Pause");
+			break;
+	}
+
+	return state;
+}
+
 
 function format_percent(o,val){
 	var p = (typeof val === "string"?parseInt(val):val);
@@ -662,6 +690,9 @@ function jobManagerCmd(cmd,button1id, button2id){
 	//send("update?actionid=6","print="+map[cmd],
 	send("update?actionid=6","print="+cmd,
 			function(data){
+				//It's not ness to listen on return value anymore.
+				//The labels of the buttons will updated by jobState value.
+				//return;
 				/* data return state of printer */
 				if( data == "print" ){
 					/*printing...*/
@@ -676,7 +707,6 @@ function jobManagerCmd(cmd,button1id, button2id){
 					bt1.val("Print"); 
 					bt2.val("Abort"); 
 				}else{
-					//alert("Command was not sucessfull.\n Server returns: \n"+data);
 					bt1.val("Command was not sucessfull.\n Server returns: \n"+data);
 				}
 			}

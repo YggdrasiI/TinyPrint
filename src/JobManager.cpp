@@ -340,7 +340,7 @@ void JobManager::run(){
 					int zHeight2 = 100*( l*zRes )/pu; //require zHeight(layer 0)=0
 					if( zHeight2 > zHeightLimit ){
 						std::ostringstream zError;
-						zError << "(Job) Height of next layer lower as current height. Abort job."
+						zError << "(Job) Height of next layer higher as maximal height. Abort job."
 						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
 						<< std::endl << "Height limit: " << zHeightLimit
 						<< std::endl << "Next layer: " << l;
@@ -362,9 +362,12 @@ void JobManager::run(){
 						break;
 					}
 
-					//update height.
-					//zHeight = zHeight2;
-					//no, do not update value manually. wait on message on serial channel.
+					// Update height.
+					// Do not update value manually, if printer is connected.
+					// Wait on message on serial channel.
+					if( !m_b9CreatorSettings.m_connected ){
+						zHeight = zHeight2;
+					}
 
 					std::ostringstream cmd_next;
 					cmd_next << "N" << zHeight2 ;
@@ -457,7 +460,13 @@ void JobManager::run(){
 								m_b9CreatorSettings.m_printProp.m_overcureTime <= 0 ){
 							l++;
 							m_displayManager.blank();
+
+							if( l < m_b9CreatorSettings.m_printProp.m_nmbrOfLayers ){
 							m_state = NEXT_LAYER;
+							}else {
+								m_state = FINISH;
+							}
+
 						}else {
 							// Init Overcuring
 							gettimeofday( &m_tCuring.begin, NULL );
@@ -483,6 +492,16 @@ void JobManager::run(){
 							m_state = NEXT_LAYER;
 						}else {
 							m_state = FINISH;
+
+							/* Power of the Projector.
+							 * This is not done by the printer.
+							 * I placed it here and not in FINISH to
+							 * avoid the projector shutoff if
+							 * the job canceld by user (over stopJob())
+							 * */
+							std::string P0 = "PO" ; 
+							q.add_command(P0);
+
 						}
 
 					}
@@ -493,16 +512,21 @@ void JobManager::run(){
 					RUNPRINT("Pause...\n");
 				}
 				break;
-			case ERROR:
 			case FINISH:
 				{
-					m_displayManager.blank();
-					//TODO?! Power of Projector?!
-
 					std::string cmd_finished;
 					RUNPRINT("Send F%i. Job finished\n",9000 );
 					cmd_finished = "F9000" ; 
 					q.add_command(cmd_finished);
+
+					m_b9CreatorSettings.lock();
+					m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
+					m_b9CreatorSettings.unlock();
+					//fall through...
+				}
+			case ERROR:
+				{
+					m_displayManager.blank();
 
 					m_b9CreatorSettings.lock();
 					m_b9CreatorSettings.m_printProp.m_lockTimes = false;
