@@ -27,7 +27,7 @@ function reloadImage(manual){
 		window.clearInterval(refreshIntervall);
 	}
 
-	if( $("#previewRefresh").prop("checked") != true ) return true;
+	if( !manual && $("#previewRefresh").prop("checked") != true ) return true;
 
 	var scale = $("#previewScale").val();
 	d = new Date();
@@ -51,9 +51,9 @@ function reloadImage(manual){
 	var newImg = new Image();
 	newImg.onload = function(){
 		if( newImg.width < 2 ){
-			$("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
+			if(manual) $("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
 		}else{
-			$("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
+			if(manual) $("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
 			$("#previewImg").empty().append($(newImg));
 		}
 	};
@@ -61,13 +61,13 @@ function reloadImage(manual){
 	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
 
 	if(manual){
-		refreshIntervall = window.setInterval("reloadImage(false)", 4000);
+		refreshIntervall = window.setInterval("reloadImage(false)", 2000);
 	}
 
 	return true;
 }
 
-refreshIntervall = window.setInterval("reloadImage(false)", 4000);
+refreshIntervall = window.setInterval("reloadImage(false)", 2000);
 //-->
 </script>
 </head>
@@ -84,6 +84,6 @@ refreshIntervall = window.setInterval("reloadImage(false)", 4000);
 		</span>
 		<span id="info"></span>
 		</p>
-		<span id="previewImg" onclick="reloadImage(true)" title="Click to reload.\n"><img src="preview.png?scale=50&force=1" /></span>
+		<span id="previewImg" onClick="reloadImage(true)" title="Click to reload."><img src="preview.png?scale=50&force=1" /></span>
 	</div>
 </body>

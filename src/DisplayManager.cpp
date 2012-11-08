@@ -425,6 +425,8 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 				void *data_ptr;
 				int pitch;
+
+				m_img_mutex.lock();
 				m_pPrimary->Lock(m_pPrimary, DSLF_READ, &data_ptr, &pitch);
 
 				if( scale == 100 ){
@@ -458,6 +460,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 
 				m_pPrimary->Unlock(m_pPrimary);
+				m_img_mutex.unlock();
 
 				m_png_redraw = false;
 				m_png_scale  = scale;
