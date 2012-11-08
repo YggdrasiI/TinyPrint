@@ -23,6 +23,7 @@
 		padding:1em;
 		border:1px solid black;
 	}
+	.containerL span { width:10em; }
 	.containerL input { text-align:center;}
 	.containerL input[type="button"] { width:10em; }
 

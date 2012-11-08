@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdint.h>
 
 #include <directfb.h>
 #include <boost/bind.hpp>
@@ -30,6 +31,8 @@ DisplayManager::DisplayManager(B9CreatorSettings &b9CreatorSettings, vector<std:
 	m_die(false),
 	m_pause(true),
 	m_redraw(false),
+	m_png_redraw(false),
+	m_png_scale(-1),
 	m_screenWidth(0),
 	m_screenHeight(0),
 	m_pDfb(NULL),
@@ -222,6 +225,7 @@ void DisplayManager::redraw(){
 	DFBCHECK (m_pPrimary->Flip (m_pPrimary, NULL, DSFLIP_WAITFORSYNC));
 
 	m_redraw = false;
+	m_png_redraw = true;
 	m_img_mutex.unlock();
 }
 
@@ -364,15 +368,40 @@ void DisplayManager::updateSignalHandler(int changes){
  *
  * */
 bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_response *res){
+
 	switch(actionid){
 		case 10:
 			{ /* Generate png image */
+				int scale = atoi( onion_request_get_queryd(req,"scale","100") );
+				const char *force = onion_request_get_queryd(req,"force","0");
+
+				//check if png generation is forced
+				if( *force == '1' ) m_png_redraw = true;
+
+				VPRINT("redraw: %i, scale: %i, newscale: %i", m_png_redraw?1:0, m_png_scale, scale);
+
+				if( !m_png_redraw && scale==m_png_scale ){
+					//There was no change between the last sended image.
+					//std::string reply = "noNewImage";
+					//onion_response_write(res, reply.c_str(), reply.size() ); 
+					unsigned char *image=new unsigned char[4];
+					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					onion_png_response( image, 4, 1, 1, res);
+					delete image;
+					return true;
+				}
+
 
 				if( m_pDfb == NULL || m_pPrimary == NULL ){
 					//Display is not active
-					return false;
+					//generate 1x1 pixel
+					unsigned char *image=new unsigned char[4];
+					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					onion_png_response( image, 4, 1, 1, res);
+					delete image;
+					m_png_redraw = false;
+					return true;
 				}
-
 
 				DFBSurfacePixelFormat format; // Should be DSPF_ARGB
 				int channels=1;//4=RGBA, -4=ABRG ?!
@@ -382,14 +411,11 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				else{
 					//generate 1x1 pixel
 					unsigned char *image=new unsigned char[4];
-					image[0] = 0;
-					image[0] = 255;
-					image[0] = 127;
-					image[0] = 127;
-					
+					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
 					onion_png_response( image, 4, 1, 1, res);
 					delete image;
-
+					m_png_redraw = false;
+					m_png_scale  = scale;
 					return true;
 				}
 
@@ -401,9 +427,40 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				int pitch;
 				m_pPrimary->Lock(m_pPrimary, DSLF_READ, &data_ptr, &pitch);
 
-				onion_png_response( (unsigned char*) data_ptr , channels, width, height, res);
+				if( scale == 100 ){
+					onion_png_response( (unsigned char*) data_ptr , channels, width, height, res);
+				}else{
+					//rescale to 50% or 25%				
+					int w2 = width*scale/100;
+					int h2 = height*scale/100;
+					int incW = width/w2;
+					int incH = incW;//height/h2;
+
+					unsigned char *image=new unsigned char[4*w2*h2];
+
+					uint32_t *pdata = (uint32_t*) data_ptr;//4*char, ARGB
+					uint32_t *pimage = (uint32_t*) image;
+
+					uint32_t *nextRowImage = pimage + w2;
+					uint32_t *nextRowData = pdata +  incH*width;
+					for( int i=0; i<h2; ++i ){
+						for( ; pimage<nextRowImage; ++pimage, pdata+=incW ){
+							*pimage = *pdata;
+						}
+						nextRowImage += w2;
+						pdata = nextRowData;
+					  nextRowData = pdata +  incH*width;
+					}
+
+					onion_png_response( image , channels, w2, h2, res);
+					delete image;
+				}
+
 
 				m_pPrimary->Unlock(m_pPrimary);
+
+				m_png_redraw = false;
+				m_png_scale  = scale;
 
 				return true;
 			}

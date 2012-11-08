@@ -98,6 +98,8 @@ class DisplayManager {
 		bool m_die; // quit frame buffer thread loop.
 		bool m_pause; // pause frame buffer loop.
 		bool m_redraw; //mark if redraw is ness.
+		bool m_png_redraw; //mark if png_redraw is useful.
+		int m_png_scale; //mark last scale factor of png.
 		bool m_blank; //mark if slices are not shown.
 		pthread_t m_pthread;
 		Mutex m_img_mutex;

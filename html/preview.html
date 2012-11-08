@@ -9,19 +9,71 @@
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
 <script type="text/javascript" src="jquery.mousewheel.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
+<script type="text/javascript" src="b9creator_script.js"></script>
+<script type="text/javascript">
+<!--
+function utf8_to_b64( str ){
+	return window.btoa(unescape(encodeURIComponent( str )));
+}
+
+function b64_to_utf8( str ){
+	return decodeURIComponent(escape(window.atob( str )));
+}
+
+function reloadImage(){
+	if( $("#previewRefresh").prop("checked") != true ) return true;
+
+	var scale = $("#previewScale").val();
+	d = new Date();
+
+	/* //Does not  work. Input has wrong coding
+		 send("preview.png","scale="+scale,
+		 function(data){
+		 if( data == "noNewImage" ){
+		 $("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
+		 }else{
+		 $("#previewImg").attr("src", "");
+	//$("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
+	$("#info").empty().append( utf8_to_b64(data) );
+	//	$("#previewImg").attr("src", "data:image/png;base64,"+utf8_to_b64(data)+"=" );
+	//$("#previewImg").attr("src", "data:image/png;base64,"+data );
+	//$("#previewImg").attr("src", "data:image/png,"+encodeURI(data) );
+	//$("#previewImg").attr("src", "data:image/png;base64,"+encodeURI(data) );
+	} });
+	 */
+
+	var newImg = new Image();
+	newImg.onload = function(){
+		if( newImg.width < 2 ){
+			$("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
+		}else{
+			$("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
+			$("#previewImg").empty().append($(newImg));
+		}
+	};
+
+	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
+
+	return true;
+}
+
+refreshIntervall = window.setInterval("reloadImage()", 4000);
+//-->
+</script>
 </head>
 <body>
-	<div class="containerL" style="min-width:90%;">
+	<div class="containerL" style="min-width:90%;" >
 		<h1>Preview</h1>
-		<p>The preview shows the exact copy of the displayed beamer image and require that the display is on.
-		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="checked" /> 
+		<p>The preview shows the exact copy of the displayed beamer image and require that the display is on.<br>
+		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" xchecked="checked" /> 
 			Scale: <select id="previewScale">
 				<option value="100">100%</option>
-				<option value="50">50%</option>
-				<option value="25">25%</option>
+				<option value="50" selected>50%</option>
+				<option value="25" >25%</option>
 			</select>
 		</span>
+		<span id="info"></span>
 		</p>
-		<img src="preview.png" />
+		<span id="previewImg"><img src="preview.png?scale=50&force=1" /></span>
 	</div>
 </body>
