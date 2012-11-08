@@ -20,7 +20,13 @@ function b64_to_utf8( str ){
 	return decodeURIComponent(escape(window.atob( str )));
 }
 
-function reloadImage(){
+function reloadImage(manual){
+
+	if(manual){
+		//clear pending refresh
+		window.clearInterval(refreshIntervall);
+	}
+
 	if( $("#previewRefresh").prop("checked") != true ) return true;
 
 	var scale = $("#previewScale").val();
@@ -54,10 +60,14 @@ function reloadImage(){
 
 	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
 
+	if(manual){
+		refreshIntervall = window.setInterval("reloadImage(false)", 4000);
+	}
+
 	return true;
 }
 
-refreshIntervall = window.setInterval("reloadImage()", 4000);
+refreshIntervall = window.setInterval("reloadImage(false)", 4000);
 //-->
 </script>
 </head>
@@ -74,6 +84,6 @@ refreshIntervall = window.setInterval("reloadImage()", 4000);
 		</span>
 		<span id="info"></span>
 		</p>
-		<span id="previewImg"><img src="preview.png?scale=50&force=1" /></span>
+		<span id="previewImg" onclick="reloadImage(true)" title="Click to reload.\n"><img src="preview.png?scale=50&force=1" /></span>
 	</div>
 </body>
