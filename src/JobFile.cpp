@@ -58,8 +58,8 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 				 */
 				int blurwidth = 9;
 				int bwbw = blurwidth*blurwidth;
-				int mins = 0.7*255;
-				int maxs = 1*255;
+				uchar mins = 0.7*255;
+				uchar maxs = 1*255;
 
 				uchar colmap[256];
 				for( int a=0; a<256; ++a ){
@@ -71,11 +71,14 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 					}
 				}
 
+				//Assume CV_8UC4
 				const cv::Mat raw = getSlice(layer, RAW);
-				cv::Mat tmp;
+				cv::Mat tmp(raw.size(),raw.type());
+				//cv::Mat tmp(raw.size(),CV_8UC4);
 				cv::Size ksize(blurwidth, blurwidth);
 				cv::blur(raw, tmp, ksize, cv::Point(-1,-1), cv::BORDER_CONSTANT);
 
+				//Assume CV_8UC4 data
 				typedef cv::Vec<uchar, 4> VT;
 				cv::MatConstIterator_<VT> itRaw = raw.begin<VT>(),
 					itRaw_end = raw.end<VT>();
@@ -84,12 +87,14 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 					VT pixRaw = *itRaw;
 					VT pixTmp = *itTmp;
 					if( pixRaw[0] == 0 ){
-						*itTmp = VT(0,0,0, 255 );
+						*itTmp = VT(0, 0, 0, 0 ); //transparent-black, rgba
 					}else{
-						*itTmp = VT(colmap[ pixTmp[0]],
+						*itTmp = VT(
+								colmap[ pixTmp[0]],
 								colmap[ pixTmp[1]],
 								colmap[ pixTmp[2]],
-								255 );
+								colmap[ pixTmp[0]]?255:0 //red=0=>full transparence.
+								);
 					}
 				}  
 
@@ -196,7 +201,13 @@ cv::Mat JobFileSvg::loadSlice(int layer){
 			);
 
 	//convert to grayscale image
-	ret.convertTo( ret, CV_8UC1 );
+	//ret.convertTo( ret, CV_8UC1 );
+	//convert to grayscale image with alpha channel
+	//ret.convertTo( ret, CV_8UC2 );
+	
+	//use red values as mask (assume white/black image)
+	int from_to[] = { 0,0,  1,1,  2,2,  0,3 };
+	cv::mixChannels( &ret, 1, &ret, 1, from_to, 4 );
 
 	return ret;
 }
@@ -299,11 +310,17 @@ JobFileList::~JobFileList(){
 
 
 cv::Mat JobFileList::loadSlice(int layer){
-	cv::Mat ret;
+	cv::Mat raw;
 
-	ret = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
-	ret = cv::imread( m_filelist[layer], 1 ); 
-	ret.convertTo( ret, CV_8UC1 );
+	//raw = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
+	raw = cv::imread( m_filelist[layer], 1 /*RGB*/ );//transparency will be ignored. 
+	//raw = cv::imread( m_filelist[layer], -1 /*RGBA, RBA or GRAYSCALE*/ ); 
+
+	//raw.convertTo( raw, CV_8UC4 );//hm, this add no alpha channel to rgb images...
+	//use red channel as alpha channel.
+	cv::Mat ret( raw.rows, raw.cols, CV_8UC4 );
+	int from_to[] = { 0,0,  1,1,  2,2,  0,3 };
+	cv::mixChannels( &raw, 1, &ret, 1, from_to, 4 );
 
 	return ret;
 }

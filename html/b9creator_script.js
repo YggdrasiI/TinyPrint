@@ -562,12 +562,14 @@ function format_state(o,val){
 			break;
 		case "IDLE":
 			$('#printButton').val("Print");
+			$('#openButton').prop("disabled",false);
 			break;
 		case "BREATH":
 		case "CURING":
 		case "OVERCURING":
 		case "WAIT_ON_ZERO_HEIGHT":
 			$('#printButton').val("Pause");
+			$('#openButton').prop("disabled",true);
 			break;
 	}
 

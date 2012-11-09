@@ -153,17 +153,22 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
   for( ; it1 != it1_end; ++it1, ++dst_it ) {
 		VT pix1 = *it1;
-		/**dst_it = (*it1.val[3] << 24) 
-			+ (*it1.val[4] << 16)
-			+ (*it1.val[4] << 8)
-			+ (*it1.val[0]); */
-		*dst_it = pix1[3];//saturate_cast<uchar>( pix1[3]);
+		/*
+		//assume big endian order
+		*dst_it = (pix1[0] << 24) 
+			| (pix1[1] << 16)
+			| (pix1[2] << 8)
+			| (pix1[3]) ;
+			*/
+		
+		*dst_it = pix1[3];//blue
 		++dst_it;
-		*dst_it = pix1[1];//saturate_cast<uchar>( pix1[3]);
+		*dst_it = pix1[0]; //green
 		++dst_it;
-		*dst_it = pix1[2];//saturate_cast<uchar>( pix1[3]);
+		*dst_it = pix1[1]; //red
 		++dst_it;
-		*dst_it = pix1[0];//saturate_cast<uchar>( pix1[3]);
+		*dst_it = pix1[2];//alpha
+		
 	}
 
 	DFBSurfaceDescription dsc;
