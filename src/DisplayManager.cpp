@@ -141,34 +141,49 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	/*Die Farben in opencv sind in slices organisiert,
 	 * bbbb,gggg,rrrr,aaaa,… , aber in directfb punktweise,
 	 * argb, argb,… . Daher müssen die Daten
-	 * umorganisiert werden. Da es den Typ in Opencv nicht gibt werden
+	 * umorganisiert werden. Da es den Typ in Opencv nicht gibt, werden
 	 * alle Kanäle in ein Graustufenbild mit 4*8bit gepackt und dann
 	 * in directfb als "argb" interpretiert.
-	 * Kann die Umwandlung vermieden/automatisiert werden?
+	 * Auf einem 'Big Endian' System ist die Bytereihenfolge allerdings
+	 * bgra.
 	 * */
 	typedef Vec<uchar, 4> VT;
 
-	MatConstIterator_<VT> it1 = cvimg.begin<VT>(),
-		it1_end = cvimg.end<VT>();
-	MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
-  for( ; it1 != it1_end; ++it1, ++dst_it ) {
-		VT pix1 = *it1;
-		/*
-		//assume big endian order
-		*dst_it = (pix1[0] << 24) 
-			| (pix1[1] << 16)
-			| (pix1[2] << 8)
-			| (pix1[3]) ;
-			*/
-		
-		*dst_it = pix1[3];//blue
-		++dst_it;
-		*dst_it = pix1[0]; //green
-		++dst_it;
-		*dst_it = pix1[1]; //red
-		++dst_it;
-		*dst_it = pix1[2];//alpha
-		
+	if( m_b9CreatorSettings.m_flipSprites ){
+		//flip image vertical
+
+		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
+		for( int r = cvimg.rows-1 ; r>=0; --r ){
+			cv::Mat row = cvimg.row(r);
+			MatConstIterator_<VT> it1 = row.begin<VT>(),
+				it1_end = row.end<VT>();
+			for( ; it1 != it1_end; ++it1, ++dst_it ) {
+				VT pix1 = *it1;
+
+				*dst_it = pix1[3];//blue
+				++dst_it;
+				*dst_it = pix1[0]; //green
+				++dst_it;
+				*dst_it = pix1[1]; //red
+				++dst_it;
+				*dst_it = pix1[2];//alpha
+			}		
+		}
+	}else{
+		MatConstIterator_<VT> it1 = cvimg.begin<VT>(),
+				it1_end = cvimg.end<VT>();
+		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
+		for( ; it1 != it1_end; ++it1, ++dst_it ) {
+			VT pix1 = *it1;
+
+			*dst_it = pix1[3];//blue
+			++dst_it;
+			*dst_it = pix1[0]; //green
+			++dst_it;
+			*dst_it = pix1[1]; //red
+			++dst_it;
+			*dst_it = pix1[2];//alpha
+		}
 	}
 
 	DFBSurfaceDescription dsc;
@@ -296,6 +311,10 @@ void DisplayManager::initFB(){
 	DFBCHECK (m_pPrimary->SetBlittingFlags (m_pPrimary, DSBLIT_BLEND_ALPHACHANNEL));
 
 	createGrid();
+
+	//set flipping flag
+	//setFlipping(true);
+
 	m_redraw = true;
 	m_img_mutex.unlock();
 
@@ -486,6 +505,14 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 
 
+void DisplayManager::setFlipping(bool flip){
+	if( m_pPrimary == NULL ) return;
+	//Require > DirectFB 1.4.x
+	/*DFBSurfaceBlittingFlags	flags = DSBLIT_FLIP_HORIZONTAL; 
+	m_pPrimary->SetBlittingFlags ( m_pPrimary, flags	);
+	*/
+	VPRINT("setFlipping require DirectFB 1.4.x\n");
+}
 
 
 

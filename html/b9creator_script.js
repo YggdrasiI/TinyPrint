@@ -206,7 +206,12 @@ function create_doubleField(obj, pnode){
 	//format value
 	var val = format(obj,obj.val);
 
-	var inputfield = $('<input id="'+obj.id+'_" value="'+val+'" size="6" />');
+	var inputfield = $('<input id="'+obj.id+'_" value="'+val
+			+(obj.readonly==0?'" ':'" readonly="readonly"')
+			+'" size="6" />');
+
+	if( obj.readonly!=0 ) $("#"+obj.id).addClass("readonly");
+
 	// prevvalue property: backup of value to compare on changements.
 	inputfield.prop("prevvalue", val);
 

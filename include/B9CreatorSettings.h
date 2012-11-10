@@ -131,6 +131,9 @@ class B9CreatorSettings: public JsonConfig{
 		unsigned char m_gridColor[3]; //rgb value
 		bool m_die; // flag indicate end of main loop
 		bool m_connected; // flag indicate serial connecton.
+		/* Flag to flip slice orientation.
+		 * This correct 'wrong' layer order where layer0 is on top */
+		bool m_flipSprites; 
 		JobState m_jobState; //updated by JobManager Thread.
 		std::vector<JobFile*> m_files;
 

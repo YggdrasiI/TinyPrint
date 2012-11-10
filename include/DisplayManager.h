@@ -82,6 +82,10 @@ class DisplayManager {
 		/* Should return png with current displayed image */
 		bool getDisplayedImage(onion_request *req, int actionid, onion_response *res);
 
+		/* Set horizontal flipping of sprites.
+		 * This correct the 'wrong' slice order. */
+		void setFlipping(bool flip);
+
 	private:
 		//This is the super interface, it's the entry point to all functionality.
 		IDirectFB *m_pDfb;

@@ -29,6 +29,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp(),
 	m_jobState(IDLE),
 	m_connected(false),
+	m_flipSprites(true),
 	m_files(),
 	m_currentDisplayedImage(),
 	m_die(false)
@@ -113,6 +114,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("displayStatus",m_display,"token","token") );
 
 	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
+	cJSON_AddItemToArray(html, jsonCheckbox("flipSprites",m_flipSprites) );
 
 	cJSON_AddItemToObject(root, "html", html);
 
@@ -153,6 +155,7 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_xyResolution = 100;
 	m_printProp.m_lockTimes = false;
 	m_jobState = IDLE;
+	m_flipSprites = true;
 };
 
 /*
@@ -163,9 +166,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 	cJSON *nhtml = cJSON_GetObjectItem(jsonNew,"html");
 	cJSON *ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 
-	std::cout << "Changes (A): " << changes << std::endl;
 	lock();
-	std::cout << "Changes (B): " << changes << std::endl;
 
 	/*load values outside of the html node. This valus should only
 	* read from config files.
@@ -212,7 +213,6 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		}
 
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ){
-			//m_redraw = true;
 			changes|=REDRAW;
 		}
 
@@ -239,6 +239,10 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			if( JsonConfig::update(nhtml,ohtml,"zResolution",&m_printProp.m_zResolution) ) changes|=YES;
 			if( JsonConfig::update(nhtml,ohtml,"xyResolution",&m_printProp.m_xyResolution) ) changes|=YES;
 
+			if( JsonConfig::updateCheckbox(nhtml,ohtml,"flipSprites",&m_flipSprites) ){
+				changes|=LAYER;
+			}
+
 			int c2;
 
 			//unlock here because updateFiles can extend m_files vector.
@@ -258,7 +262,6 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 	unlock();
 
 	//call update signal
-	std::cout << "Changes(C): " << changes << std::endl;
 	updateSettings(changes);	
 
 	return changes!=NO?1:0;

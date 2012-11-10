@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define VERBOSE 1
+//#define VERBOSE 1
 
 #ifdef VERBOSE
 #define VPRINT(...) fprintf(stdout, __VA_ARGS__)

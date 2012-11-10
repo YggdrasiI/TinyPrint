@@ -61,13 +61,13 @@ function reloadImage(manual){
 	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
 
 	if(manual){
-		refreshIntervall = window.setInterval("reloadImage(false)", 2000);
+		refreshIntervall = window.setInterval("reloadImage(false)", 200);
 	}
 
 	return true;
 }
 
-refreshIntervall = window.setInterval("reloadImage(false)", 2000);
+refreshIntervall = window.setInterval("reloadImage(false)", 200);
 //-->
 </script>
 </head>
