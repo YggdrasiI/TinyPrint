@@ -13,7 +13,7 @@ Start and example usage on Raspberry PI:
 	Some example settings are already included in bin/start.sh. 
 
   Open a SSH connection and go into the build directory of
-	TinyPrint. Call 'bin/start.sh pi' one-time
+	TinyPrint. Call 'bin/start.sh pi32' one-time
 	to generate the configuration file 'b9CreatorSettings.json'.
 	Quit the first run with Ctrl+C.
 	Open the configuration file and  replace the value of 'comPort'
