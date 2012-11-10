@@ -8,13 +8,16 @@
 
 	div.prop {
 		margin-right:1em;
-		width:22em;
+		width:100%;
 		text-align:right;
 		color:black;
 		font-weight:bold;
 		/*display:inline-block;*/
 	}
-	div.prop span { }
+	div.prop spanX {
+		width:12em;
+		text-align:left;
+	}
 
 	.containerL { 
 		float:left;
@@ -23,10 +26,17 @@
 		padding:1em;
 		border:1px solid black;
 	}
-	.containerL span { width:10em; }
+	.containerL spanX { width:10em; }
 	.containerL input { text-align:center;}
 	.containerL input[type="button"] { width:10em; }
 
 	.red * input { background-color:red; }
 	.readonly * input { background-color:#CCCCCC; }
-	.json_input { color:green; width:7em; /*display:inline-block;*/ padding-right:1em; };
+	.json_input {
+		text-align:center;
+		color:green;
+		width:10em;
+		display:inline-block;
+		/*display:inline;/*make width useless*/
+		padding-right:0em;
+	}

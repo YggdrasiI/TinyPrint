@@ -87,7 +87,7 @@ function cu_fields(obj,prefix){
 function create_intField(obj, pnode){
 	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
 	//var description = description + " Diff: "+obj.diff;
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
 	//format value
@@ -200,7 +200,7 @@ function check_intField(o, val){
 function create_doubleField(obj, pnode){
 	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
 	//var description = description + " Diff: "+obj.diff;
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
 	//format value
@@ -295,7 +295,7 @@ function check_doubleField(o, val){
 /* Simple label field */
 function create_stateField(obj, pnode){
 	var description = "Id: "+obj.id+" Val: "+obj.val;
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
 	//format value
@@ -318,7 +318,7 @@ function update_stateField(obj){
 
 function create_checkboxField(obj, pnode){
 	var description = "Id: "+obj.id;
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
 	var inputfield = $('<input type="checkbox" id="'+obj.id+'_" value="yes" />');
@@ -350,8 +350,8 @@ function update_checkboxField(obj){
 
 function create_messagesField(obj, pnode){
 	var description = "Messages field. Refresh every second. Id: "+obj.id;
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
-	ret.addClass("json_input");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
+	//ret.addClass("json_input");
 
 	var field = $('<textarea id="'+obj.id+'_" rows="10" cols="35" >');
 	field.prop("readonly",true);
@@ -458,7 +458,7 @@ function create_jobFileList(){
 	pnode = $("#fileBrowserList");
 
 	var description = "List of job files. Edit the *.ini file to change the folder";
-	var ret = $("<span title='"+description+"' alt='"+description+"'>");
+	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
 	var selectfield = $('<select id="fileBrowserListSelection" size="1">'); 
