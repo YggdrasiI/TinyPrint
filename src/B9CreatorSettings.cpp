@@ -531,7 +531,7 @@ int B9CreatorSettings::loadJob(const std::string filename){
 
 	try{
 		if( check_svgExtension(filename.c_str()) ){
-			jf = new JobFileSvg(path.c_str(), m_printProp.m_xyResolution/10);
+			jf = new JobFileSvg(path.c_str(), 1000/m_printProp.m_xyResolution);
 		} else if( check_listExtension(filename.c_str()) ){
 			jf = new JobFileList(path.c_str(), m_b9jDir.c_str() );
 		} else if( check_b9jExtension(filename.c_str()) ){
