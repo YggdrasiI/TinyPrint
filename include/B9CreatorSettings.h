@@ -165,6 +165,7 @@ class B9CreatorSettings: public JsonConfig{
 		boost::signal<void (int changes)> updateSettings;
 
 		int loadJob(const std::string filename);
+		int unloadJob(const int index);
 		void clearJobs();
 
 		/* Overwrite two methodes to save filename */

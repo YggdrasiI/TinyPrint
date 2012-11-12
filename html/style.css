@@ -3,6 +3,7 @@
 
 	body { background-color:#003264; }
 	h1 { font-size:120%; }
+	a { text-decoration:none; }
 
 	#div { border: 1px solid green; }
 

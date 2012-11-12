@@ -562,3 +562,26 @@ int B9CreatorSettings::loadJob(const std::string filename){
 
 	return 0;
 }
+
+int B9CreatorSettings::unloadJob(const int index){
+
+	if( index>= m_files.size() ) return -1; //wrong index
+	if( m_printProp.m_lockTimes ) return -2; //currently printing
+
+	lock();
+
+	JobFile *jf = m_files[index];
+	VPRINT("Unload %i. Job (%s)\n",index, jf->m_filename);
+	delete(jf);
+	m_files.erase( m_files.begin() + index );
+
+	//Update the number layers which should
+	//printed.
+	updateMaxLayer();
+	//update json
+	regenerateConfig();
+
+	unlock();
+
+	return 0;
+}

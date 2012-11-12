@@ -573,6 +573,19 @@ void JobManager::run(){
 bool JobManager::webserverSetState(onion_request *req, int actionid, onion_response *res){
 	
 	switch( actionid ){
+		case 8:
+			{	/* remove Job */
+				std::string reply("failed");
+				//int index = atoi( onion_request_get_queryd(req,"job_file_index","0") );
+				int index = atoi( onion_request_get_post(req,"job_file_index") );
+				if( 0 == m_b9CreatorSettings.unloadJob(index) ){
+					reply = "ok";
+				}
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+				return true;
+
+			}
+			break;
 		case 7:
 			{  /* load Job */
 				std::string reply("failed");

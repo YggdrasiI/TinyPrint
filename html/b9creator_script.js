@@ -414,7 +414,7 @@ function create_filesField(obj, pnode){
 	for( var i in obj.filearray){
 		var file = obj.filearray[i];
 		var filespan = $("<div tite='"+file.filename+"' id='file_"+i+"'>");
-		filespan.append( $("<h2>"+file.filename+"</h2>") );
+		filespan.append( $("<h2>"+file.filename+" [<a href='javascript:unloadFile("+i+")'>X</a>]</h2>") );
 		filespan.append( $("<p>"+file.description+"</p>") );
 		ret.append(filespan);
 
@@ -514,6 +514,20 @@ function loadFile(button){
 			}
 			);
 }
+
+function unloadFile(fileindex){
+	//its possible to load the same job twice.
+	//thus, we do not use the filename to identify files.
+	var ret = confirm("Remove file?");
+	if( ret ){
+		send("update?actionid=8","job_file_index="+fileindex,
+				function(data){
+					if( data == "ok" ) window.location.reload();
+				}
+				);
+	}
+}
+
 
 function loadConfig(){
 	var configFilename = $('#configFilename').val();
