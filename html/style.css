@@ -1,7 +1,10 @@
 @charset "UTF-8";
 /*@charset "ISO-8859-1";*/
 
-	body { background-color:#003264; }
+	body { background-color:#003264;
+		padding:0px;
+		margin: 0px;
+	}
 	h1 { font-size:120%; }
 	a { text-decoration:none; }
 
@@ -20,16 +23,24 @@
 		text-align:left;
 	}
 
-	.containerL { 
-		float:left;
-		width:25em;
+	.containerL, .containerR, .preview { 
 		background-color:#DDDDDD;
 		padding:1em;
 		border:1px solid black;
 	}
-	.containerL spanX { width:10em; }
-	.containerL input { text-align:center;}
-	.containerL input[type="button"] { width:10em; }
+	.containerL { 
+		width:25em;
+		float:left;
+	}
+
+	.containerR { 
+		width:25em;
+		float:right;
+	}
+
+	.containerL spanX, .containerR spanX { width:10em; }
+	.containerL input, .containerR input { text-align:center;}
+	.containerL [type="button"], .containerR input[type="button"] { width:10em; }
 
 	.red * input { background-color:red; }
 	.readonly * input { background-color:#CCCCCC; }
@@ -40,4 +51,10 @@
 		display:inline-block;
 		/*display:inline;/*make width useless*/
 		padding-right:0em;
+	}
+
+	.preview {
+		float:left;
+		/*width:52em;*/
+		/*	clear:left;*/
 	}

@@ -12,8 +12,36 @@
 <script type="text/javascript" src="files.js"></script>
 <script type="text/javascript" src="b9creator_settings.js"></script>
 <script type="text/javascript" src="b9creator_script.js"></script>
+<script type="text/javascript" src="b9creator_preview.js"></script> </head>
 </head>
 <body>
+	<div class="containerL">
+		<h1>Manual Printer Communication</h1>
+		<div style="float:left">
+			<input type="button" onclick="sendCmd('V100')" value="VAT Open" /><br />
+			<input type="button" onclick="sendCmd('V0')" value="VAT Close" />
+		</div>
+		<div style="float:right">
+			<input type="button" onclick="sendCmd('P1')" value="Projector On " /><br />
+			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
+		</div>
+		<div style="clear:both">
+			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
+		</div>
+		<p />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print (Init)" />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
+		<br />
+		<div class="prop" id="jobState">Job Manager State: </div>
+		<hr />
+		<h1>File Browser</h1>
+		<span class="prop" id="fileBrowserList">Files: </span><br />
+		<input id="openButton" type="button" onclick="loadFile(this)" value="Open" />
+		<input id="refreshFileListButton" type="button" onclick="update_jobFileList()" value="⟳" title="Refresh file list." />
+		<hr />
+		<h1>Loaded Files</h1>
+		<div class="prop" id="files"></div>
+	</div>
 	<div class="containerL">
 		<h1>Configs</h1>
 		<p>Configs saves meta data like exposure time, model position,…<br>
@@ -33,7 +61,7 @@
 		<hr />
 		<h1>Display Window Controls</h1>
 		<input type="button" onclick="toggleDisplay(this)" value="Toggle Display" /> 
-		<a href="preview.html" style="text-decoration:none" target="_blank" ><input type="button" value="Preview" /></a>
+		<!--<a href="preview.html" style="text-decoration:none" target="_blank" ><input type="button" value="Preview" /></a>-->
 		<div class="prop" id="displayStatus">
 				Display: </div>
 		<div class="prop" id="currentLayer">Current Layer: </div>
@@ -59,37 +87,25 @@
 		<div class="prop" id="xyResolution">XY Resolution: </div>
 		<div class="prop" id="flipSprites" title="Activate this to avoid\nwrong orientation\nof non-symmetric objects.">Flip Objects: </div>
 		<hr />
-		<h1>File Browser</h1>
-		<span class="prop" id="fileBrowserList">Files: </span><br />
-		<input id="openButton" type="button" onclick="loadFile(this)" value="Open" />
-		<input id="refreshFileListButton" type="button" onclick="update_jobFileList()" value="⟳" title="Refresh file list." />
-		<hr />
-		<h1>Loaded Files</h1>
-		<div class="prop" id="files"></div>
-	</div>
-	<div class="containerL">
-		<h1>Manual Printer Communication</h1>
-		<div style="float:left">
-			<input type="button" onclick="sendCmd('V100')" value="VAT Open" /><br />
-			<input type="button" onclick="sendCmd('V0')" value="VAT Close" />
-		</div>
-		<div style="float:right">
-			<input type="button" onclick="sendCmd('P1')" value="Projector On " /><br />
-			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
-		</div>
-		<div style="clear:both">
-			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
-		</div>
-		<p />
-		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print (Init)" />
-		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
-		<br />
-		<div class="prop" id="jobState">Job Manager State: </div>
-	</div>
-	<div class="containerL">
 		<h1>Raw Messages</h1>
 		<div class="prop" id="serialMessages"></div>
 		<input type="input" id="cmdInput" value="r" size="6" />
 		<input type="button" onclick="sendCmd($('#cmdInput').val()); $('#cmdInput').val('')" value="Send" />
 	</div>
+
+	<div class="preview" id="previewContainer" xxx="{{ONION_LINE_BREAK_FIX}}">
+		<h1>Preview</h1>
+		<p>The preview shows the exact copy of the displayed beamer image and require that the display is on.<br>
+		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="checked" /> 
+			Scale: <select id="previewScale">
+				<option value="100">100%</option>
+				<option value="50" selected>50%</option>
+				<option value="25" >25%</option>
+			</select>
+		</span>
+		<span id="info"></span>
+		</p>
+		<span id="previewImg" onClick="reloadImage(true)" title="Click to reload."><img src="preview.png?scale=50&force=1" /></span>
+	</div>
 </body>
+</html>
