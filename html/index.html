@@ -16,23 +16,19 @@
 </head>
 <body>
 	<div class="containerL">
-		<h1>Manual Printer Communication</h1>
-		<div style="float:left">
-			<input type="button" onclick="sendCmd('V100')" value="VAT Open" /><br />
-			<input type="button" onclick="sendCmd('V0')" value="VAT Close" />
-		</div>
-		<div style="float:right">
-			<input type="button" onclick="sendCmd('P1')" value="Projector On " /><br />
-			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
-		</div>
-		<div style="clear:both">
-			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
-		</div>
-		<p />
-		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print (Init)" />
-		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
-		<br />
-		<div class="prop" id="jobState">Job Manager State: </div>
+		<h1>B9Creator Settings</h1>
+		<div class="prop" id="stepsPerRevolution">Steps per revolution: </div>
+		<div class="prop" id="threadPerInch">Threads per inch: </div>
+		<div class="prop" id="releaseCycleTime">Release Cycle Time: </div>
+		<div class="prop" id="breathTime">Breath Time: </div>
+		<div class="prop" id="exposureTime">Exposure Time: </div>
+		<div class="prop" id="nmbrOfAttachedLayers"># Attach Layers (AL): </div>
+		<div class="prop" id="exposureTimeAL">AL Exposure Time: </div>
+		<div class="prop" id="overcureTime">Overcure Time: </div>
+		<hr />
+		<div class="prop" id="zResolution">Z Resolution: </div>
+		<div class="prop" id="xyResolution">XY Resolution: </div>
+		<div class="prop" id="flipSprites" title="Activate this to avoid\nwrong orientation\nof non-symmetric objects.">Flip Objects: </div>
 		<hr />
 		<h1>File Browser</h1>
 		<span class="prop" id="fileBrowserList">Files: </span><br />
@@ -73,19 +69,23 @@
 		<input type="button" onclick="quitServerApp()" value="Quit" />
 	</div>
 	<div class="containerL">
-		<h1>B9Creator Settings</h1>
-		<div class="prop" id="stepsPerRevolution">Steps per revolution: </div>
-		<div class="prop" id="threadPerInch">Threads per inch: </div>
-		<div class="prop" id="releaseCycleTime">Release Cycle Time: </div>
-		<div class="prop" id="breathTime">Breath Time: </div>
-		<div class="prop" id="exposureTime">Exposure Time: </div>
-		<div class="prop" id="nmbrOfAttachedLayers"># Attach Layers (AL): </div>
-		<div class="prop" id="exposureTimeAL">AL Exposure Time: </div>
-		<div class="prop" id="overcureTime">Overcure Time: </div>
-		<hr />
-		<div class="prop" id="zResolution">Z Resolution: </div>
-		<div class="prop" id="xyResolution">XY Resolution: </div>
-		<div class="prop" id="flipSprites" title="Activate this to avoid\nwrong orientation\nof non-symmetric objects.">Flip Objects: </div>
+		<h1>Manual Printer Communication</h1>
+		<div style="float:left">
+			<input type="button" onclick="sendCmd('V100')" value="VAT Open" /><br />
+			<input type="button" onclick="sendCmd('V0')" value="VAT Close" />
+		</div>
+		<div style="float:right">
+			<input type="button" onclick="sendCmd('P1')" value="Projector On " /><br />
+			<input type="button" onclick="sendCmd('P0')" value="Projector Off" />
+		</div>
+		<div style="clear:both">
+			<input type="button" onclick="sendCmd('G630')" value="Go To Fill Level" /><br />
+		</div>
+		<p />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="printButton" onclick="jobManagerCmd('toggle','printButton','abortButton')" value="Print (Init)" />
+		<input style="padding-top:1em;padding-bottom:1em" type="button" id="abortButton" onclick="jobManagerCmd('abort','printButton','abortButton')" value="Abort" /><br />
+		<br />
+		<div class="prop" id="jobState">Job Manager State: </div>
 		<hr />
 		<h1>Raw Messages</h1>
 		<div class="prop" id="serialMessages"></div>
