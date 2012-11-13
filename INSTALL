@@ -7,6 +7,7 @@ Dependiencies:
 (iv)  Boost
 (v)   Cairo and librsvg2 
 (vi)  Onion 
+(vii) On Raspberry PI: fbset + Extra boot parameter
 
 ----------------------------------------------------------------
 
@@ -32,6 +33,14 @@ vi) This lib has to be installed manually.
 
 Note: If make failed with '[-Wunused-result]' message open CMakeLists.txt
 and remove '-Werror' from the CMAKE_C_FLAGS.
+
+vii) For Raspberry Pi:
+  Installation of fbset 
+    sudo apt-get install fbset
+  Add the following lines to your /boot/config.txt to increase some video memory buffer.
+    framebuffer_width=1024
+    framebuffer_height=768
+
 
 ----------------------------------------------------------------
 
