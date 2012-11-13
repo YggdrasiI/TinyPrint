@@ -740,7 +740,9 @@ function jobManagerAbort(button){
 }
 
 function quitServerApp(){
-	send("update?actionid=3","",null);
+	ok = confirm("Quit TinyPrint Server?");
+	if( ok )
+		send("update?actionid=3","",null);
 }
 
 /* Send serial command */
