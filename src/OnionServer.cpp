@@ -38,7 +38,6 @@ namespace fs = boost::filesystem;
 // This has to be extern, as we are compiling C++
 extern "C"{
 int index_html_template(void *p, onion_request *req, onion_response *res);
-int b9creator_script_js_template(void *p, onion_request *req, onion_response *res);
 int b9creator_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
@@ -54,24 +53,19 @@ int update_data(void *p, onion_request *req, onion_response *res){
 	 */
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 
-	// Attention each signal handler wrote into the same string 'post_reply'
-	//((OnionServer*)p)->updateSignal(req, actionid, reply);
 	if( ! ((OnionServer*)p)->updateSignal(req, actionid, res) ){
-		//signals did not write into response. Write default reply.
+		// Signal returns true if at least one handler writes into res.
+		// Write default reply, if nothing was written.
 		std::string reply("reload");
 		onion_response_write(res, reply.c_str(), reply.size() ); 
 	}
 
-	//onion_response_set_length(res, reply.size() );
 	return OCS_PROCESSED;
 }
 
 /*
- Returns json struct of current settings. If
- argument
- Check post values and then return template of index.html.
- (Or use *p for other callbacks (not implemented))
-*/
+ * Returns json struct of current settings. 
+ */
 int getB9CreatorSettings(void *p, onion_request *req, onion_response *res){
 	const char* b9Creator = ((OnionServer*)p)->m_b9CreatorSettings.getConfig(true);
 	size_t len = strlen( b9Creator );

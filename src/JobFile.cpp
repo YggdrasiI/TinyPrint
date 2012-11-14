@@ -205,6 +205,12 @@ cv::Mat JobFileSvg::loadSlice(int layer){
 	//convert to grayscale image with alpha channel
 	//ret.convertTo( ret, CV_8UC2 );
 	
+	/* Remove interpolation B9Creator beta software approach to
+	 * get black-white-image (see crushbitmap.cpp )
+	 * if(c.red()<32 && c.blue()<32 && c.green()<32) return false;
+	 */
+	cv::threshold(ret, ret, 31, 255, cv::THRESH_BINARY);
+	
 	//use red values as mask (assume white/black image)
 	int from_to[] = { 0,0,  1,1,  2,2,  0,3 };
 	cv::mixChannels( &ret, 1, &ret, 1, from_to, 4 );

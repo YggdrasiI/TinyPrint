@@ -431,7 +431,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				}
 
 				DFBSurfacePixelFormat format; // Should be DSPF_ARGB
-				int channels=1;//4=RGBA, -4=ABRG ?!
+				int channels=1;//4=RGBA, -4=ABRG 
 
 				m_pPrimary->GetPixelFormat(m_pPrimary, &format);
 				//printf("Pixelformat: %i", (int)format);

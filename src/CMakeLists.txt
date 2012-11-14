@@ -29,18 +29,14 @@ set(server_SRCS
 # create sourcefile from html template
 add_custom_command(
 	OUTPUT index_html.c
+	#	COMMAND ${OPACK} ${CMAKE_SOURCE_DIR}/html/index.html -o ${CMAKE_CURRENT_BINARY_DIR}/index_html.c
 	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/index.html ${CMAKE_CURRENT_BINARY_DIR}/index_html.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/index.html
-	)
-add_custom_command(
-	OUTPUT b9creator_script_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_script.js ${CMAKE_CURRENT_BINARY_DIR}/b9creator_script_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_script.js
+	DEPENDS ${CMAKE_SOURCE_DIR}/html/index.html
 	)
 add_custom_command(
 	OUTPUT b9creator_settings_js.c
 	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js ${CMAKE_CURRENT_BINARY_DIR}/b9creator_settings_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js
+	DEPENDS ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js
 	)
 
 add_library (server SHARED ${server_SRCS})

@@ -341,7 +341,7 @@ void JobManager::run(){
 					if( zHeight2 > zHeightLimit ){
 						std::ostringstream zError;
 						zError << "(Job) Height of next layer higher as maximal height. Abort job."
-						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
+						<< std::endl << "Current height: " << zHeight << " Next height: " << zHeight2
 						<< std::endl << "Height limit: " << zHeightLimit
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
@@ -353,7 +353,7 @@ void JobManager::run(){
 					if( zHeight2 <= zHeight ){
 						std::ostringstream zError;
 						zError << "(Job) Height of next layer lower as current height. Abort job."
-						<< std::endl << "current height: " << zHeight << " Next height: " << zHeight2
+						<< std::endl << "Current height: " << zHeight << " Next height: " << zHeight2
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
 						RUNPRINT("%s", zErrorStr.c_str() );
