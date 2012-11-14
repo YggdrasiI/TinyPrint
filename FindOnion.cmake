@@ -42,6 +42,7 @@ find_path(Onion_BIN_DIR
 
 if(Onion_BIN_DIR)
 	set(OTEMPLATE ${Onion_BIN_DIR}/otemplate)
+	set(OPACK ${Onion_BIN_DIR}/opack)
 endif(Onion_BIN_DIR)
 
 if(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)

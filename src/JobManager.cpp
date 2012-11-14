@@ -125,8 +125,7 @@ int JobManager::pauseJob(){
 
 	Messages &q = m_b9CreatorSettings.m_queues;
 
-	gettimeofday( &m_tTimer.begin, NULL );
-	//m_tPause.begin = (timeval_t*) time(NULL);
+	gettimeofday( &m_tPause.begin, NULL );
 	m_pauseInState = m_state;
 
 	/** Try to reach hazard-free state. **/
@@ -520,7 +519,7 @@ void JobManager::run(){
 					q.add_command(cmd_finished);
 
 					m_b9CreatorSettings.lock();
-					m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
+					//m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
 					m_b9CreatorSettings.unlock();
 					//fall through...
 				}
@@ -609,11 +608,22 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 #ifdef VERBOSE
 				std::cout << "'"<< print_cmd << "'" << std::endl;
 #endif
+				//convert toggle into start or pause
+				if( 0 == print_cmd.compare("toggle") ){
+					if( m_state == START_STATE || m_state == IDLE )
+						print_cmd = "start";
+					else if( m_state == PAUSE )
+						print_cmd = "resume";
+					else
+						print_cmd = "pause";
+				}
+
+
 				if( 0 == print_cmd.compare("init") ){
 					if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) )
 						reply = "idle";
 
-				}else if( 0 == print_cmd.compare("start") || 0 == print_cmd.compare("toggle")){
+				}else if( 0 == print_cmd.compare("start") ){
 					if( m_state == START_STATE){
 						//we can not start job. Init at first.
 						if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) 
@@ -628,12 +638,9 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 						reply = "idle";
 					}
 
-				}else if( 0 == print_cmd.compare("pause") || 0 == print_cmd.compare("toggle") ){
-					if( m_state == PAUSE ){
+				}else if( 0 == print_cmd.compare("pause") ){
 						if( 0 == pauseJob() )
 							reply = "pause";
-					}
-					//can not resume without pause state.
 
 				}else if( 0 == print_cmd.compare("resume") ){
 					if( 0 == resumeJob() ) 

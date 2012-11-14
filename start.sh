@@ -29,10 +29,10 @@ case "$1" in
 	laptop)
 		# Setting for aspire3020 with
 		# ubuntu 12.4 os.
-		bin/main nofullscreen 
+		bin/main nofullscreen --dfb:mode=1024x768 --dfb:pixelformat=RGB32
 		;;
 	x11)
-		bin/main nofullscreen --dfb:system=x11 --dfb:force-windowed
+		bin/main nofullscreen --dfb:system=x11 --dfb:force-windowed --dfb:pixelformat=RGB32
 		;;
 	*)
 		# Default values
