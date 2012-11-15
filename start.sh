@@ -24,7 +24,8 @@ case "$1" in
 	igep)
 		# Setting for igep board with
 		# linaro 12.x os.
-		bin/main --dfb:mode=1024x768 --dfb:pixelformat=RGB16
+		sudo fbset -a -depth 32
+		bin/main --dfb:mode=1024x768 --dfb:pixelformat=RGB32
 		;;
 	laptop)
 		# Setting for aspire3020 with
