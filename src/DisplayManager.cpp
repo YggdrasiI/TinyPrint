@@ -83,11 +83,19 @@ void DisplayManager::createGrid(){
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc2, &m_grid ));
 
 	// Set color of grid lines */
+#ifdef FLIP_COLORS
+  DFBCHECK (m_grid->SetColor (m_grid, 
+				0xFF,
+				m_b9CreatorSettings.m_gridColor[2],
+				m_b9CreatorSettings.m_gridColor[1],
+				m_b9CreatorSettings.m_gridColor[0]));
+#else
   DFBCHECK (m_grid->SetColor (m_grid, 
 				m_b9CreatorSettings.m_gridColor[0],
 				m_b9CreatorSettings.m_gridColor[1],
 				m_b9CreatorSettings.m_gridColor[2],
 				0xFF));
+#endif
 	/* Create 100px X 100px grid */
 	int i;
 	for( i=0; i<dsc2.width; i+=100){
@@ -160,18 +168,20 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 			for( ; it1 != it1_end; ++it1, dst_it+=4 ) {
 				VT pix1 = *it1;
 				/*
-				 *dst_it = pix1[3];//blue
+				 *dst_it = pix1[3];//alpha
 				 ++dst_it;
-				 *dst_it = pix1[0]; //green
+				 *dst_it = pix1[0]; //red
 				 ++dst_it;
-				 *dst_it = pix1[1]; //red
+				 *dst_it = pix1[1]; //green
 				 ++dst_it;
-				 *dst_it = pix1[2];//alpha
+				 *dst_it = pix1[2];//blue
 				 */
 #ifdef FLIP_COLORS
-				*dst_it = (pix1[2] << 24) | (pix1[3] << 16) | (pix1[0] << 8) | pix1[1];
+				//bgra
+				*dst_it = (pix1[0] << 24) | (pix1[1] << 16) | (pix1[2] << 8) | pix1[3];
 #else
-				*dst_it = (pix1[2] << 24) | (pix1[1] << 16) | (pix1[0] << 8) | pix1[3];
+				//argb
+				*dst_it = (pix1[3] << 24) | (pix1[2] << 16) | (pix1[1] << 8) | pix1[0];
 #endif
 
 			}		
