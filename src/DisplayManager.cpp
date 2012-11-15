@@ -84,12 +84,14 @@ void DisplayManager::createGrid(){
 
 	// Set color of grid lines */
 #ifdef FLIP_COLORS
+	//brga
   DFBCHECK (m_grid->SetColor (m_grid, 
-				0xFF,
 				m_b9CreatorSettings.m_gridColor[2],
 				m_b9CreatorSettings.m_gridColor[1],
-				m_b9CreatorSettings.m_gridColor[0]));
+				m_b9CreatorSettings.m_gridColor[0],
+				0xFF));
 #else
+	//rgba
   DFBCHECK (m_grid->SetColor (m_grid, 
 				m_b9CreatorSettings.m_gridColor[0],
 				m_b9CreatorSettings.m_gridColor[1],
@@ -177,8 +179,8 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 				 *dst_it = pix1[2];//blue
 				 */
 #ifdef FLIP_COLORS
-				//bgra
-				*dst_it = (pix1[0] << 24) | (pix1[1] << 16) | (pix1[2] << 8) | pix1[3];
+				//rgba
+				*dst_it = (pix1[2] << 24) | (pix1[1] << 16) | (pix1[0] << 8) | pix1[3];
 #else
 				//argb
 				*dst_it = (pix1[3] << 24) | (pix1[2] << 16) | (pix1[1] << 8) | pix1[0];
