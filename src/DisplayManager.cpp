@@ -152,21 +152,28 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	if( m_b9CreatorSettings.m_flipSprites ){
 		//flip image vertical
 
-		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
+		MatIterator_<uint32_t> dst_it = sprite->cvmat.begin<uint32_t>();
 		for( int r = cvimg.rows-1 ; r>=0; --r ){
 			cv::Mat row = cvimg.row(r);
 			MatConstIterator_<VT> it1 = row.begin<VT>(),
 				it1_end = row.end<VT>();
-			for( ; it1 != it1_end; ++it1, ++dst_it ) {
+			for( ; it1 != it1_end; ++it1, dst_it+=4 ) {
 				VT pix1 = *it1;
+				/*
+				 *dst_it = pix1[3];//blue
+				 ++dst_it;
+				 *dst_it = pix1[0]; //green
+				 ++dst_it;
+				 *dst_it = pix1[1]; //red
+				 ++dst_it;
+				 *dst_it = pix1[2];//alpha
+				 */
+#ifdef FLIP_COLORS
+				*dst_it = (pix1[2] << 24) | (pix1[3] << 16) | (pix1[0] << 8) | pix1[1];
+#else
+				*dst_it = (pix1[2] << 24) | (pix1[1] << 16) | (pix1[0] << 8) | pix1[3];
+#endif
 
-				*dst_it = pix1[3];//blue
-				++dst_it;
-				*dst_it = pix1[0]; //green
-				++dst_it;
-				*dst_it = pix1[1]; //red
-				++dst_it;
-				*dst_it = pix1[2];//alpha
 			}		
 		}
 	}else{
@@ -435,8 +442,13 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 				m_pPrimary->GetPixelFormat(m_pPrimary, &format);
 				//printf("Pixelformat: %i", (int)format);
-				if( format == DSPF_ARGB ) channels=-4;
-				else{
+				if( format == DSPF_ARGB ){
+#ifdef FLIP_COLORS
+					channels=4;
+#else
+					channels=-4;
+#endif
+				}else{
 					//generate 1x1 pixel
 					unsigned char *image=new unsigned char[4];
 					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;

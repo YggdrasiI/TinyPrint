@@ -1,5 +1,6 @@
 project(B9CreatorLinux)
 cmake_minimum_required(VERSION 2.6)
+option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" OFF)
 
 set(EXTRA_C_FLAGS "${PG_FLAGS}")
 set(EXTRA_C_FLAGS_DEBUG "")
@@ -40,6 +41,13 @@ message(FATAL_ERROR "Could not find gtk2 installation.")
 endif(GTK2_FOUND)
 
 ## end required and optional packages
+
+## set definitions
+if(FLIP_COLORS)
+	add_definitions(-DFLIP_COLORS)
+endif(FLIP_COLORS)
+## end set definitions
+
 
 ## add include dirs and lib dirs of above packages
 include_directories(

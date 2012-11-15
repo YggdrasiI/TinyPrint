@@ -209,7 +209,6 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			m_gridColor[0] = max(0,min( (color>>16) & 0xFF  ,255));//red bits
 			m_gridColor[1] = max(0,min( (color>>8) & 0xFF  ,255));//green bits
 			m_gridColor[2] = max(0,min( (color>>0) & 0xFF  ,255));//blue bits
-			
 		}
 
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ){
