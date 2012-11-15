@@ -53,8 +53,13 @@ set(main_SRCS
 	JobFile.cpp
 	JobFileSvg.cpp
 	JobFileList.cpp
+	)
+
+if(B9J_SUPPORT)
+set(main_SRCS ${main_SRCS} 
 	JobFileB9J.cpp
 	)
+endif(B9J_SUPPORT)
 
 add_executable (main ${main_SRCS} )
 
@@ -68,6 +73,13 @@ target_link_libraries(main server
 	${GTK2_LIBARIES}
 	${Boost_LIBRARIES}
 	)
+
+if(B9J_SUPPORT)
+target_link_libraries(main 
+	${QT_LIBRARIES}
+	)
+endif(B9J_SUPPORT)
+
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 

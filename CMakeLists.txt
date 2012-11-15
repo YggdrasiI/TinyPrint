@@ -1,6 +1,7 @@
 project(B9CreatorLinux)
 cmake_minimum_required(VERSION 2.6)
-option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" ON)
+option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" OFF)
+option(B9J_SUPPORT "Enable loading of b9j filetype. Require QT library." ON)
 
 set(EXTRA_C_FLAGS "${PG_FLAGS}")
 set(EXTRA_C_FLAGS_DEBUG "")
@@ -39,6 +40,21 @@ message(STATUS " - Libraries: ${GTK2_LIBRARIES}" )
 else(GTK2_FOUND)
 message(FATAL_ERROR "Could not find gtk2 installation.")
 endif(GTK2_FOUND)
+
+# begin of optional packages
+if(B9J_SUPPORT)
+find_package(Qt4 REQUIRED)
+if(QT4_FOUND )
+message(STATUS " Lib: qt4" )
+message(STATUS " - Includes: ${QT_INCLUDES}" )
+message(STATUS " - Libraries: ${QT_LIBRARIES}" )
+include_directories( ${QT_INCLUDES} )
+else(QT4_FOUND)
+	message(FATAL_ERROR "Could not find qt installation. Install qt4 dev. packages or disable b9j support.")
+endif(QT4_FOUND)
+endif(B9J_SUPPORT)
+
+
 
 ## end required and optional packages
 
