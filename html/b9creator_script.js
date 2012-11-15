@@ -159,6 +159,58 @@ function create_intField(obj, pnode){
 		return false;
 	});
 
+	inputfield.bind('keyup', function(event) {
+
+		var o = pnode.prop("json"); 
+		if(o.readonly) return false;
+
+		var accel =0;
+		switch( event.which ){
+			case 37: /*Left key */
+				accel =-1;
+				break;
+			case 39: /*Right key */
+				accel =1;
+				break;
+			case 38: /*Up key */
+				accel =10;
+				break;
+			case 40: /*Down key */
+				accel =-10;
+				break;
+			case 33: /*PageUp key */
+				accel =10000;
+				break;
+			case 34: /*PageDown key */
+				accel =-10000;
+				break;
+			case 13: /* Enter */
+				inputfield.blur();
+				return false;
+				break;
+		}
+
+
+		var prevVal = parse(o,this.value);
+		var nextVal = prevVal + parseInt(accel*o.diff);
+
+		//cut low and high values
+		nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+		var nextValStr = format(o,nextVal);
+
+		//check if new value is valid.
+		if(check_intField(o, nextValStr)){
+			this.value = nextValStr;
+			//send updated values to server
+			var o = pnode.prop("json"); 
+			if( o.val != nextVal ) inputfield.trigger('change');
+		}
+
+		return false;
+	});
+
+
 	ret.append( inputfield ); 
 	pnode.append( ret );
 }
@@ -271,6 +323,58 @@ function create_doubleField(obj, pnode){
 
 		return false;
 	});
+
+	inputfield.bind('keyup', function(event) {
+
+		var o = pnode.prop("json"); 
+		if(o.readonly) return false;
+
+		var accel =0;
+		switch( event.which ){
+			case 37: /*Left key */
+				accel =-1;
+				break;
+			case 39: /*Right key */
+				accel =1;
+				break;
+			case 38: /*Up key */
+				accel =10;
+				break;
+			case 40: /*Down key */
+				accel =-10;
+				break;
+			case 33: /*PageUp key */
+				accel =10000;
+				break;
+			case 34: /*PageDown key */
+				accel =-10000;
+				break;
+			case 13: /* Enter */
+				inputfield.blur();
+				return false;
+				break;
+		}
+
+		var prevVal = parse(o,this.value);
+		var nextVal = Math.round( 100*(prevVal + accel*o.diff) )/100;
+
+		//cut low and high values
+		nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+		var nextValStr = format(o,nextVal);
+
+		//check if new value is valid.
+		if(check_doubleField(o, nextValStr)){
+			this.value = nextValStr;
+			//send updated values to server
+			var o = pnode.prop("json"); 
+			if( o.val != nextVal ) inputfield.trigger('change');
+		}
+
+		return false;
+	});
+
+
 	ret.append( inputfield ); 
 	pnode.append( ret );
 
