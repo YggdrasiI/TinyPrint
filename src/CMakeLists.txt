@@ -51,6 +51,9 @@ set(main_SRCS
 	DisplayManager.cpp
 	JobManager.cpp
 	JobFile.cpp
+	JobFileSvg.cpp
+	JobFileList.cpp
+	JobFileB9J.cpp
 	)
 
 add_executable (main ${main_SRCS} )

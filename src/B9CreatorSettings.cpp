@@ -1,6 +1,9 @@
 #include <vector>
 #include "B9CreatorSettings.h"
 #include "JobFile.h"
+#include "JobFileSvg.h"
+#include "JobFileList.h"
+#include "JobFileB9J.h"
 #include "OnionServer.h"
 
 using namespace std;

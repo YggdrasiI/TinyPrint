@@ -124,45 +124,4 @@ class JobFile{
 
 };
 
-class JobFileSvg : public JobFile {
-	private:
-		cairo_t *m_pCairo;
-		cairo_surface_t *m_pSurface;
-		RsvgHandle *m_pRsvgHandle;
-	public:
-		JobFileSvg(const char* filename, double scale=1.0f);
-		~JobFileSvg();
-		void setScale(double scale);
-
-	protected:
-		/* Load raw image data. */
-		cv::Mat loadSlice(int layer);
-
-
-};
-
-/*
- * Use list of filenames to load
- * image for each layer.
- * Filenames are relative to job_files folder.
- * This JobFile type allows no scaling.
- * */
-class JobFileList : public JobFile {
-	private:
-		std::vector<std::string> m_filelist;
-	public:
-		/*
-		 * Filename: Path to list of images.
-		 * Pathprefix: Parent dir for relative paths in list 'filename'
-		 * */
-		JobFileList(const char* filename, const char* pathPrefix);
-		~JobFileList();
-		void setScale(double scale);
-
-	protected:
-		/* Load raw image data. */
-		cv::Mat loadSlice(int layer);
-
-};
-
 #endif
