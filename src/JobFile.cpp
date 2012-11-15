@@ -212,7 +212,11 @@ cv::Mat JobFileSvg::loadSlice(int layer){
 	cv::threshold(ret, ret, 31, 255, cv::THRESH_BINARY);
 	
 	//use red values as mask (assume white/black image)
+#ifdef FLIP_COLORS
+	int from_to[] = { 0,0,  1,1,  2,2,  2,3 };
+#else
 	int from_to[] = { 0,0,  1,1,  2,2,  0,3 };
+#endif
 	cv::mixChannels( &ret, 1, &ret, 1, from_to, 4 );
 
 	return ret;
@@ -321,11 +325,21 @@ cv::Mat JobFileList::loadSlice(int layer){
 	//raw = cv::imread( m_filelist[layer], CV_LOAD_IMAGE_GRAYSCALE ); 
 	raw = cv::imread( m_filelist[layer], 1 /*RGB*/ );//transparency will be ignored. 
 	//raw = cv::imread( m_filelist[layer], -1 /*RGBA, RBA or GRAYSCALE*/ ); 
+	//
+	/* Remove interpolation B9Creator beta software approach to
+	 * get black-white-image (see crushbitmap.cpp )
+	 * if(c.red()<32 && c.blue()<32 && c.green()<32) return false;
+	 */
+	cv::threshold(raw, raw, 31, 255, cv::THRESH_BINARY);
 
 	//raw.convertTo( raw, CV_8UC4 );//hm, this add no alpha channel to rgb images...
 	//use red channel as alpha channel.
 	cv::Mat ret( raw.rows, raw.cols, CV_8UC4 );
+#ifdef FLIP_COLORS
+	int from_to[] = { 0,0,  1,1,  2,2,  2,3 };
+#else
 	int from_to[] = { 0,0,  1,1,  2,2,  0,3 };
+#endif
 	cv::mixChannels( &raw, 1, &ret, 1, from_to, 4 );
 
 	return ret;

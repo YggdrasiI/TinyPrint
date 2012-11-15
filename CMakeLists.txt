@@ -1,6 +1,6 @@
 project(B9CreatorLinux)
 cmake_minimum_required(VERSION 2.6)
-option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" OFF)
+option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" ON)
 
 set(EXTRA_C_FLAGS "${PG_FLAGS}")
 set(EXTRA_C_FLAGS_DEBUG "")

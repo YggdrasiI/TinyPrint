@@ -162,28 +162,32 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	if( m_b9CreatorSettings.m_flipSprites ){
 		//flip image vertical
 
-		MatIterator_<uint32_t> dst_it = sprite->cvmat.begin<uint32_t>();
+		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
 		for( int r = cvimg.rows-1 ; r>=0; --r ){
 			cv::Mat row = cvimg.row(r);
 			MatConstIterator_<VT> it1 = row.begin<VT>(),
 				it1_end = row.end<VT>();
-			for( ; it1 != it1_end; ++it1, dst_it+=4 ) {
-				VT pix1 = *it1;
-				/*
-				 *dst_it = pix1[3];//alpha
-				 ++dst_it;
-				 *dst_it = pix1[0]; //red
-				 ++dst_it;
-				 *dst_it = pix1[1]; //green
-				 ++dst_it;
-				 *dst_it = pix1[2];//blue
-				 */
+			for( ; it1 != it1_end; ++it1, ++dst_it ) {
+				VT pix = *it1;
 #ifdef FLIP_COLORS
-				//rgba
-				*dst_it = (pix1[2] << 24) | (pix1[1] << 16) | (pix1[0] << 8) | pix1[3];
+				//bgra	
+				 *dst_it = pix[2];
+				 ++dst_it;
+				 *dst_it = pix[1];
+				 ++dst_it;
+				 *dst_it = pix[0];
+				 ++dst_it;
+				 *dst_it = pix[3];
 #else
 				//argb
-				*dst_it = (pix1[3] << 24) | (pix1[2] << 16) | (pix1[1] << 8) | pix1[0];
+				//*dst_it = (pix[3] << 24) | (pix[2] << 16) | (pix[1] << 8) | pix[0];
+				 *dst_it = pix[3];
+				 ++dst_it;
+				 *dst_it = pix[0];
+				 ++dst_it;
+				 *dst_it = pix[1];
+				 ++dst_it;
+				 *dst_it = pix[2];
 #endif
 
 			}		
@@ -193,15 +197,27 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 				it1_end = cvimg.end<VT>();
 		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
 		for( ; it1 != it1_end; ++it1, ++dst_it ) {
-			VT pix1 = *it1;
-
-			*dst_it = pix1[3];//blue
-			++dst_it;
-			*dst_it = pix1[0]; //green
-			++dst_it;
-			*dst_it = pix1[1]; //red
-			++dst_it;
-			*dst_it = pix1[2];//alpha
+			VT pix = *it1;
+#ifdef FLIP_COLORS
+				//bgra	
+				 *dst_it = pix[2];
+				 ++dst_it;
+				 *dst_it = pix[1];
+				 ++dst_it;
+				 *dst_it = pix[0];
+				 ++dst_it;
+				 *dst_it = pix[3];
+#else
+				//argb
+				//*dst_it = (pix[3] << 24) | (pix[2] << 16) | (pix[1] << 8) | pix[0];
+				 *dst_it = pix[3];
+				 ++dst_it;
+				 *dst_it = pix[0];
+				 ++dst_it;
+				 *dst_it = pix[1];
+				 ++dst_it;
+				 *dst_it = pix[2];
+#endif
 		}
 	}
 
