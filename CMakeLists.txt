@@ -1,7 +1,8 @@
 project(B9CreatorLinux)
 cmake_minimum_required(VERSION 2.6)
 option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" OFF)
-option(B9J_SUPPORT "Enable loading of b9j filetype. Require QT library." ON)
+option(B9J_SUPPORT "Enable loading of b9j filetype. Require Qt4 library. Option will 
+automatically activated if Qt4 was found." OFF)
 
 set(EXTRA_C_FLAGS "${PG_FLAGS}")
 set(EXTRA_C_FLAGS_DEBUG "")
@@ -42,19 +43,21 @@ message(FATAL_ERROR "Could not find gtk2 installation.")
 endif(GTK2_FOUND)
 
 # begin of optional packages
-if(B9J_SUPPORT)
-	find_package(Qt4 COMPONENTS QtCore  REQUIRED)
+find_package(Qt4 COMPONENTS QtCore )
+if( B9J_SUPPORT AND NOT QT4_FOUND )
+		message(FATAL_ERROR "Could not find qt installation. Install qt4 dev. packages or disable b9j support.")
+endif( B9J_SUPPORT AND NOT QT4_FOUND )
+
 if(QT4_FOUND )
+	set( B9J_SUPPORT ON)
 	include(${QT_USE_FILE})
-message(STATUS " Lib: qt4" )
-message(STATUS " - Includes: ${QT_INCLUDES}" )
-message(STATUS " - Libraries: ${QT_LIBRARIES}" )
-include_directories( ${QT_INCLUDES} )
-add_definitions(-DB9J_SUPPORT)
-else(QT4_FOUND)
-	message(FATAL_ERROR "Could not find qt installation. Install qt4 dev. packages or disable b9j support.")
+	message(STATUS " Lib: qt4" )
+	message(STATUS " - Includes: ${QT_INCLUDES}" )
+	message(STATUS " - Libraries: ${QT_LIBRARIES}" )
+	include_directories( ${QT_INCLUDES} )
+	add_definitions(-DB9J_SUPPORT)
 endif(QT4_FOUND)
-endif(B9J_SUPPORT)
+
 
 
 
@@ -69,7 +72,7 @@ endif(FLIP_COLORS)
 
 ## add include dirs and lib dirs of above packages
 include_directories(
-		${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/include
 	)
 link_directories (
 	${Onion_LIBRARY_DIR}

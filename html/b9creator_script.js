@@ -188,6 +188,9 @@ function create_intField(obj, pnode){
 				inputfield.blur();
 				return false;
 				break;
+			default:
+				return false;
+				break;
 		}
 
 
@@ -351,6 +354,9 @@ function create_doubleField(obj, pnode){
 				break;
 			case 13: /* Enter */
 				inputfield.blur();
+				return false;
+				break;
+			default:
 				return false;
 				break;
 		}

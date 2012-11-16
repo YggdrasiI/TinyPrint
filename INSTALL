@@ -7,7 +7,8 @@ Dependiencies:
 (iv)  Boost
 (v)   Cairo and librsvg2 
 (vi)  Onion 
-(vii) On Raspberry PI: fbset + Extra boot parameter
+(vii) QT4 (optional)
+(viii) On Raspberry PI: fbset + Extra boot parameter
 
 ----------------------------------------------------------------
 
@@ -34,7 +35,10 @@ vi) This lib has to be installed manually.
 Note: If make failed with '[-Wunused-result]' message open CMakeLists.txt
 and remove '-Werror' from the CMAKE_C_FLAGS.
 
-vii) For Raspberry Pi:
+vii) QT4 is optional and will just required for b9j file support
+  sudo apt-get install libqt4-dev	
+
+viii) For Raspberry Pi:
   Installation of fbset 
     sudo apt-get install fbset
   Add the following lines to your /boot/config.txt to increase some video memory buffer.
@@ -58,5 +62,4 @@ Configuration and Compiling:
 		cd build
 		cmake -DCMAKE_BUILD_TYPE=Release ..
 		make
-
 
