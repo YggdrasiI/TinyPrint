@@ -25,6 +25,18 @@ class JobFileB9J : public JobFile {
 		std::string m_reserved1;
 		std::string m_reserved2;
 		std::string m_reserved3;
+
+		/* 'm_modelPosition' is the conterpart to B9Creators 'mJobExtends'
+		 * The saved imagesdata
+		 * of b9j files is always JobFile.m_size = (1024,768).
+		 * and the inital value of JobFile.m_position is (0,0) (top left image corner).
+		 * Thus, this data can not be used as infomation about the model dimensions.
+		 * Use JobFileB9J.m_modelPosition to get the model location+dimension for B9J files.
+		 * * Attention, I convert the data to opencv syntax:
+		 *   cv::Rect stores (left,top,width,height),
+		 *   QRect stores (left,top,right,bottom).
+		 * */
+		cv::Rect m_modelPosition;
 	public:
 		/*
 		 * Filename: Path to list of images.

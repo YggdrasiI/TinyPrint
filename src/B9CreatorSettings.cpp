@@ -582,7 +582,7 @@ int B9CreatorSettings::unloadJob(const int index){
 	lock();
 
 	JobFile *jf = m_files[index];
-	VPRINT("Unload %i. Job (%s)\n",index, jf->m_filename);
+	VPRINT("Unload %i. Job (%s)\n",index, jf->m_filename.c_str());
 	delete(jf);
 	m_files.erase( m_files.begin() + index );
 
