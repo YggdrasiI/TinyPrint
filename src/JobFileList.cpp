@@ -101,7 +101,6 @@ cv::Mat JobFileList::loadSlice(int layer){
 
 void JobFileList::setScale(double scale){
 	//No scale of pixel data
-	m_scale = scale;
 	return;
 }
 

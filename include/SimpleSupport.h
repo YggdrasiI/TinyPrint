@@ -1,11 +1,13 @@
 #ifndef SIMPLESUPPORT_H
 #define SIMPLESUPPORT_H
 
+enum SupportType {st_CIRCLE, st_SQUARE, st_TRIANGLE, st_DIAMOND};
+
 #include <opencv2/core/core.hpp>
 class QDataStream;
 
 class SimpleSupport {
-	private:
+	public:
 		uint32_t m_type;
 		uint32_t m_size;
 		uint32_t m_start;
@@ -22,6 +24,7 @@ class SimpleSupport {
 			}
 
 		void streamInSupport(QDataStream* pIn);
+		void draw(cv::Mat &img ); 
 };
 
 

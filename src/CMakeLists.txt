@@ -57,6 +57,7 @@ set(main_SRCS
 
 if(B9J_SUPPORT)
 set(main_SRCS ${main_SRCS} 
+	SimpleSupport.cpp
 	JobFileB9J.cpp
 	)
 endif(B9J_SUPPORT)

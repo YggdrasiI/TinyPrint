@@ -1,10 +1,13 @@
 #include <vector>
 #include "B9CreatorSettings.h"
+#include "OnionServer.h"
 #include "JobFile.h"
 #include "JobFileSvg.h"
 #include "JobFileList.h"
+
+#ifdef B9J_SUPPORT
 #include "JobFileB9J.h"
-#include "OnionServer.h"
+#endif
 
 using namespace std;
 
@@ -538,6 +541,12 @@ int B9CreatorSettings::loadJob(const std::string filename){
 			jf = new JobFileList(path.c_str(), m_b9jDir.c_str() );
 		} else if( check_b9jExtension(filename.c_str()) ){
 			//TODO
+#ifdef B9J_SUPPORT
+			std::cout << "Load " << path << std::endl;
+			jf = new JobFileB9J(path.c_str() );
+#else
+			std::cout << "TinyPrint was compiled without b9j support." << std::endl;
+#endif
 		}
 	}catch( Exceptions e){ //only possible exception here: load failed
 		unlock();
