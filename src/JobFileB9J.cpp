@@ -206,7 +206,6 @@ void JobFileB9J::loadStream(QDataStream* pIn){
 		>> m_base >> m_filled
 		>> qr3 >> qr2 >> qr1;
 
-	std::cout << "xy: " << xy << std::endl;
 	//convert qstring to std::string
 	m_version = qToS(qVersion);
 	m_filename = qToS(qName);

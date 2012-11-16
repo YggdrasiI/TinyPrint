@@ -49,7 +49,7 @@ function reloadImage(manual){
 	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
 
 	if(manual){
-		refreshIntervall = window.setInterval("reloadImage(false)", 200);
+		refreshIntervall = window.setInterval("reloadImage(false)", 500);
 	}
 
 	return true;
@@ -67,4 +67,4 @@ $(function(){
 
 });
 
-refreshIntervall = window.setInterval("reloadImage(false)", 200);
+refreshIntervall = window.setInterval("reloadImage(false)", 500);

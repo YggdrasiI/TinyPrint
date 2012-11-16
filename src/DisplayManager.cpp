@@ -145,6 +145,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	}
 
 
+	m_img_mutex.lock();
 	Sprite *sprite = new Sprite(topLeftCorner);
 	sprite->cvmat = cv::Mat(cvimg.size().height,4*cvimg.size().width,CV_8UC1);
 
@@ -238,7 +239,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 	//printf("Test c. Pointer: %p\n", sprite->m_pSurface) ;
 	DFBCHECK (m_pDfb->CreateSurface( m_pDfb, &dsc, &(sprite->m_pSurface)));
 
-	m_img_mutex.lock();
+	//m_img_mutex.lock();
 	m_sprites.push_back( sprite );
 	m_img_mutex.unlock();
 

@@ -547,7 +547,6 @@ int B9CreatorSettings::loadJob(const std::string filename){
 			//update resolution with file values
 			int xy = ((JobFileB9J*)jf)->getXYResolution();
 			int z = ((JobFileB9J*)jf)->getZResolution();
-			printf("Loaded resolution: %i %i\n", xy, z);
 			if(xy > 0 ) m_printProp.m_xyResolution = xy;
 			if(z > 0 ) m_printProp.m_zResolution = z;
 #else
