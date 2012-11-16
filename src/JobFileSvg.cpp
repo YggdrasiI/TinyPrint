@@ -14,9 +14,11 @@ namespace fs = boost::filesystem;
 JobFileSvg::JobFileSvg(const char* filename, double scale):
 	JobFile(filename,scale),
 	m_pCairo(NULL),
+	m_cairoMutex(),
 	m_pSurface(NULL),
 	m_pRsvgHandle(NULL) {
 
+		m_cairoMutex.lock();
 		float dpi=254.0;
 		GError *error = NULL;
 		RsvgDimensionData dimensions;
@@ -58,9 +60,12 @@ JobFileSvg::JobFileSvg(const char* filename, double scale):
 			std::cout << "Found layers: " << m_nmbrOfLayers << std::endl;
 			m_maxLayer = m_nmbrOfLayers-1;
 
+			m_cairoMutex.unlock();
 		}else{
 			std::cout << "Error while loading file '"
 				<< filename << "'." << std::endl;
+
+			m_cairoMutex.unlock();
 			throw JOB_LOAD_EXCEPTION;
 		}
 
@@ -78,6 +83,7 @@ cv::Mat JobFileSvg::loadSlice(int layer){
 	cv::Mat ret;
 
 	//clear cairo context
+	m_cairoMutex.lock();
 	cairo_set_source_rgb (m_pCairo, 0, 0, 0);
 	cairo_paint (m_pCairo);
 
@@ -92,6 +98,8 @@ cv::Mat JobFileSvg::loadSlice(int layer){
 			CV_8UC4,
 			(void*) cairo_image_surface_get_data(m_pSurface)
 			);
+
+	m_cairoMutex.unlock();
 
 	//convert to grayscale image
 	//ret.convertTo( ret, CV_8UC1 );

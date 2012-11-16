@@ -443,6 +443,20 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 
 				VPRINT("redraw: %i, scale: %i, newscale: %i", m_png_redraw?1:0, m_png_scale, scale);
 
+				if( m_redraw ){
+					/* An redraw action is pending. Do not 
+					 * create a png with the old image data
+					 * and wait on new image.
+					 * This can cause by fast layer switches on the
+					 * webinterface.
+					 * */
+					unsigned char *image=new unsigned char[4];
+					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					onion_png_response( image, 4, 1, 1, res);
+					delete image;
+					return true;
+				}
+
 				if( !m_png_redraw && scale==m_png_scale ){
 					//There was no change between the last sended image.
 					//std::string reply = "noNewImage";
