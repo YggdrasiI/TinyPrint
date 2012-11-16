@@ -18,8 +18,10 @@ class JobFileB9J : public JobFile {
 		std::vector<SimpleSupport> m_supports;
 		std::vector<CrushedBitMap> m_packedSlices;
 		std::string m_version;
-		std::string m_xyPixel;
-		std::string m_zLayer;
+		//std::string m_xyPixel;
+		//std::string m_zLayer;
+		int m_xyPixel;
+		int m_zLayer;
 		int32_t m_base;
 		int32_t m_filled;
 		std::string m_reserved1;
@@ -45,6 +47,9 @@ class JobFileB9J : public JobFile {
 		JobFileB9J(const char* filename);
 		~JobFileB9J();
 		void setScale(double scale);
+		int getXYResolution(){ return m_xyPixel; };
+		int getZResolution(){ return m_zLayer; };
+		
 
 	protected:
 		/* Load raw image data. */

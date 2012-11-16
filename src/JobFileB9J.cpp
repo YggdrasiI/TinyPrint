@@ -206,12 +206,19 @@ void JobFileB9J::loadStream(QDataStream* pIn){
 		>> m_base >> m_filled
 		>> qr3 >> qr2 >> qr1;
 
+	std::cout << "xy: " << xy << std::endl;
 	//convert qstring to std::string
 	m_version = qToS(qVersion);
 	m_filename = qToS(qName);
 	m_description = qToS(qDescription);
-	m_xyPixel = xy;
-	m_zLayer = zl;
+	/*
+	std::ostringstream xystr; xystr << xy*1000; 
+	std::ostringstream zlstr; zlstr << zl*1000; 
+	m_xyPixel = xystr.str();
+	m_zLayer = zlstr.str();
+	*/
+	m_xyPixel = 1000*xy;
+	m_zLayer = 1000*zl;
 	m_reserved3 = qToS(qr3);
 	m_reserved2 = qToS(qr2);
 	m_reserved1 = qToS(qr1);
