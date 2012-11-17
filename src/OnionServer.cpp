@@ -176,7 +176,7 @@ int preview(void *p, onion_request *req, onion_response *res){
 
 //sendSignal with actionid=10 to get png image from
 //DisplayManager.
-	if( ! ((OnionServer*)p)->updateSignal(req, 10, res) ){
+	if( ((OnionServer*)p)->updateSignal(req, 10, res) ){
 		//signals did not write into response. Write default reply.
 		std::string reply("Could not generate Image.");
 		onion_response_write(res, reply.c_str(), reply.size() ); 
@@ -223,12 +223,12 @@ int search_file(void *p, onion_request *req, onion_response *res){
 		}//catch ( const boost::iobase::failure &ex ){
 		catch ( const std::exception & ex ){
 			std::cerr << "Can not read " << filename << std::endl;
-			//onion_response_set_length(res, 35);
-			onion_response_write(res, "<h1>Error while reading File.</h1>", 35); 
+			//onion_response_set_length(res, 34);
+			onion_response_write(res, "<h1>Error while reading File.</h1>", 34); 
 		}
 	}else{
-		//onion_response_set_length(res, 25);
-		onion_response_write(res, "<h1>File not found.</h1>", 25); 
+		//onion_response_set_length(res, 34);
+		onion_response_write(res, "<h1>File not found.</h1>", 34); 
 	}
 
 	return OCS_PROCESSED;
