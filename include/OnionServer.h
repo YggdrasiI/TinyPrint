@@ -6,9 +6,15 @@
 #include <pthread.h>
 //#include <png.h>
 
-#include <onion/log.h>
-#include <onion/onion.h>
-#include <onion/dict.h>
+//#include <onion/onion.h>
+//#include <onion/dict.h>
+//#include <onion/log.h>
+#include <onion/onion.hpp>
+#include <onion/response.hpp>
+#include <onion/request.hpp>
+#include <onion/dict.hpp>
+#include <onion/url.hpp>
+
 //#include <onion/mime.h>
 //#include <onion/extras/png.h>
 
@@ -18,12 +24,6 @@
 #include "JsonConfig.h"
 //#include "B9CreatorSettings.h"
 class B9CreatorSettings;
-
-
-/* Declare jSON data object here
- *
- *
- */
 
 
 //thread function
@@ -61,25 +61,20 @@ struct maximum
 
 class OnionServer{
 	public:	
-		onion* m_ponion;
-		pthread_t m_pthread;
-		//PrinterSetting* m_pprintSetting const;
-		B9CreatorSettings &m_b9CreatorSettings;
+		Onion::Onion m_onion;
+		Onion::Url m_url;
 		/* Store header with mime type and charset information for several file extensions.
 		 * This is just a workaround. There should be an automatic mechanicm
 		 * in libonion. */
-		onion_dict *m_mimedict;
+		Onion::Dict m_mimedict;
+
+		B9CreatorSettings &m_b9CreatorSettings;
 	public:
 		OnionServer(B9CreatorSettings &b9CreatorSettings );
 		
 		~OnionServer()
 		{
-			if(m_ponion != NULL) stop_server();
-
-			if(m_mimedict != NULL ){
-				onion_dict_free(m_mimedict);
-				m_mimedict = NULL;
-			}
+			stop_server();
 		}
 
 		int start_server();
@@ -94,10 +89,12 @@ class OnionServer{
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/
 		//boost::signal<void (onion_request *req,int actionid, std::string &reply)> updateSignal;
-		boost::signal<bool (onion_request *req,int actionid, onion_response *res), maximum<bool> > updateSignal;
+		boost::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ), maximum<bool> > updateSignal;
 
 		/* Update signal handler of this class.*/
-		bool updateWebserver(onion_request *req, int actionid, onion_response *res);
+		bool updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);
+
+		int index_html( Onion::Request &req, Onion::Response &res);
 };
 
 #endif

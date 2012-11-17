@@ -569,18 +569,18 @@ void JobManager::run(){
 	
 }
 
-bool JobManager::webserverSetState(onion_request *req, int actionid, onion_response *res){
+bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Response *pres){
 	
 	switch( actionid ){
 		case 8:
 			{	/* remove Job */
 				std::string reply("failed");
 				//int index = atoi( onion_request_get_queryd(req,"job_file_index","0") );
-				int index = atoi( onion_request_get_post(req,"job_file_index") );
+				int index = atoi( onion_request_get_post(preq->c_handler(), "job_file_index") );
 				if( 0 == m_b9CreatorSettings.unloadJob(index) ){
 					reply = "ok";
 				}
-				onion_response_write(res, reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 
 			}
@@ -589,7 +589,7 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 			{  /* load Job */
 				std::string reply("failed");
 
-				std::string job_file ( onion_request_get_post(req,"job_file") );
+				std::string job_file ( onion_request_get_post(preq->c_handler(),"job_file") );
 #ifdef VERBOSE
 				std::cout << "Load '"<< job_file << "'" << std::endl;
 #endif
@@ -597,14 +597,14 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 					reply = "ok";
 				}
 
-				onion_response_write(res, reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 			}
 			break;
 		case 6: /* control JobManager */
 			{
 				std::string reply("error");
-				std::string print_cmd ( onion_request_get_post(req,"print") );
+				std::string print_cmd ( onion_request_get_post(preq->c_handler(),"print") );
 #ifdef VERBOSE
 				std::cout << "'"<< print_cmd << "'" << std::endl;
 #endif
@@ -659,13 +659,13 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 				}
 
 				//now, write "error","idle","print" or "pause" to response struct.
-				onion_response_write(res, reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 			}
 			break;
 		case 5: /* Toggle Display */
 			{
-				const char* disp = onion_request_get_post(req,"display");
+				const char* disp = onion_request_get_post(preq->c_handler(),"display");
 
 				if( disp != NULL ){
 
@@ -685,7 +685,7 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 					}
 
 					std::string reply = m_b9CreatorSettings.m_display?"1":"0";
-					onion_response_write(res, reply.c_str(), reply.size() ); 
+					pres->write( reply.c_str(), reply.size() ); 
 					return true;
 				}
 			}
@@ -693,7 +693,7 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 		case 2: /* Save config */
 			{
 				std::string reply;
-				const char* configFilename = onion_request_get_post(req,"configFilename");
+				const char* configFilename = onion_request_get_post(preq->c_handler(),"configFilename");
 
 				if( configFilename == NULL ) break;
 				if( check_configFilename(configFilename ) == 1){
@@ -709,14 +709,14 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 					printf("Filename not allowed\n");
 				}
 
-				onion_response_write(res, reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 			}
 			break;
 		case 1: /* Load config */
 			{
 				std::string reply;
-				const char* configFilename = onion_request_get_post(req,"configFilename");
+				const char* configFilename = onion_request_get_post(preq->c_handler(),"configFilename");
 
 				if( configFilename == NULL ) break;
 				if( check_configFilename(configFilename ) == 1){
@@ -738,7 +738,7 @@ bool JobManager::webserverSetState(onion_request *req, int actionid, onion_respo
 					printf("Filename not allowed\n");
 				}
 
-				onion_response_write(res, reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 			}
 		default:

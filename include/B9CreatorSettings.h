@@ -6,7 +6,10 @@
 #include <cstring>
 #include <queue>
 
-#include <onion/onion.h>
+#include <onion/onion.hpp>
+#include <onion/response.hpp>
+#include <onion/request.hpp>
+
 #include <boost/signal.hpp>
 #include <boost/regex.hpp> 
 //#include <boost/bind.hpp>
@@ -154,7 +157,7 @@ class B9CreatorSettings: public JsonConfig{
 		int update(cJSON* root, cJSON* update, int changes=NO);
 
 		/* Will called if website send data */
-		bool webserverUpdateConfig(onion_request *req, int actionid, onion_response *res);
+		bool webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 		/* Call this method to eval the highest layer number
 		 * for current list of m_files.

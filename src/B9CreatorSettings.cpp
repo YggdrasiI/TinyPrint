@@ -305,16 +305,16 @@ bool B9CreatorSettings::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* i
 }
 
 
-bool B9CreatorSettings::webserverUpdateConfig(onion_request *req, int actionid, onion_response *res){
+bool B9CreatorSettings::webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres){
 	if( actionid == 0 ){
 		VPRINT("update b9CreatorSettings values\n");
-		const char* json_str = onion_request_get_post(req,"b9CreatorSettings");
+		const char* json_str = onion_request_get_post(preq->c_handler(), "b9CreatorSettings");
 		if( json_str != NULL){
 			setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
 			//hm, send update signal here with some flags which mark changes?
 		}
 		std::string reply = "ok";
-		onion_response_write(res, reply.c_str(), reply.size() ); 
+		pres->write( reply.c_str(), reply.size() ); 
 		return true;
 	}
 return false;

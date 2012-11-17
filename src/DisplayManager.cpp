@@ -430,13 +430,13 @@ void DisplayManager::updateSignalHandler(int changes){
 /* Use Sprite data to generate png of current screen
  *
  * */
-bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_response *res){
+bool DisplayManager::getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres){
 
 	switch(actionid){
 		case 10:
 			{ /* Generate png image */
-				int scale = atoi( onion_request_get_queryd(req,"scale","100") );
-				const char *force = onion_request_get_queryd(req,"force","0");
+				int scale = atoi( onion_request_get_queryd(preq->c_handler(),"scale","100") );
+				const char *force = onion_request_get_queryd(preq->c_handler(),"force","0");
 
 				//check if png generation is forced
 				if( *force == '1' ) m_png_redraw = true;
@@ -452,7 +452,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					 * */
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-					onion_png_response( image, 4, 1, 1, res);
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 					return true;
 				}
 
@@ -462,7 +462,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					//onion_response_write(res, reply.c_str(), reply.size() ); 
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-					onion_png_response( image, 4, 1, 1, res);
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 					return true;
 				}
 
@@ -472,7 +472,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					//generate 1x1 pixel
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-					onion_png_response( image, 4, 1, 1, res);
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 					m_png_redraw = false;
 					return true;
 				}
@@ -492,7 +492,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					//generate 1x1 pixel
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-					onion_png_response( image, 4, 1, 1, res);
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 					m_png_redraw = false;
 					m_png_scale  = scale;
 					return true;
@@ -509,7 +509,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				m_pPrimary->Lock(m_pPrimary, DSLF_READ, &data_ptr, &pitch);
 
 				if( scale == 100 ){
-					onion_png_response( (unsigned char*) data_ptr , channels, width, height, res);
+					onion_png_response( (unsigned char*) data_ptr , channels, width, height, pres->c_handler() );
 				}else{
 					//rescale to 50% or 25%				
 					int w2 = width*scale/100;
@@ -533,7 +533,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					  nextRowData = pdata +  incH*width;
 					}
 
-					onion_png_response( image , channels, w2, h2, res);
+					onion_png_response( image , channels, w2, h2, pres->c_handler() );
 				}
 
 
