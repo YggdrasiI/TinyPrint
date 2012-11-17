@@ -450,10 +450,9 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					 * This can cause by fast layer switches on the
 					 * webinterface.
 					 * */
-					unsigned char *image=new unsigned char[4];
-					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
 					onion_png_response( image, 4, 1, 1, res);
-					delete image;
 					return true;
 				}
 
@@ -461,10 +460,9 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					//There was no change between the last sended image.
 					//std::string reply = "noNewImage";
 					//onion_response_write(res, reply.c_str(), reply.size() ); 
-					unsigned char *image=new unsigned char[4];
-					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
 					onion_png_response( image, 4, 1, 1, res);
-					delete image;
 					return true;
 				}
 
@@ -472,10 +470,9 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 				if( m_pDfb == NULL || m_pPrimary == NULL ){
 					//Display is not active
 					//generate 1x1 pixel
-					unsigned char *image=new unsigned char[4];
-					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
 					onion_png_response( image, 4, 1, 1, res);
-					delete image;
 					m_png_redraw = false;
 					return true;
 				}
@@ -493,10 +490,9 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 #endif
 				}else{
 					//generate 1x1 pixel
-					unsigned char *image=new unsigned char[4];
-					image[0] = 0; image[0] = 255; image[0] = 127; image[0] = 127;
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
 					onion_png_response( image, 4, 1, 1, res);
-					delete image;
 					m_png_redraw = false;
 					m_png_scale  = scale;
 					return true;
@@ -521,7 +517,7 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					int incW = width/w2;
 					int incH = incW;//height/h2;
 
-					unsigned char *image=new unsigned char[4*w2*h2];
+					unsigned char image[4*w2*h2];
 
 					uint32_t *pdata = (uint32_t*) data_ptr;//4*char, ARGB
 					uint32_t *pimage = (uint32_t*) image;
@@ -538,7 +534,6 @@ bool DisplayManager::getDisplayedImage(onion_request *req, int actionid, onion_r
 					}
 
 					onion_png_response( image , channels, w2, h2, res);
-					delete image;
 				}
 
 

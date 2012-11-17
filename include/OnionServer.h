@@ -74,8 +74,12 @@ class OnionServer{
 		
 		~OnionServer()
 		{
-			if(m_mimedict != NULL ) onion_dict_free(m_mimedict);
 			if(m_ponion != NULL) stop_server();
+
+			if(m_mimedict != NULL ){
+				onion_dict_free(m_mimedict);
+				m_mimedict = NULL;
+			}
 		}
 
 		int start_server();

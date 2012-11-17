@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <pthread.h>
+#include <signal.h>
 
 //#include <boost/signal.hpp>
 #include <boost/bind.hpp>
@@ -21,8 +22,17 @@
 //#include <time.h>
 #include <sys/time.h>
 
+static bool die(false);
+
+static void end_main(int _){
+	die = true;
+}
+
 int main(int argc, char **argv) {
-	bool die(false);
+	//signal(SIGINT,end_main);//segfault...
+	//signal(SIGTERM,end_main);
+
+	//bool die(false);
 	int k(0);
 
 	//Create arguments for DisplayManager.
@@ -108,7 +118,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* Clean up objects */
-	//none
+	onion.stop_server();
 
 	usleep(10000);
 

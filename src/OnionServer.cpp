@@ -269,9 +269,13 @@ return index_html_template(d, req, res);
 OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 			//m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
 			m_ponion( onion_new(O_THREADED) ),
+			//m_ponion( onion_new(O_ONE_LOOP) ),
 			m_pthread(),
 			m_b9CreatorSettings(b9CreatorSettings)
 		{
+
+			onion_set_timeout(m_ponion, 5000);
+
 			//add default signal handler.
 			updateSignal.connect(
 					boost::bind(&OnionServer::updateWebserver,this, _1, _2, _3)
@@ -341,6 +345,7 @@ int OnionServer::stop_server()
 	onion_listen_stop(m_ponion);//stop loop
 	int i = pthread_join( m_pthread, NULL);//wait till loop ends
 	onion_free(m_ponion);
+	m_ponion = NULL;
 	return i;
 }
 
@@ -350,7 +355,6 @@ int OnionServer::stop_server()
  * -1: No data written into reply. Input generate state which require reloading of web page.
  *  0: data written into reply
  *  1: No data written into reply, but input processed successful.*/
-//TODO: Shift several cases of the switch into own signal handler.
 bool OnionServer::updateWebserver(onion_request *req, int actionid, onion_response *res){
 	VPRINT("Actionid: %i \n", actionid);
 	switch(actionid){
@@ -374,13 +378,14 @@ bool OnionServer::updateWebserver(onion_request *req, int actionid, onion_respon
 			break;
 		case 3:
 			{ /* Quit */
+				std::string reply("quit");
+				onion_response_write(res, reply.c_str(), reply.size() ); 
+
 				printf("Quitting...\n");
 				m_b9CreatorSettings.lock();
 				m_b9CreatorSettings.m_die = true;
 				m_b9CreatorSettings.unlock();
 
-				std::string reply("quit");
-				onion_response_write(res, reply.c_str(), reply.size() ); 
 				return true;
 			}
 			break;
