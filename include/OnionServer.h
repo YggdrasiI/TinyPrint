@@ -2,8 +2,9 @@
 #define ONIONSERVER_H
 
 #include <string>
+#include <vector>
 #include <iostream>
-#include <pthread.h>
+//#include <pthread.h>
 //#include <png.h>
 
 //#include <onion/onion.h>
@@ -12,6 +13,7 @@
 #include <onion/onion.hpp>
 #include <onion/response.hpp>
 #include <onion/request.hpp>
+#include <onion/handler.hpp>
 #include <onion/dict.hpp>
 #include <onion/url.hpp>
 
@@ -60,13 +62,21 @@ struct maximum
 };
 
 class OnionServer{
-	public:	
+	private:	
 		Onion::Onion m_onion;
 		Onion::Url m_url;
 		/* Store header with mime type and charset information for several file extensions.
 		 * This is just a workaround. There should be an automatic mechanicm
 		 * in libonion. */
 		Onion::Dict m_mimedict;
+
+		/* This arrays saves some strings. Most
+		 * functions of onion cpp binding use 
+		 * references to string. Thus we need
+		 * to omit local variables.
+		 * */
+		std::vector<std::string> m_urls;
+		std::vector<std::string> m_mimes;
 
 		B9CreatorSettings &m_b9CreatorSettings;
 	public:
@@ -94,7 +104,16 @@ class OnionServer{
 		/* Update signal handler of this class.*/
 		bool updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);
 
-		int index_html( Onion::Request &req, Onion::Response &res);
+		/* Handler for webinterface requests */
+		onion_connection_status index_html( Onion::Request &req, Onion::Response &res);
+		onion_connection_status updateData( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getB9CreatorSettings( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getB9CreatorSettingsWrapped( Onion::Request &req, Onion::Response &res);
+		onion_connection_status search_file( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getPrinterMessages( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getJobFolder( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getJobFolderWrapped( Onion::Request &req, Onion::Response &res);
+		onion_connection_status preview( Onion::Request &req, Onion::Response &res);
 };
 
 #endif
