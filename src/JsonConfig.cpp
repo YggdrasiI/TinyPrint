@@ -26,11 +26,11 @@ int JsonConfig::clearConfig()
 
 int JsonConfig::regenerateConfig()
 {
-		clearConfig();
-		m_json_mutex.lock();
-		m_pjson_root = genJson(); 
-		m_json_mutex.unlock();
-		return 0;
+	clearConfig();
+	m_json_mutex.lock();
+	m_pjson_root = genJson();
+	m_json_mutex.unlock();
+	return 0;
 }
 
 int JsonConfig::setConfig(const char* json_str, int changes)
@@ -57,9 +57,16 @@ int JsonConfig::setConfig(const char* json_str, int changes)
 char* JsonConfig::getConfig(bool regenerate)//const
 {
 	if( regenerate ) regenerateConfig();
-	return cJSON_Print(m_pjson_root);
+	//return cJSON_Print(m_pjson_root);//here was a mem leak!
 	//cJSON html_node = cJSON_GetObjectItem(m_pjson_root,"html");
 	//return cJSON_Print(html_node);
+
+	m_json_mutex.lock();
+	if( m_tmp_config_str != NULL ) free(m_tmp_config_str);
+	m_tmp_config_str = cJSON_Print(m_pjson_root);
+	m_json_mutex.unlock();
+
+	return m_tmp_config_str;
 }
 
 int JsonConfig::loadConfigFile(const char* filename)
@@ -92,7 +99,7 @@ int JsonConfig::saveConfigFile(const char* filename)
 	char* conf = getConfig();
 	fprintf(file,"%s", conf );
 	free(conf);
-	fclose(file); 
+	fclose(file);
 	return 0;
 }
 
@@ -102,10 +109,10 @@ void JsonConfig::loadDefaults(){
 
 cJSON* JsonConfig::genJson()
 {
-cJSON* root = cJSON_CreateObject();	
-cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
-VPRINT("Should not execute __FILE__ , __LINE__ .\n");
-return root;
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
+	VPRINT("Should not execute __FILE__ , __LINE__ .\n");
+	return root;
 }
 
 
@@ -124,7 +131,7 @@ const char* JsonConfig::getString(cJSON* r, const char* string) const{
 		static const char* notfound = "not found";
 		return notfound;
 	}
-}; 
+};
 
 double JsonConfig::getNumber(cJSON* r, const char* string) const{
 	cJSON* obj = 	cJSON_GetObjectItem(r,string);
@@ -145,11 +152,11 @@ cJSON* JsonConfig::getArrayEntry(cJSON* arr, const char* string) const{
 	}
 	return NULL;
 };
-		
+
 
 /*
  * json representation of extended html input field.
- * 
+ *
  * diff - deprached value. Controlls value change on click on "+","-"
  * readonly - Flag to set value readonly.
  * format - Set name of javascript function to format display style of val.
@@ -158,7 +165,7 @@ cJSON* JsonConfig::getArrayEntry(cJSON* arr, const char* string) const{
 cJSON* JsonConfig::jsonDoubleField(const char* id,
 		double val, double min,
 		double max, double diff,
-		bool readonly, const char* format , const char* parse 
+		bool readonly, const char* format , const char* parse
 		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "doubleField");
@@ -177,7 +184,7 @@ cJSON* JsonConfig::jsonDoubleField(const char* id,
 cJSON* JsonConfig::jsonIntField(const char* id,
 		int val, int min,
 		int max, int diff,
-		bool readonly, const char* format , const char* parse 
+		bool readonly, const char* format , const char* parse
 		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "intField");
@@ -195,7 +202,7 @@ cJSON* JsonConfig::jsonIntField(const char* id,
 
 cJSON* JsonConfig::jsonCheckbox(const char* id,
 		bool checked,
-		bool readonly, const char* format , const char* parse 
+		bool readonly, const char* format , const char* parse
 		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "checkboxField");
@@ -211,7 +218,7 @@ cJSON* JsonConfig::jsonCheckbox(const char* id,
 /* Similar to jsonIntField, but for formatted values. */
 cJSON* JsonConfig::jsonStateField(const char* id,
 		double val,
-		const char* format , const char* parse 
+		const char* format , const char* parse
 		){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddStringToObject(df, "type", "stateField");
@@ -270,7 +277,7 @@ bool JsonConfig::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* v
 	cJSON* ntmp = getArrayEntry(jsonNew,id);
 	cJSON* otmp;
 	bool ret(false);
-	//VPRINT("update of %s:",id);				
+	//VPRINT("update of %s:",id);
 	double nval=0.0, oval=*val;
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");//probably redundant.
@@ -289,8 +296,8 @@ bool JsonConfig::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* v
 			ret = true;
 		}
 	}
-	//VPRINT(" %f\n",nval);				
-	
+	//VPRINT(" %f\n",nval);
+
 	return ret;
 }
 
@@ -298,7 +305,7 @@ bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, b
 	cJSON* ntmp = getArrayEntry(jsonNew,id);
 	cJSON* otmp;
 	bool ret(false);
-	//VPRINT("update of %s:",id);				
+	//VPRINT("update of %s:",id);
 	double nval=0.0, oval=*val;
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");
@@ -308,7 +315,7 @@ bool JsonConfig::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, b
 		nval = getNumber(ntmp,"val");
 		ret = true;
 	}
-	//VPRINT(" %f\n",nval);				
+	//VPRINT(" %f\n",nval);
 	*val = nval!=0.0;
 	return ret;
 }

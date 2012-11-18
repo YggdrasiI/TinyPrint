@@ -22,6 +22,7 @@ typedef cJSON* DefaultsType(void);
 class JsonConfig{
 	private:
 		int clearConfig();
+		char *m_tmp_config_str;//store cJSON_Print return val.
 	protected:
 		cJSON* m_pjson_root;
 		Mutex m_json_mutex; // mutex for internal usage
@@ -33,12 +34,14 @@ class JsonConfig{
 		JsonConfig():
 			m_pjson_root(NULL),
 			m_json_mutex(),	
+			m_tmp_config_str(NULL),
 			m_block_all()
 		{
 		};
 
 		~JsonConfig(){
 			clearConfig();
+			if( m_tmp_config_str != NULL ) free(m_tmp_config_str);
 		};
 
 		/*

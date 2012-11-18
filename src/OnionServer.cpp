@@ -143,16 +143,19 @@ onion_connection_status OnionServer::getPrinterMessages(
 		Messages &q = m_b9CreatorSettings.m_queues;
 		cJSON* tmp = jsonMessages("serialMessages", q.m_messageQueue);
 		if( tmp != NULL ){
-			const char* json_serialMessages = cJSON_Print( tmp );
+			char* json_serialMessages = cJSON_Print( tmp );
 			size_t len = strlen( json_serialMessages );
 			res.write(json_serialMessages, (int) len);
 
 			cJSON_Delete(tmp);
 			tmp = NULL;
+			free(json_serialMessages);
+			json_serialMessages = NULL;
 		}else{
 			const char* json_serialMessages = "(OnionServer) Serial Messages Error";
 			size_t len = strlen( json_serialMessages );
 			res.write(json_serialMessages, (int) len);
+			//here no free of json_serialMessages, because it's point to static string
 		}
 
 	return OCS_PROCESSED;
@@ -164,7 +167,8 @@ onion_connection_status OnionServer::getPrinterMessages(
  */
 onion_connection_status OnionServer::preview(
 		Onion::Request &req, Onion::Response &res ){
-	if( ! updateSignal(&req, 10, &res) ){
+	int actionid = 10;
+	if( ! updateSignal(&req, actionid, &res) ){
 		//signals did not write into response. Write default reply.
 		std::string reply("Could not generate Image.");
 		res.write( reply.c_str(), reply.size() );
@@ -211,10 +215,10 @@ onion_connection_status OnionServer::search_file(
 		}//catch ( const boost::iobase::failure &ex )
 		catch ( const std::exception & ex ){
 			std::cerr << "Can not read " << filename << std::endl;
-			res.write( "<h1>Error while reading File.</h1>", 25);
+			res.write( "<h1>Error while reading File.</h1>", 34);
 		}
 	}else{
-		res.write( "<h1>File not found.</h1>", 25);
+		res.write( "<h1>File not found.</h1>", 34);
 	}
 
 	return OCS_PROCESSED;
@@ -263,6 +267,7 @@ onion_connection_status OnionServer::getB9CreatorSettingsWrapped(
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
 OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 	m_onion( O_THREADED|O_DETACH_LISTEN ),
+	//m_onion( O_ONE_LOOP|O_DETACH_LISTEN ),
 	m_url(m_onion),
 	m_mimedict(),
 	m_mimes(),
