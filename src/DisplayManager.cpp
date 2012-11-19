@@ -320,6 +320,7 @@ void DisplayManager::initFB(){
 	for( int i=0; i<argc2; ++i ){
 		if( m_dfbOptions[i].compare("nofullscreen") == 0 ){
 			fullscreen = false;
+			break;
 		}
 	}
 

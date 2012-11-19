@@ -75,8 +75,16 @@ int main(int argc, char **argv) {
 					);
 
 
+	bool autostartdisplay(false);
+	for( int i=0; i<argc2; ++i ){
+		if( m_dfbOptions[i].compare("display") == 0 ){
+			autostartdisplay = true;
+			break;
+		}
+	}
 
-	//displayManager.start();
+	if(autostartdisplay) displayManager.start();
+
 	//jobManager.loadJob("puzzle.svg");
 
 	/* Local needs to be set to avoid errors with printf + float values.
@@ -119,7 +127,7 @@ int main(int argc, char **argv) {
 
 	/* Clean up objects */
 	onion.stop_server();
-	for(int i=0;i<9;++i){
+	for(int i=0;i<6;++i){
 		std::cout << "Wait..." << std::endl;
 		sleep(1);
 	}

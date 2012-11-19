@@ -374,10 +374,7 @@ int OnionServer::start_server() {
 int OnionServer::stop_server()
 {
 	m_onion.listenStop();
-	//onion_listen_stop(m_ponion);//stop loop
 	int i = pthread_join( m_pthread, NULL);//wait till loop ends
-	//onion_free(m_ponion);
-	m_onion.~Onion();
 	return i;
 }
 
