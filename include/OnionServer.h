@@ -33,7 +33,7 @@ class B9CreatorSettings;
 //thread function
 static void* start_myonion_server(void* arg){
 	printf("Onion server: Start listening.\n");
-	onion_listen((onion*)arg);//loop
+	((Onion::Onion*)arg)->listen();//loop
 	printf("Onion server: Stop listening.\n");
 }
 
@@ -65,6 +65,7 @@ struct maximum
 
 class OnionServer{
 	private:	
+		pthread_t m_pthread;
 		Onion::Onion m_onion;
 		Onion::Url m_url;
 		/* Store header with mime type and charset information for several file extensions.
@@ -87,7 +88,6 @@ class OnionServer{
 		~OnionServer()
 		{
 			//stop_server();
-			onion_url_free( m_url.c_handler() );
 		}
 
 		int start_server();
