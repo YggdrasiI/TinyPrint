@@ -8,6 +8,7 @@
 find_path(Onion_INCLUDE_DIR
 	NAMES
 		onion/onion.h
+		onion/onion.hpp
 		onion/log.h
 		onion/extras/png.h
 	PATHS
@@ -22,6 +23,7 @@ find_path(Onion_INCLUDE_DIR
 find_path(Onion_LIBRARY_DIR
 	NAMES
 		libonion.so
+		libonioncpp.so
 	PATHS
 		/usr/lib
 		/usr/local/lib64
@@ -47,7 +49,7 @@ endif(Onion_BIN_DIR)
 
 if(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)
 	set(Onion_FOUND TRUE)
-	set(Onion_LIBS onion onion_extras)
+	set(Onion_LIBS onion onion_extras onioncpp)
 else(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)
 	set(Onion_FOUND FALSE)
 endif(Onion_INCLUDE_DIR AND Onion_LIBRARY_DIR AND Onion_BIN_DIR)

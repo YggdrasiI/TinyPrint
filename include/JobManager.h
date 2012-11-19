@@ -16,7 +16,9 @@
 #include <vector>
 #include <pthread.h>
 #include <sys/time.h>
-#include <onion/onion.h>
+#include <onion/onion.hpp>
+#include <onion/response.hpp>
+#include <onion/request.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -129,7 +131,7 @@ class JobManager {
 		//int nextStep();
 
 		/* Will called if website send data. */
-		bool webserverSetState(onion_request *req, int actionid, onion_response *res);
+		bool webserverSetState(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 		/* Will called if m_b9CreatorSettings propagate settings change. */
 		void updateSignalHandler(int changes);

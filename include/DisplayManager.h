@@ -10,7 +10,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <onion/onion.h>
+#include <onion/onion.hpp>
+#include <onion/response.hpp>
 #include <onion/extras/png.h>
 
 #include <pthread.h>
@@ -80,7 +81,7 @@ class DisplayManager {
 		void updateSignalHandler(int changes);
 
 		/* Should return png with current displayed image */
-		bool getDisplayedImage(onion_request *req, int actionid, onion_response *res);
+		bool getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 		/* Set horizontal flipping of sprites.
 		 * This correct the 'wrong' slice order. */

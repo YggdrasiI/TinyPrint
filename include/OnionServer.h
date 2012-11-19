@@ -2,13 +2,23 @@
 #define ONIONSERVER_H
 
 #include <string>
+#include <vector>
 #include <iostream>
-#include <pthread.h>
+//#include <pthread.h>
 //#include <png.h>
 
+#include <stdarg.h>
+
+//#include <onion/onion.h>
+//#include <onion/dict.h>
 #include <onion/log.h>
-#include <onion/onion.h>
-#include <onion/dict.h>
+#include <onion/onion.hpp>
+#include <onion/response.hpp>
+#include <onion/request.hpp>
+#include <onion/handler.hpp>
+#include <onion/dict.hpp>
+#include <onion/url.hpp>
+
 //#include <onion/mime.h>
 //#include <onion/extras/png.h>
 
@@ -20,16 +30,10 @@
 class B9CreatorSettings;
 
 
-/* Declare jSON data object here
- *
- *
- */
-
-
 //thread function
 static void* start_myonion_server(void* arg){
 	printf("Onion server: Start listening.\n");
-	onion_listen((onion*)arg);//loop
+	((Onion::Onion*)arg)->listen();//loop
 	printf("Onion server: Stop listening.\n");
 }
 
@@ -60,26 +64,30 @@ struct maximum
 };
 
 class OnionServer{
-	public:	
-		onion* m_ponion;
+	private:	
 		pthread_t m_pthread;
-		//PrinterSetting* m_pprintSetting const;
-		B9CreatorSettings &m_b9CreatorSettings;
+		Onion::Onion m_onion;
+		Onion::Url m_url;
 		/* Store header with mime type and charset information for several file extensions.
 		 * This is just a workaround. There should be an automatic mechanicm
 		 * in libonion. */
-		onion_dict *m_mimedict;
+		Onion::Dict m_mimedict;
+
+		/* This arrays saves some strings. Most
+		 * functions of onion cpp binding use 
+		 * references to string. Thus we need
+		 * to omit local variables.
+		 * */
+		std::vector<std::string> m_urls;
+		std::vector<std::string> m_mimes;
+
+		B9CreatorSettings &m_b9CreatorSettings;
 	public:
 		OnionServer(B9CreatorSettings &b9CreatorSettings );
 		
 		~OnionServer()
 		{
-			if(m_ponion != NULL) stop_server();
-
-			if(m_mimedict != NULL ){
-				onion_dict_free(m_mimedict);
-				m_mimedict = NULL;
-			}
+			//stop_server();
 		}
 
 		int start_server();
@@ -94,10 +102,21 @@ class OnionServer{
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/
 		//boost::signal<void (onion_request *req,int actionid, std::string &reply)> updateSignal;
-		boost::signal<bool (onion_request *req,int actionid, onion_response *res), maximum<bool> > updateSignal;
+		boost::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ), maximum<bool> > updateSignal;
 
 		/* Update signal handler of this class.*/
-		bool updateWebserver(onion_request *req, int actionid, onion_response *res);
+		bool updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);
+
+		/* Handler for webinterface requests */
+		onion_connection_status index_html( Onion::Request &req, Onion::Response &res);
+		onion_connection_status updateData( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getB9CreatorSettings( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getB9CreatorSettingsWrapped( Onion::Request &req, Onion::Response &res);
+		onion_connection_status search_file( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getPrinterMessages( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getJobFolder( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getJobFolderWrapped( Onion::Request &req, Onion::Response &res);
+		onion_connection_status preview( Onion::Request &req, Onion::Response &res);
 };
 
 #endif
