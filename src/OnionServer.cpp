@@ -2,7 +2,6 @@
  * This class use the onion library from David Moreno.
  * See https://github.com/davidmoreno/onion .
 	*/
-
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -27,6 +26,27 @@ extern "C"{
 onion_connection_status index_html_template(void *p, onion_request *req, onion_response *res);
 onion_connection_status b9creator_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
+
+extern "C" {
+	/* Replace default onion_log function to 
+	 * to filter out O_INFO messages */
+	void log_wrapper(onion_log_level level, const char *filename,
+			int lineno, const char *fmt, ...){
+
+		if( level == O_INFO) return;
+
+		char tmp[256];
+		va_list ap;
+		va_start(ap, fmt);
+		vsnprintf(tmp,sizeof(tmp),fmt, ap);
+		va_end(ap);
+		onion_log_stderr(level, filename, lineno, tmp);
+	};
+
+//	void (*onion_log)(onion_log_level level, const char *filename,
+//			int lineno, const char *fmt, ...)=log_wrapper;
+}
+
 
 
 /*
@@ -266,6 +286,7 @@ onion_connection_status OnionServer::getB9CreatorSettingsWrapped(
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
 OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
+	//m_onion( O_THREADED),
 	m_onion( O_THREADED|O_DETACH_LISTEN ),
 	//m_onion( O_ONE_LOOP|O_DETACH_LISTEN ),
 	m_url(m_onion),
@@ -273,7 +294,7 @@ OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 	m_mimes(),
 	m_urls(),
 	m_b9CreatorSettings(b9CreatorSettings) {
-		m_onion.setTimeout(5000);
+		//m_onion.setTimeout(5000);
 
 		// Store used urls
 		m_urls.push_back( "" );

@@ -7,9 +7,11 @@
 //#include <pthread.h>
 //#include <png.h>
 
+#include <stdarg.h>
+
 //#include <onion/onion.h>
 //#include <onion/dict.h>
-//#include <onion/log.h>
+#include <onion/log.h>
 #include <onion/onion.hpp>
 #include <onion/response.hpp>
 #include <onion/request.hpp>
@@ -84,7 +86,8 @@ class OnionServer{
 		
 		~OnionServer()
 		{
-			stop_server();
+			//stop_server();
+			onion_url_free( m_url.c_handler() );
 		}
 
 		int start_server();

@@ -119,6 +119,10 @@ int main(int argc, char **argv) {
 
 	/* Clean up objects */
 	onion.stop_server();
+	for(int i=0;i<9;++i){
+		std::cout << "Wait..." << std::endl;
+		sleep(1);
+	}
 
 	usleep(10000);
 
