@@ -645,11 +645,8 @@ function create_jobTimingStates(){
 		 create_fields(job_timings);
 		 }
 		 );
-		 */
-	var job_timings =	{ "html": [
-		{ "type": "stateField", "id": "runTime", "val": 0, "format": "hhmmss", "parse": "" },
-		{ "type": "stateField", "id": "stateTime", "val": 1, "format": "", "parse": "" },
-		{ "type": "stateField", "id": "stateCountdown", "val": 0, "format": "", "parse": "" } ] };
+		*/
+	//now already readed in job_timings.js
 	create_fields(job_timings);
 }
 

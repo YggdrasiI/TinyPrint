@@ -209,6 +209,24 @@ onion_connection_status OnionServer::getJobTimings(
 	return OCS_PROCESSED;
 }
 
+/* Like getJobTimings but with some prefix and suffix text
+ * to get an *.js file.
+ * Moreover, the sending of all state fields will forced.
+ * */
+onion_connection_status OnionServer::getJobTimingsWrapped(
+		Onion::Request &req, Onion::Response &res ){
+	
+	int actionid = 12;
+	res.write("job_timings = ", 14);
+	if( ! updateSignal(&req, actionid, &res) ){
+		//signals did not write into response. Write default reply.
+		std::string reply("'Request not handled.'");
+		res.write( reply.c_str(), reply.size() );
+	}
+	res.write(";", 1);
+	return OCS_PROCESSED;
+}
+
 /*
  Return raw file if found. Security risk?! Check of filename/path required?!
 */
@@ -320,6 +338,7 @@ OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 		m_urls.push_back("messages");
 		m_urls.push_back("preview.png");
 		m_urls.push_back("update");
+		m_urls.push_back("jobtimings.js");
 		m_urls.push_back("jobtimings");
 		m_urls.push_back("^.*$");
 
@@ -371,14 +390,15 @@ int OnionServer::start_server() {
 	m_url.add<OnionServer>(m_urls[5], this, &OnionServer::getJobFolder );
 	m_url.add<OnionServer>(m_urls[6], this, &OnionServer::getPrinterMessages );
 	m_url.add<OnionServer>(m_urls[7], this, &OnionServer::preview );
-	m_url.add<OnionServer>(m_urls[9], this, &OnionServer::getJobTimings );
+	m_url.add<OnionServer>(m_urls[9], this, &OnionServer::getJobTimingsWrapped );
+	m_url.add<OnionServer>(m_urls[10], this, &OnionServer::getJobTimings );
 	
 	/* Recive data */
 	m_url.add<OnionServer>(m_urls[8], this, &OnionServer::updateData );
 
 	/** Static content **/
-	/* Send data */
-	m_url.add<OnionServer>(m_urls[10], this, &OnionServer::search_file );
+	/* Send data, should be the last added case. */
+	m_url.add<OnionServer>(m_urls[11], this, &OnionServer::search_file );
 
 	//start loop as thread  (O_DETACH_LISTEN flag is set.)
 	//m_onion.listen();//loop

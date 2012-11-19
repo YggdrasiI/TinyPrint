@@ -137,7 +137,7 @@ class B9CreatorSettings: public JsonConfig{
 		/* Flag to flip slice orientation.
 		 * This correct 'wrong' layer order where layer0 is on top */
 		bool m_flipSprites; 
-		JobState m_jobState; //updated by JobManager Thread.
+//		JobState m_jobState; //updated by JobManager Thread.
 		std::vector<JobFile*> m_files;
 
 		/* This object owns his own mutexes.

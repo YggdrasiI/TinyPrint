@@ -118,6 +118,7 @@ class OnionServer{
 		onion_connection_status getJobFolderWrapped( Onion::Request &req, Onion::Response &res);
 		onion_connection_status preview( Onion::Request &req, Onion::Response &res);
 		onion_connection_status getJobTimings( Onion::Request &req, Onion::Response &res);
+		onion_connection_status getJobTimingsWrapped( Onion::Request &req, Onion::Response &res);
 };
 
 #endif

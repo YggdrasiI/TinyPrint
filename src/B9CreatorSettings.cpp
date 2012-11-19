@@ -33,7 +33,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_b9jDir(),
 	m_readyForNextCycle(false),
 	m_printProp(),
-	m_jobState(IDLE),
+//	m_jobState(IDLE),
 	m_connected(false),
 	m_flipSprites(true),
 	m_files(),
@@ -116,7 +116,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
-	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"state","token") );
+//	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"state","token") );//moved to JobManager
 	cJSON_AddItemToArray(html, jsonStateField("displayStatus",m_display,"token","token") );
 
 	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
@@ -160,7 +160,7 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_zResolution = 50;
 	m_printProp.m_xyResolution = 100;
 	m_printProp.m_lockTimes = false;
-	m_jobState = IDLE;
+//	m_jobState = IDLE;
 	m_flipSprites = true;
 };
 

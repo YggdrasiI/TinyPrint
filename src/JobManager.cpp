@@ -557,9 +557,10 @@ void JobManager::run(){
 			default:
 				std::cout << "State " << m_state << " unknown" << std::endl;
 		}
-		m_b9CreatorSettings.lock();
+
+		/*m_b9CreatorSettings.lock();
 		m_b9CreatorSettings.m_jobState = m_state;
-		m_b9CreatorSettings.unlock();
+		m_b9CreatorSettings.unlock();*/
 
 		//check change external change of current layer
 		/*
@@ -864,59 +865,70 @@ void JobManager::updateSignalHandler(int changes){
 
 bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Response *pres){
 
-	if( actionid == 11){
+	switch( actionid ){
+		case 12:
+			{
+				m_timingState = (JobState)-1;
+			}
+			//fall through
+		case 11:
+			{
+				/* check if state was changed during last update
+				 * If its the same state, just a subset of
+				 * information will be created and sended.
+				 * */
+				bool newstate( m_timingState != m_state );
+				PrintProperties &p = m_b9CreatorSettings.m_printProp;
 
-		/* check if state was changed during last update
-		 * If its the same state, just a subset of
-		 * information will be created and sended.
-		 * */
-		bool newstate( m_timingState != m_state );
-		PrintProperties &p = m_b9CreatorSettings.m_printProp;
+				int runTime = (p.m_nmbrOfLayers - p.m_currentLayer) * (
+						p.m_exposureTime +
+						p.m_releaseCycleTime +
+						p.m_breathTime +
+						p.m_overcureTime );
+				// Conside exposure time of attached layers
+				if( p.m_currentLayer < p.m_nmbrOfAttachedLayers ){
+					runTime +=  (p.m_nmbrOfAttachedLayers-p.m_currentLayer) * (
+							p.m_exposureTimeAL -
+							p.m_exposureTime -
+							p.m_overcureTime );
+				}
 
-		int runTime = (p.m_nmbrOfLayers - p.m_currentLayer) * (
-				p.m_exposureTime +
-				p.m_releaseCycleTime +
-				p.m_breathTime +
-				p.m_overcureTime );
-		// Conside exposure time of attached layers
-		if( p.m_currentLayer < p.m_nmbrOfAttachedLayers ){
-			runTime +=  (p.m_nmbrOfAttachedLayers-p.m_currentLayer) * (
-					p.m_exposureTimeAL -
-					p.m_exposureTime -
-					p.m_overcureTime );
-		}
+				int stateTime, stateCountdown;
+				//if( m_state == PAUSE || m_state == START_STATE || m_state == IDLE )
+				if( m_state & (PAUSE|START_STATE|IDLE|ERROR) )
+				{
+					stateTime = 1;
+					stateCountdown = 0;
+				}else{
+					stateTime = m_tTimer.diff / 1000000;
+					timeval_t now;
+					gettimeofday( &now, NULL );
+					stateCountdown = (m_tTimer.diff - Timer::timeval_diff(&now, &(m_tTimer.begin) )) / 1000000;
+				}
 
-		int stateTime, stateCountdown;
-		//if( m_state == PAUSE || m_state == START_STATE || m_state == IDLE )
-		if( m_state & (PAUSE|START_STATE|IDLE|ERROR) )
-		{
-			stateTime = 1;
-			stateCountdown = 0;
-		}else{
-			stateTime = m_tTimer.diff / 1000000;
-			timeval_t now;
-			gettimeofday( &now, NULL );
-			stateCountdown = (m_tTimer.diff - Timer::timeval_diff(&now, &(m_tTimer.begin) )) / 1000000;
-		}
+				cJSON *root = cJSON_CreateObject();
+				cJSON *html = cJSON_CreateArray();
 
-		cJSON *root = cJSON_CreateObject();
-		cJSON *html = cJSON_CreateArray();
+				if( newstate ){
+					cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("jobState",m_state,"state","token") );
+					cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("runTime",(double)runTime,"hhmmss","") );
+					cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateTime",(double)stateTime,"","") );
+					m_timingState = m_state;
+				}
+				cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateCountdown",(double)stateCountdown,"","") );
 
-		if( newstate ){
-			cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("runTime",(double)runTime,"hhmmss","") );
-			cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateTime",(double)stateTime,"","") );
-			m_timingState = m_state;
-		}
-		cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateCountdown",(double)stateCountdown,"","") );
+				cJSON_AddItemToObject(root, "html", html);
 
-		cJSON_AddItemToObject(root, "html", html);
+				char* reply = cJSON_Print(root);
+				cJSON_Delete(root);
+				pres->write( reply, strlen(reply) );
+				free( reply );
 
-		char* reply = cJSON_Print(root);
-		cJSON_Delete(root);
-		pres->write( reply, strlen(reply) );
-		free( reply );
-
-		return true;
+				return true;
+			}
+			break;
+		default:
+			break;
 	}
 	return false;
 }
