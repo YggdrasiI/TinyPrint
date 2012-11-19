@@ -41,6 +41,11 @@ TOKENS = {
  * */
 TEXTAREA_MAX_LINES = 300;
 
+/* Backup of last state. Used in format_state */
+last_state = -1;
+/* Flag enable prompts to avoid missclicks on
+ * the webinterface during printing */
+request_confirmation = false;
 
 /* Fill in json values on desired
  * positions on the page. Raw values
@@ -610,6 +615,7 @@ function update_jobFileList(){
  *
  * */
 function loadFile(button){
+
 	var filename = $('#fileBrowserListSelection').val();
 	var pnode = $('#files');
 
@@ -668,6 +674,10 @@ function unloadFile(fileindex){
 
 
 function loadConfig(){
+
+	ok = !request_confirmation || confirm("Printing... Are you sure?");
+	if( !ok ) return;
+	
 	var configFilename = $('#configFilename').val();
 	send("update?actionid=1","configFilename="+configFilename,
 			function(data){
@@ -684,6 +694,13 @@ function saveConfig(){
 				if( data == "error" ) alert("Saveing failed");
 			}
 			);
+}
+
+function resetPrinter(){
+	ok = !request_confirmation || confirm("Printing... Are you sure?");
+	if( !ok ) return;
+
+	sendCmd('R');
 }
 
 /**
@@ -704,11 +721,17 @@ function format_token(o,val){
 	return "undefined";
 
 }
+
 /* format_state will be called for
  * job state string. Analyse this string
  * and update Print buttons. */
 function format_state(o,val){
 	state = format_token(o,val);
+
+	if( val == last_state ){
+		return state;
+	}
+
 	switch( state ){
 		case "START_STATE":
 //		case "INIT":
@@ -718,15 +741,19 @@ function format_state(o,val){
 			$('#printButton').val("Resume");
 			break;
 		case "IDLE":
+			request_confirmation = false;
 			$('#printButton').val("Print");
 			$('#openButton').prop("disabled",false);
+			//$('#resetButton').prop("disabled",false);
 			break;
 		case "BREATH":
 		case "CURING":
 		case "OVERCURING":
 		case "WAIT_ON_ZERO_HEIGHT":
+			request_confirmation = true;
 			$('#printButton').val("Pause");
 			$('#openButton').prop("disabled",true);
+			//$('#resetButton').prop("disabled",true);
 			break;
 	}
 
@@ -832,6 +859,10 @@ function send(url,val, handler){
 
 
 function toggleDisplay(button){
+
+	ok = !request_confirmation || confirm("Printing... Are you sure?");
+	if( !ok ) return;
+
 	/* With post arg display=0: display off.
 	 * With post arg display=1: display on.
 	 * With post arg display=2: display toggle.
@@ -869,7 +900,7 @@ function jobManagerCmd(cmd,button1id, button2id){
 			function(data){
 				//It's not ness to listen on return value anymore.
 				//The labels of the buttons will updated by jobState value.
-				//return;
+				return;
 				/* data return state of printer */
 				if( data == "print" ){
 					/*printing...*/
@@ -896,7 +927,7 @@ function jobManagerAbort(button){
 }
 
 function quitServerApp(){
-	ok = confirm("Quit TinyPrint Server?");
+	ok = !request_confirmation || confirm("Quit TinyPrint Server?");
 	if( ok )
 		send("update?actionid=3","",null);
 }

@@ -707,6 +707,18 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 		case 5: /* Toggle Display */
 			{
 				const char* disp = onion_request_get_post(preq->c_handler(),"display");
+				/* Do noting, if printing is running and display is on
+				 * to avoid problems.
+				 * */
+				/*
+				if( m_b9CreatorSettings.m_display && 
+						//!( m_state & ( IDLE|START_STATE|PAUSE|ERROR ))
+						m_b9CreatorSettings.m_printProp.m_lockTimes
+					){
+					std::string msg("(Job) Job running. You can not disable display.");
+					m_b9CreatorSettings.m_queues.add_message(msg);
+					return true;
+				}*/
 
 				if( disp != NULL ){
 
@@ -876,7 +888,7 @@ bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Respon
 
 		int stateTime, stateCountdown;
 		//if( m_state == PAUSE || m_state == START_STATE || m_state == IDLE )
-		if( m_state & (PAUSE|START_STATE|IDLE) )
+		if( m_state & (PAUSE|START_STATE|IDLE|ERROR) )
 		{
 			stateTime = 1;
 			stateCountdown = 0;
