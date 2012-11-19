@@ -318,7 +318,7 @@ void DisplayManager::initFB(){
 	//search for 'nofullscreen' flag
 	bool fullscreen(true);
 	for( int i=0; i<argc2; ++i ){
-		if( m_dfbOptions[i].compare("nofullscreen") == 0 ){
+		if( m_dfbOptions[i].compare("--nofullscreen") == 0 ){
 			fullscreen = false;
 			break;
 		}

@@ -76,14 +76,16 @@ int main(int argc, char **argv) {
 
 
 	bool autostartdisplay(false);
-	for( int i=0; i<argc2; ++i ){
-		if( m_dfbOptions[i].compare("display") == 0 ){
+	for( int i=0; i<argc; ++i ){
+		if( strcmp("--display",argv[i]) == 0 ){
 			autostartdisplay = true;
 			break;
 		}
 	}
 
-	if(autostartdisplay) displayManager.start();
+	if(autostartdisplay){
+		b9CreatorSettings.m_display = true;
+	}
 
 	//jobManager.loadJob("puzzle.svg");
 

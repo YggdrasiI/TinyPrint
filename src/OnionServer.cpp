@@ -43,8 +43,8 @@ extern "C" {
 		onion_log_stderr(level, filename, lineno, tmp);
 	};
 
-//	void (*onion_log)(onion_log_level level, const char *filename,
-//			int lineno, const char *fmt, ...)=log_wrapper;
+	void (*onion_log)(onion_log_level level, const char *filename,
+			int lineno, const char *fmt, ...)=log_wrapper;
 }
 
 
