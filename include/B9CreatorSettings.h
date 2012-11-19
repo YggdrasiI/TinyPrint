@@ -182,6 +182,9 @@ class B9CreatorSettings: public JsonConfig{
 			return JsonConfig::init(filename);
 		};
 
+		/* Get json struct of current open files. */
+		cJSON *jsonFilesField(const char* id);
+
 	private:
 		//similar to updateIntField in JsonConfig.
 		bool updateState(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);

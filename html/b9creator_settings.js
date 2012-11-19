@@ -23,6 +23,7 @@ $(function(){
 		create_fields(json_messages);
 
 		create_jobFileList();
+		create_jobTimingStates();
 
 		refreshIntervall = window.setInterval("refresh()", 1000);
 });

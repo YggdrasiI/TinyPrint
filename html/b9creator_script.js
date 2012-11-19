@@ -36,7 +36,7 @@ TOKENS = {
 	}
 }
 
-/* maximal number of lines in the messages 
+/* maximal number of lines in the messages
  * textarea.
  * */
 TEXTAREA_MAX_LINES = 300;
@@ -103,10 +103,10 @@ function create_intField(obj, pnode){
 	inputfield.prop("prevvalue", val);
 
 	/* jQuery: .change fires if element lost focus. .input fires on every change. */
-	inputfield.bind('input', 
+	inputfield.bind('input',
 			function(event){
 				if(check_intField(pnode.prop("json"), this.value)){
-					//unset red property	
+					//unset red property
 					pnode.removeClass("red");
 				}else{
 					//mark element red
@@ -115,7 +115,7 @@ function create_intField(obj, pnode){
 			});
 	//add event for element leave....
 	inputfield.change( function(event){
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(check_intField(o, this.value)){
 			inputfield.prop("prevvalue", this.value);
 			o.val = parse(o,this.value);
@@ -132,15 +132,15 @@ function create_intField(obj, pnode){
 	},
 	function(event){
 		//this.blur();//unfocus element
-		
-		var o = pnode.prop("json"); 
+
+		var o = pnode.prop("json");
 		if( o.val != parse(o,this.value) ) inputfield.trigger('change');
 	});
 
 	inputfield.bind('mousewheel', function(event, delta) {
 
 		var dir = delta>0?1:-1;
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(o.readonly) return false;
 
 		var prevVal = parse(o,this.value);
@@ -161,7 +161,7 @@ function create_intField(obj, pnode){
 
 	inputfield.bind('keyup', function(event) {
 
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(o.readonly) return false;
 
 		var accel =0;
@@ -206,7 +206,7 @@ function create_intField(obj, pnode){
 		if(check_intField(o, nextValStr)){
 			this.value = nextValStr;
 			//send updated values to server
-			var o = pnode.prop("json"); 
+			var o = pnode.prop("json");
 			if( o.val != nextVal ) inputfield.trigger('change');
 		}
 
@@ -214,13 +214,13 @@ function create_intField(obj, pnode){
 	});
 
 
-	ret.append( inputfield ); 
+	ret.append( inputfield );
 	pnode.append( ret );
 }
 
 function update_intField(obj){
 	var val = format(obj,obj.val);
-	var inputfield = $("#"+obj.id+"_"); 
+	var inputfield = $("#"+obj.id+"_");
 	var prev = inputfield.prop("prevvalue");
 	/* This check omit the automaticly change of field
 	 * which currently changed by the user.
@@ -271,10 +271,10 @@ function create_doubleField(obj, pnode){
 	inputfield.prop("prevvalue", val);
 
 	/* jQuery: .change fires if element lost focus. .input fires on every change. */
-	inputfield.bind('input', 
+	inputfield.bind('input',
 			function(event){
 				if(check_doubleField(pnode.prop("json"), this.value)){
-					//unset red property	
+					//unset red property
 					pnode.removeClass("red");
 				}else{
 					//mark element red
@@ -283,7 +283,7 @@ function create_doubleField(obj, pnode){
 			});
 	//add event for element leave....
 	inputfield.change( function(event){
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(check_doubleField(o, this.value)){
 			inputfield.prop("prevvalue", this.value);
 			o.val = parse(o,this.value);
@@ -300,15 +300,15 @@ function create_doubleField(obj, pnode){
 	},
 	function(event){
 		//this.blur();//unfocus element
-		
-		var o = pnode.prop("json"); 
+
+		var o = pnode.prop("json");
 		if( o.val != parse(o,this.value) ) inputfield.trigger('change');
 	});
 
 	inputfield.bind('mousewheel', function(event, delta) {
 
 		var dir = delta>0?1:-1;
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(o.readonly) return false;
 
 		var prevVal = parse(o,this.value);
@@ -329,7 +329,7 @@ function create_doubleField(obj, pnode){
 
 	inputfield.bind('keyup', function(event) {
 
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		if(o.readonly) return false;
 
 		var accel =0;
@@ -373,7 +373,7 @@ function create_doubleField(obj, pnode){
 		if(check_doubleField(o, nextValStr)){
 			this.value = nextValStr;
 			//send updated values to server
-			var o = pnode.prop("json"); 
+			var o = pnode.prop("json");
 			if( o.val != nextVal ) inputfield.trigger('change');
 		}
 
@@ -381,7 +381,7 @@ function create_doubleField(obj, pnode){
 	});
 
 
-	ret.append( inputfield ); 
+	ret.append( inputfield );
 	pnode.append( ret );
 
 }
@@ -412,12 +412,12 @@ function create_stateField(obj, pnode){
 	var val = format(obj,obj.val);
 	var statefield = $('<span id="'+obj.id+'_">'+val+'</span>');
 
-	ret.append( statefield ); 
+	ret.append( statefield );
 	pnode.append( ret );
 }
 
 function update_stateField(obj){
-	var statefield = $("#"+obj.id+"_"); 
+	var statefield = $("#"+obj.id+"_");
 	var val = format(obj,obj.val);
 	var statefield2 = $('<span id="'+obj.id+'_">'+val+'</span>');
 	statefield.replaceWith(statefield2);
@@ -437,18 +437,18 @@ function create_checkboxField(obj, pnode){
 
 	//add toggle event
 	inputfield.change( function(event){
-		var o = pnode.prop("json"); 
+		var o = pnode.prop("json");
 		o.val = ( $(this).prop("checked")!=false?1:0 );
 		send_setting();
 	});
 
-	ret.append( inputfield ); 
+	ret.append( inputfield );
 	pnode.append( ret );
 }
 
 function update_checkboxField(obj){
 	var val = obj.val!=0;
-	var checkbox = $("#"+obj.id+"_"); 
+	var checkbox = $("#"+obj.id+"_");
 	var prev = checkbox.prop("prevvalue");
 	if( val != prev && prev == checkbox.prop("checked") ){
 		checkbox.prop("checked", obj.val!=0 );
@@ -480,7 +480,7 @@ function create_messagesField(obj, pnode){
 	//scroll to bottom
 	field.scrollTop(field.scrollHeight);
 
-	ret.append( field ); 
+	ret.append( field );
 	pnode.append( ret );
 }
 
@@ -507,7 +507,7 @@ function update_messagesField(obj){
 		//scroll to bottom
 		field.scrollTop(field[0].scrollHeight);
 	}else{
-		//scroll to last known position. This is not perfect if old lines was removed. 
+		//scroll to last known position. This is not perfect if old lines was removed.
 		field.scrollTop(scrollPos);
 	}
 }
@@ -571,12 +571,12 @@ function create_jobFileList(){
 	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
-	var selectfield = $('<select id="fileBrowserListSelection" size="1">'); 
+	var selectfield = $('<select id="fileBrowserListSelection" size="1">');
 	selectfield.change( function(event){
 		//alert($(this).val());
 	});
 
-	ret.append( selectfield ); 
+	ret.append( selectfield );
 	pnode.append( ret );
 
 	filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
@@ -588,7 +588,7 @@ function filling_jobFileList( id, objArr ){
 	if( objArr.length < 1 ){
 		$("<option/>").val("-1").text("No files.").appendTo(selectfield);
 	}else{
-		for(var i=0; i<objArr.length; i++){			
+		for(var i=0; i<objArr.length; i++){
 			$("<option/>").val(objArr[i][""+i+""]).text(objArr[i][i]).appendTo(selectfield);
 		}
 	}
@@ -611,6 +611,7 @@ function update_jobFileList(){
  * */
 function loadFile(button){
 	var filename = $('#fileBrowserListSelection').val();
+	var pnode = $('#files');
 
 	//block load button
 	$(button).prop("disabled",true);
@@ -618,21 +619,48 @@ function loadFile(button){
 
 	send("update?actionid=7","job_file="+filename,
 			function(data){
-				if( data == "ok" ) window.location.reload();
+				if( "failed" != data ){
+					var job_files = JSON.parse(data);//local var.
+					pnode.empty();
+					create_filesField( job_files.html[0], pnode);
+				}
 				else alert("Loading of file failed.\nReturn value of server:\n"+data);
 				$(button).prop("disabled",false);
 			}
 			);
 }
 
+
+function create_jobTimingStates(){
+	/*
+		 send("jobtimings","",
+		 function(data){
+		 var job_timings = JSON.parse(data);
+		 create_fields(job_timings);
+		 }
+		 );
+		 */
+	var job_timings =	{ "html": [
+		{ "type": "stateField", "id": "runTime", "val": 0, "format": "hhmmss", "parse": "" },
+		{ "type": "stateField", "id": "stateTime", "val": 1, "format": "", "parse": "" },
+		{ "type": "stateField", "id": "stateCountdown", "val": 0, "format": "", "parse": "" } ] };
+	create_fields(job_timings);
+}
+
+
 function unloadFile(fileindex){
 	//its possible to load the same job twice.
 	//thus, we do not use the filename to identify files.
 	var ret = confirm("Remove file?");
 	if( ret ){
+		var pnode = $('#files');
 		send("update?actionid=8","job_file_index="+fileindex,
 				function(data){
-					if( data == "ok" ) window.location.reload();
+					if( "failed" != data ){
+						var job_files = JSON.parse(data);
+						pnode.empty();
+						create_filesField( job_files.html[0], pnode);
+					}
 				}
 				);
 	}
@@ -730,6 +758,18 @@ function parse_mm(s){
 	return parseFloat(s)*100;
 }
 
+/* Parse seconds into hh:mm:ss format */
+function format_hhmmss(o,val){
+	var p = (typeof val === "string"?parseInt(val):val);
+	if( p < 0 ) return "00:00:00";
+	s = p%60;
+	p = Math.floor(p/60);
+	m = p%60;
+	h = Math.floor(p/60);
+//	return sprintf("%2.0f:2.0f:2.0f", h,m,s);
+ return (h<10?"0":"") + h + (m<10?":0":":") + m + (s<10?":0":":") + s;
+}
+
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
@@ -764,6 +804,12 @@ function refresh(){
 			}
 			);
 
+	send("jobtimings","",
+			function(data){
+				var job_timings = JSON.parse(data);
+				update_fields(job_timings);
+			}
+			);
 }
 
 //send complete json struct
@@ -806,7 +852,7 @@ function toggleDisplay(button){
 
 
 /* Start, stop or pause printing job
- * Require two buttons and update the button labels. 
+ * Require two buttons and update the button labels.
  * Possible commands:
 	 * print="init": init printer (required for start)
 	 * print="start": start print
@@ -827,16 +873,16 @@ function jobManagerCmd(cmd,button1id, button2id){
 				/* data return state of printer */
 				if( data == "print" ){
 					/*printing...*/
-					bt1.val("Pause"); 
-					bt2.val("Abort"); 
+					bt1.val("Pause");
+					bt2.val("Abort");
 				}else if(data == "pause"){
 					/*paused...*/
-					bt1.val("Resume"); 
-					bt2.val("Abort"); 
+					bt1.val("Resume");
+					bt2.val("Abort");
 				}else if(data == "idle"){
 					/*stoped/idle...*/
-					bt1.val("Print"); 
-					bt2.val("Abort"); 
+					bt1.val("Print");
+					bt2.val("Abort");
 				}else{
 					bt1.val("Command was not sucessfull.\n Server returns: \n"+data);
 				}
@@ -891,5 +937,5 @@ function deepCopy(p,c) {
 		} else c[i] = p[i];
 	}
 	return c;
-} 
+}
 

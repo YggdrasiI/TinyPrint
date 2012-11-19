@@ -28,6 +28,7 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 	//m_showedLayer(b9CreatorSettings.m_printProp.m_currentLayer),
 	m_state(START_STATE),
 	m_pauseInState(IDLE),
+	m_timingState(FINISH), //startvalue just some value != START_STATE
 	m_job_mutex(),
 	m_tTimer(),
 	m_tPause(),
@@ -46,7 +47,11 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 			<< std::endl ;
 		exit(1) ;
 	}
-	
+
+	//init timer value
+	m_tTimer.diff = 0;
+	gettimeofday( &m_tTimer.begin, NULL );
+
 	//connect B9CreatorSettings update signal
 	m_b9CreatorSettings.updateSettings.connect(
 					boost::bind(&JobManager::updateSignalHandler,this, _1 )
@@ -66,18 +71,23 @@ JobManager::~JobManager(){
 int JobManager::loadJob(const std::string filename){
 
 	m_job_mutex.lock();
-
 	/* Most lines moved to B9CreatorSettings */
 	if( m_b9CreatorSettings.loadJob(filename) == 0)
 		show( m_b9CreatorSettings.m_printProp.m_currentLayer, RAW );
-
 	m_job_mutex.unlock();
 	return 0;
 }
 
-int JobManager::loadImg(const std::string filename){
-	return -1;
+int JobManager::unloadJob(int index){
+
+	m_job_mutex.lock();
+	/* Most lines moved to B9CreatorSettings */
+	if( m_b9CreatorSettings.unloadJob(index) == 0)
+		show( m_b9CreatorSettings.m_printProp.m_currentLayer, RAW );
+	m_job_mutex.unlock();
+	return 0;
 }
+
 
 int JobManager::initJob(bool withReset){
 	m_job_mutex.lock();
@@ -98,13 +108,13 @@ int JobManager::initJob(bool withReset){
 	}
 	m_job_mutex.unlock();
 
-return 0;	
+return 0;
 }
 
 int JobManager::startJob(){
 	if( m_state == START_STATE ){
 	}
-	
+
 	if( m_state != IDLE ){
 		std::string msg("(Job) Can not start job.");
 		std::cerr << msg << std::endl;
@@ -134,9 +144,9 @@ int JobManager::pauseJob(){
 
 	/* Close VAT if printer is equipped with slider */
 	if( m_b9CreatorSettings.m_shutterEquipped ){
-		std::string cmd_close("V0"); 
-		q.add_command(cmd_close);	
-		m_b9CreatorSettings.m_queues.add_command(cmd_close);	
+		std::string cmd_close("V0");
+		q.add_command(cmd_close);
+		m_b9CreatorSettings.m_queues.add_command(cmd_close);
 	}
 
 	m_state = PAUSE;
@@ -150,7 +160,7 @@ int JobManager::resumeJob(){
 	// Analyse m_pauseInState to fix some timing
 	switch( m_pauseInState ){
 		case IDLE:
-			{ 
+			{
 				std::string msg("Can not resume job. It was not paused");
 				std::cerr << msg << std::endl;
 				m_b9CreatorSettings.m_queues.add_message(msg);
@@ -159,11 +169,11 @@ int JobManager::resumeJob(){
 			break;
 		case BREATH:
 			{
-				// Open shutter 
+				// Open shutter
 				if( m_b9CreatorSettings.m_shutterEquipped ){
-					std::string cmd_open("V100"); 
-					q.add_command(cmd_open);	
-					m_b9CreatorSettings.m_queues.add_command(cmd_open);	
+					std::string cmd_open("V100");
+					q.add_command(cmd_open);
+					m_b9CreatorSettings.m_queues.add_command(cmd_open);
 				}
 				VPRINT("Repeat breath for layer %i.\n",
 						m_b9CreatorSettings.m_printProp.m_currentLayer );
@@ -178,7 +188,7 @@ int JobManager::resumeJob(){
 					- Timer::timeval_diff( &m_tPause.begin ,&m_tCuring.begin );
 				gettimeofday( &m_tCuring.begin, NULL );
 				show( m_b9CreatorSettings.m_printProp.m_currentLayer,
-						(m_state==OVERCURING?OVERCURE1:RAW)  ); 
+						(m_state==OVERCURING?OVERCURE1:RAW)  );
 			}
 			break;
 		case WAIT_ON_R_MESS:
@@ -230,11 +240,11 @@ void JobManager::run(){
 			case RESET:
 				{
 					gettimeofday( &m_tRWait.begin, NULL );
-					m_tRWait.diff = MaxWaitR; 
+					m_tRWait.diff = MaxWaitR;
 
 					/* Send reset command to printer */
-					std::string cmd_reset("R"); 
-					q.add_command(cmd_reset);	
+					std::string cmd_reset("R");
+					q.add_command(cmd_reset);
 
 					RUNPRINT("Reset requested. Now wait on 'R0' Message.\n");
 					m_state = WAIT_ON_R_MESS;
@@ -268,18 +278,18 @@ void JobManager::run(){
 					/* Set release cycle time */
 					std::ostringstream cmd_cycle;
 					cmd_cycle << "D" << (int)(1000*m_b9CreatorSettings.m_printProp.m_releaseCycleTime);
-					std::string cmd_cycleStr(cmd_cycle.str()); 
-					q.add_command(cmd_cycleStr);	
+					std::string cmd_cycleStr(cmd_cycle.str());
+					q.add_command(cmd_cycleStr);
 
 					/* Update machine data ('A' covers 'I' command.) */
-					std::string cmd_info("A"); 
-					q.add_command(cmd_info);	
+					std::string cmd_info("A");
+					q.add_command(cmd_info);
 
 					// Set layer number to base layer index.
 					m_b9CreatorSettings.m_printProp.m_currentLayer = 0;
 					// Set display framebuffer on
 					m_b9CreatorSettings.m_display = true;
-					
+
 
 					// reset pause state to default value
 					m_pauseInState = IDLE;
@@ -292,21 +302,21 @@ void JobManager::run(){
 				break;
 			case FIRST_LAYER:
 				{
-					std::string cmd_base("B0"); 
-					q.add_command(cmd_base);	
+					std::string cmd_base("B0");
+					q.add_command(cmd_base);
 
 					//wait on shutter opening.
 					/* Thats not possible. 'F' message is send on shutter opening and not
 					 * after table movement.
 					RUNPRINT("First layer state. Wait on 'F' message\n");
 					gettimeofday( &(m_tFWait.begin), NULL );
-					m_tFWait.diff = MaxWaitFfrist; 
+					m_tFWait.diff = MaxWaitFfrist;
 					m_state = WAIT_ON_F_MESS;
 					*/
 
 					/* Wait on zHeight = 0 */
 					gettimeofday( &(m_tFWait.begin), NULL );
-					m_tFWait.diff = MaxWaitF; 
+					m_tFWait.diff = MaxWaitF;
 					RUNPRINT("Move Table to base position.\n");
 
 					m_state = WAIT_ON_ZERO_HEIGHT;
@@ -330,7 +340,7 @@ void JobManager::run(){
 			case NEXT_LAYER:
 				{
 					int &zHeight = m_b9CreatorSettings.m_zHeight; //Reference!
-					int zHeightLimit = m_b9CreatorSettings.m_zHeightLimit; 
+					int zHeightLimit = m_b9CreatorSettings.m_zHeightLimit;
 					int zRes = m_b9CreatorSettings.m_printProp.m_zResolution;
 					int pu = m_b9CreatorSettings.m_PU;
 					int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
@@ -345,7 +355,7 @@ void JobManager::run(){
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
 						RUNPRINT("%s", zErrorStr.c_str() );
-						q.add_message( zErrorStr );	
+						q.add_message( zErrorStr );
 						m_state = ERROR;
 						break;
 					}
@@ -356,7 +366,7 @@ void JobManager::run(){
 						<< std::endl << "Next layer: " << l;
 						std::string zErrorStr = zError.str();
 						RUNPRINT("%s", zErrorStr.c_str() );
-						q.add_message( zErrorStr );	
+						q.add_message( zErrorStr );
 						m_state = ERROR;
 						break;
 					}
@@ -371,14 +381,14 @@ void JobManager::run(){
 					std::ostringstream cmd_next;
 					cmd_next << "N" << zHeight2 ;
 					std::string cmd_nextStr = cmd_next.str();
-					q.add_command( cmd_nextStr );	
+					q.add_command( cmd_nextStr );
 					RUNPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
 
 					//hm, should I wait on release cycle here?!
 
 					//wait on shutter opening.
 					gettimeofday( &m_tFWait.begin, NULL );
-					m_tFWait.diff = MaxWaitF; 
+					m_tFWait.diff = MaxWaitF;
 
 					m_force_preload = true;
 					m_state = WAIT_ON_F_MESS;
@@ -389,7 +399,7 @@ void JobManager::run(){
 							}
 							break;*/
 			case WAIT_ON_F_MESS:
-				{	
+				{
 					RUNPRINT("Wait on 'F' message...\n");
 
 					if( m_force_preload ){
@@ -498,7 +508,7 @@ void JobManager::run(){
 							 * avoid the projector shutoff if
 							 * the job canceld by user (over stopJob())
 							 * */
-							std::string P0 = "PO" ; 
+							std::string P0 = "PO" ;
 							q.add_command(P0);
 
 						}
@@ -515,7 +525,7 @@ void JobManager::run(){
 				{
 					std::string cmd_finished;
 					RUNPRINT("Send F%i. Job finished\n",9000 );
-					cmd_finished = "F9000" ; 
+					cmd_finished = "F9000" ;
 					q.add_command(cmd_finished);
 
 					m_b9CreatorSettings.lock();
@@ -544,7 +554,7 @@ void JobManager::run(){
 
 				}
 				break;
-			default: 
+			default:
 				std::cout << "State " << m_state << " unknown" << std::endl;
 		}
 		m_b9CreatorSettings.lock();
@@ -553,7 +563,7 @@ void JobManager::run(){
 
 		//check change external change of current layer
 		/*
-		if( m_b9CreatorSettings.m_display && 
+		if( m_b9CreatorSettings.m_display &&
 				(m_b9CreatorSettings.m_printProp.m_currentLayer != m_showedLayer)
 			){
 			RUNPRINT("(Job) Change of layer detected. Show new layer.\n");
@@ -566,11 +576,11 @@ void JobManager::run(){
 		usleep(50000); //.05s
 		//usleep(2000000); //2s
 	}
-	
+
 }
 
 bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Response *pres){
-	
+
 	switch( actionid ){
 		case 8:
 			{	/* remove Job */
@@ -578,9 +588,23 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 				//int index = atoi( onion_request_get_queryd(req,"job_file_index","0") );
 				int index = atoi( onion_request_get_post(preq->c_handler(), "job_file_index") );
 				if( 0 == m_b9CreatorSettings.unloadJob(index) ){
-					reply = "ok";
+					cJSON *root = cJSON_CreateObject();
+					cJSON *html = cJSON_CreateArray();
+					cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonFilesField("files") );
+					cJSON_AddItemToObject(root, "html", html);
+					char *files = cJSON_Print( root );
+					cJSON_Delete( root );
+
+					pres->write( files, strlen(files) );
+					free( files );
+
+					//reset this state to send more data
+					//on next getJobTimings call.
+					m_timingState = FINISH;
+
+				}else{
+					pres->write( reply.c_str(), reply.size() );
 				}
-				pres->write( reply.c_str(), reply.size() ); 
 				return true;
 
 			}
@@ -594,10 +618,27 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 				std::cout << "Load '"<< job_file << "'" << std::endl;
 #endif
 				if( loadJob( job_file.c_str() ) == 0){
-					reply = "ok";
-				}
+					//reply = "ok";
+					/* Create json struct with list of open files.
+					 * this is an subset of all nodes of B9CreatorSettings.genJson()
+					 * */
+					cJSON *root = cJSON_CreateObject();
+					cJSON *html = cJSON_CreateArray();
+					cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonFilesField("files") );
+					cJSON_AddItemToObject(root, "html", html);
+					char *files = cJSON_Print( root );
+					cJSON_Delete( root );
 
-				pres->write( reply.c_str(), reply.size() ); 
+					pres->write( files, strlen(files) );
+					free( files );
+
+					//reset this state to send more data
+					//on next getJobTimings call.
+					m_timingState = FINISH;
+
+				}else{
+					pres->write( reply.c_str(), reply.size() );
+				}
 				return true;
 			}
 			break;
@@ -626,11 +667,11 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 				}else if( 0 == print_cmd.compare("start") ){
 					if( m_state == START_STATE){
 						//we can not start job. Init at first.
-						if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) ) 
+						if( 0 == initJob( (m_b9CreatorSettings.m_resetStatus != 0)  ) )
 							reply = "idle";
 
 					}else if( m_state == IDLE ){
-						if( 0 == startJob() ) 
+						if( 0 == startJob() )
 							reply = "print";
 
 					}else{
@@ -643,7 +684,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 							reply = "pause";
 
 				}else if( 0 == print_cmd.compare("resume") ){
-					if( 0 == resumeJob() ) 
+					if( 0 == resumeJob() )
 						reply = "print";
 
 				}else if( 0 == print_cmd.compare("abort") ){
@@ -659,7 +700,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 				}
 
 				//now, write "error","idle","print" or "pause" to response struct.
-				pres->write( reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() );
 				return true;
 			}
 			break;
@@ -672,7 +713,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 					m_b9CreatorSettings.lock();
 					if( disp[0] == '2' )
 						m_b9CreatorSettings.m_display = !m_b9CreatorSettings.m_display;
-					else 
+					else
 						m_b9CreatorSettings.m_display = (disp[0] == '1');
 					m_b9CreatorSettings.unlock();
 
@@ -685,7 +726,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 					}
 
 					std::string reply = m_b9CreatorSettings.m_display?"1":"0";
-					pres->write( reply.c_str(), reply.size() ); 
+					pres->write( reply.c_str(), reply.size() );
 					return true;
 				}
 			}
@@ -709,7 +750,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 					printf("Filename not allowed\n");
 				}
 
-				pres->write( reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() );
 				return true;
 			}
 			break;
@@ -738,7 +779,7 @@ bool JobManager::webserverSetState(Onion::Request *preq, int actionid, Onion::Re
 					printf("Filename not allowed\n");
 				}
 
-				pres->write( reply.c_str(), reply.size() ); 
+				pres->write( reply.c_str(), reply.size() );
 				return true;
 			}
 		default:
@@ -800,4 +841,71 @@ void JobManager::updateSignalHandler(int changes){
 			show( m_b9CreatorSettings.m_printProp.m_currentLayer, RAW );
 	}
 
+	if( changes ){
+		//reset this state to send more data
+		//on next getJobTimings call.
+		m_timingState = FINISH;
+	}
+
 }
+
+
+bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Response *pres){
+
+	if( actionid == 11){
+
+		/* check if state was changed during last update
+		 * If its the same state, just a subset of
+		 * information will be created and sended.
+		 * */
+		bool newstate( m_timingState != m_state );
+		PrintProperties &p = m_b9CreatorSettings.m_printProp;
+
+		int runTime = (p.m_nmbrOfLayers - p.m_currentLayer) * (
+				p.m_exposureTime +
+				p.m_releaseCycleTime +
+				p.m_breathTime +
+				p.m_overcureTime );
+		// Conside exposure time of attached layers
+		if( p.m_currentLayer < p.m_nmbrOfAttachedLayers ){
+			runTime +=  (p.m_nmbrOfAttachedLayers-p.m_currentLayer) * (
+					p.m_exposureTimeAL -
+					p.m_exposureTime -
+					p.m_overcureTime );
+		}
+
+		int stateTime, stateCountdown;
+		//if( m_state == PAUSE || m_state == START_STATE || m_state == IDLE )
+		if( m_state & (PAUSE|START_STATE|IDLE) )
+		{
+			stateTime = 1;
+			stateCountdown = 0;
+		}else{
+			stateTime = m_tTimer.diff / 1000000;
+			timeval_t now;
+			gettimeofday( &now, NULL );
+			stateCountdown = (m_tTimer.diff - Timer::timeval_diff(&now, &(m_tTimer.begin) )) / 1000000;
+		}
+
+		cJSON *root = cJSON_CreateObject();
+		cJSON *html = cJSON_CreateArray();
+
+		if( newstate ){
+			cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("runTime",(double)runTime,"hhmmss","") );
+			cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateTime",(double)stateTime,"","") );
+			m_timingState = m_state;
+		}
+		cJSON_AddItemToArray(html, m_b9CreatorSettings.jsonStateField("stateCountdown",(double)stateCountdown,"","") );
+
+		cJSON_AddItemToObject(root, "html", html);
+
+		char* reply = cJSON_Print(root);
+		cJSON_Delete(root);
+		pres->write( reply, strlen(reply) );
+		free( reply );
+
+		return true;
+	}
+	return false;
+}
+

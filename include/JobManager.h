@@ -1,5 +1,5 @@
 /*
- * Mange start, flow and end of 
+ * Mange start, flow and end of
  * printing jobs.
  * Works like an finite state machine. (See run())
  * See http://b9creator.com/downloads/DLP3DPAPI_1.0.htm
@@ -57,9 +57,9 @@ struct Timer{
 		/* Return time diff in ns */
 		static long long timeval_diff(
 				timeval_t *pEndTime,
-				timeval_t *pStartTime) 
-		{   
-			timeval_t difference;	
+				timeval_t *pStartTime)
+		{
+			timeval_t difference;
 
 			difference.tv_sec =pEndTime->tv_sec -pStartTime->tv_sec ;
 			difference.tv_usec=pEndTime->tv_usec-pStartTime->tv_usec;
@@ -69,10 +69,10 @@ struct Timer{
 			/* Using while instead of if below makes the code slightly more robust. */
 
 			while(difference.tv_usec<0)
-			{   
+			{
 				difference.tv_usec+=1000000;
 				difference.tv_sec -=1;
-			}   
+			}
 
 			return 1000000LL*difference.tv_sec+
 				difference.tv_usec;
@@ -83,7 +83,7 @@ struct Timer{
 class JobManager {
 		static const long long MaxWaitR = 12E7; //120s. Maximal waiting time on 'Ri' in ns.
 		//static const long long MaxWaitF = 5E6; //5s. Maximal waiting time on 'F' in ns.
-		static const long long MaxWaitF = 40E6; //40s. 5s was to low. It limit maximal release cycle timeout! 
+		static const long long MaxWaitF = 40E6; //40s. 5s was to low. It limit maximal release cycle timeout!
 		//static const long long MaxWaitFfrist = MaxWaitR; // Maximal waiting time on 'F' for base layer.
 	private:
 		pthread_t m_pthread;
@@ -92,6 +92,7 @@ class JobManager {
 		DisplayManager &m_displayManager;
 		JobState m_state;
 		JobState m_pauseInState; //marks state which got paused.
+		JobState m_timingState; //marks last used state in getJobTimings function.
 		Mutex m_job_mutex;
 		//save some timings
 		Timer m_tTimer;
@@ -108,15 +109,14 @@ class JobManager {
 		bool m_force_preload; //preload image of next layer
 
 	public:
-		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );	 
+		JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &displayManager );
 		~JobManager();
 
 		JobState getState() { return m_state; };
 
 		/* Load b9j file */
 		int loadJob(const std::string filename);
-		/* Load image. (For testing) */
-		int loadImg(const std::string filename);
+		int unloadJob(int index);
 
 		/* Init printer (read printer properties and set z-Table). */
 		int initJob(bool withReset);
@@ -135,6 +135,12 @@ class JobManager {
 
 		/* Will called if m_b9CreatorSettings propagate settings change. */
 		void updateSignalHandler(int changes);
+
+		/* Return json struct with some information
+		 * about the running jobs.
+		 * I.e. estimated time consumption.
+		 * */
+		bool getJobTimings(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 	private:
 		/* call getSlice for Jobfile. This call fill the

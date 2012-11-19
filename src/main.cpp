@@ -73,6 +73,9 @@ int main(int argc, char **argv) {
 	onion.updateSignal.connect(
 					boost::bind(&DisplayManager::getDisplayedImage, &displayManager, _1, _2, _3)
 					);
+	onion.updateSignal.connect(
+					boost::bind(&JobManager::getJobTimings, &jobManager, _1, _2, _3)
+					);
 
 
 	bool autostartdisplay(false);
@@ -129,7 +132,7 @@ int main(int argc, char **argv) {
 
 	/* Clean up objects */
 	onion.stop_server();
-	for(int i=0;i<6;++i){
+	for(int i=0;i<1;++i){
 		std::cout << "Wait..." << std::endl;
 		sleep(1);
 	}

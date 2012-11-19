@@ -320,6 +320,10 @@ bool B9CreatorSettings::webserverUpdateConfig(Onion::Request *preq, int actionid
 return false;
 }
 
+cJSON *B9CreatorSettings::jsonFilesField(const char* id){
+	return jsonFilesField(id, m_files);
+}
+
 /* See Header for generated structure of json struct */
 cJSON *B9CreatorSettings::jsonFilesField(const char* id, std::vector<JobFile*> files){
 
