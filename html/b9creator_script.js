@@ -919,9 +919,12 @@ function jobManagerCmd(cmd,button1id, button2id){
 }
 
 /* Abort printing job. Same structure as jobManagerPrint.*/
-function jobManagerAbort(button){
-	alert('Todo');
+function goToFillLevel(){
+	ok = !request_confirmation || confirm("Printing... Are you sure?");
+	if( ok )
+		sendCmd('G630')
 }
+
 
 function quitServerApp(){
 	ok = !request_confirmation || confirm("Quit TinyPrint Server?");
