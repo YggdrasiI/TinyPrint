@@ -234,9 +234,11 @@ function update_intField(obj){
 	 * which currently changed by the user.
 	 */
 	if( val != prev && prev == inputfield.val() ){
-		inputfield.val(val);
-		inputfield.prop("prevvalue", val);
+		if( inputfield.val() != val ){
+			inputfield.val(val);
+			inputfield.prop("prevvalue", val);
 			inputfield.trigger('input');
+		}
 	}
 	//set readonly flag
 	var ro = obj.readonly;
@@ -419,6 +421,7 @@ function create_stateField(obj, pnode){
 	//format value
 	var val = format(obj,obj.val);
 	var statefield = $('<span id="'+obj.id+'_">'+val+'</span>');
+	statefield.prop("prevvalue", val);
 
 	ret.append( statefield );
 	pnode.append( ret );
@@ -427,7 +430,11 @@ function create_stateField(obj, pnode){
 function update_stateField(obj){
 	var statefield = $("#"+obj.id+"_");
 	var val = format(obj,obj.val);
+
+	if( val == statefield.prop("prevvalue")) return;
+
 	var statefield2 = $('<span id="'+obj.id+'_">'+val+'</span>');
+	statefield2.prop("prevvalue", val);
 	statefield.replaceWith(statefield2);
 }
 
@@ -548,8 +555,8 @@ function create_filesField(obj, pnode){
 			propspan.addClass("prop");
 			filespan.append(propspan);
 
-			open_files++;
 		}
+		open_files++;
 
 		//fill new element nodes
 		create_fields(file);
@@ -566,6 +573,7 @@ function update_filesField(obj){
 	  // Clear displayed files and recreate.
 		pnode = $('#files');
 		pnode.empty();
+		open_files = 0;
 		create_filesField(obj, pnode)
 	}
 
