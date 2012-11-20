@@ -25,6 +25,6 @@ $(function(){
 		create_jobFileList();
 		create_jobTimingStates();
 
-		refreshIntervall = window.setInterval("refresh()", 1000);
 });
 
+refreshIntervall = window.setInterval("refresh()", 1000);
