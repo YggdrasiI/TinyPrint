@@ -47,6 +47,9 @@ last_state = -1;
  * the webinterface during printing */
 request_confirmation = false;
 
+/* Number of open job files */
+open_files = 0;
+
 /* Fill in json values on desired
  * positions on the page. Raw values
  * will wrapped by some dynamic html stuff.
@@ -544,6 +547,8 @@ function create_filesField(obj, pnode){
 			var propspan = $("<div id='"+prop.id+"' title='"+desc+"'>"+text+" </div>");
 			propspan.addClass("prop");
 			filespan.append(propspan);
+
+			open_files++;
 		}
 
 		//fill new element nodes
@@ -554,6 +559,15 @@ function create_filesField(obj, pnode){
 }
 
 function update_filesField(obj){
+
+	if( open_files > obj.filearray.length){
+		// the displayed number of files
+		// excess number of open files.
+	  // Clear displayed files and recreate.
+		pnode = $('#files');
+		pnode.empty();
+		create_filesField(obj, pnode)
+	}
 
 	//loop throuth files-Array.
 	for( var i in obj.filearray){
