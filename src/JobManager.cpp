@@ -403,9 +403,8 @@ void JobManager::run(){
 					RUNPRINT("Wait on 'F' message...\n");
 
 					if( m_force_preload ){
-						VPRINT("Preload images\n");
+						VPRINT("Preload of next slice images.\n");
 						preload(m_b9CreatorSettings.m_printProp.m_currentLayer, RAW);
-						preload(m_b9CreatorSettings.m_printProp.m_currentLayer, OVERCURE1);
 						m_force_preload = false;
 					}
 
@@ -419,6 +418,7 @@ void JobManager::run(){
 
 						RUNPRINT("Begin breath for layer %i.\n",
 								m_b9CreatorSettings.m_printProp.m_currentLayer);
+						m_force_preload = true;
 						m_state = BREATH;
 					}else
 					if( m_tFWait.timePassed() ){
@@ -462,6 +462,13 @@ void JobManager::run(){
 			case CURING:
 				{
 					RUNPRINT("Curing...\n");
+
+					if( m_force_preload ){
+						VPRINT("Preload next overcure images\n");
+						preload(m_b9CreatorSettings.m_printProp.m_currentLayer, OVERCURE1);
+						m_force_preload = false;
+					}
+
 					if( m_tCuring.timePassed() ){
 
 						int &l = m_b9CreatorSettings.m_printProp.m_currentLayer;
