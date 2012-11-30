@@ -298,8 +298,10 @@ void JobManager::run(){
 					std::ostringstream cmd_lower,cmd_raise;
 					cmd_raise << "K" << m_b9CreatorSettings.m_zAxisRaiseSpeed;
 					cmd_lower << "L" << m_b9CreatorSettings.m_zAxisLowerSpeed;
-					q.add_command(cmd_raise.str());
-					q.add_command(cmd_lower.str());
+					std::string cmd_raiseStr(cmd_raise.str());
+					std::string cmd_lowerStr(cmd_lower.str());
+					m_b9CreatorSettings.m_queues.add_command(cmd_raiseStr);
+					m_b9CreatorSettings.m_queues.add_command(cmd_lowerStr);
 
 					/* Set opening and cloing speed of shutter
 					 * Values in Percent. 0% = Lowest Speed.
@@ -308,8 +310,10 @@ void JobManager::run(){
 					std::ostringstream cmd_open,cmd_close;
 					cmd_open << "W" << m_b9CreatorSettings.m_shutterOpenSpeed;
 					cmd_close << "X" << m_b9CreatorSettings.m_shutterCloseSpeed;
-					q.add_command(cmd_open.str());
-					q.add_command(cmd_close.str());
+					std::string cmd_openStr(cmd_open.str());
+					std::string cmd_closeStr(cmd_close.str());
+					m_b9CreatorSettings.m_queues.add_command(cmd_openStr);
+					m_b9CreatorSettings.m_queues.add_command(cmd_closeStr);
 
 					/* Update machine data ('A' covers 'I' command.) */
 					std::string cmd_info("A");
