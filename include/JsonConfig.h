@@ -41,7 +41,10 @@ class JsonConfig{
 
 		~JsonConfig(){
 			clearConfig();
-			if( m_tmp_config_str != NULL ) free(m_tmp_config_str);
+			if( m_tmp_config_str != NULL ){
+				free(m_tmp_config_str);
+				m_tmp_config_str = NULL;
+			}
 		};
 
 		/*
@@ -107,6 +110,9 @@ class JsonConfig{
 				 bool readonly=0, const char* format="" , const char* parse="" );
 		 cJSON* jsonStateField(const char* id,
 				 double val,
+				 const char* format="" , const char* parse="" );
+		 cJSON* jsonStateField(const char* id,
+				 std::string val,
 				 const char* format="" , const char* parse="" );
 
 		/*

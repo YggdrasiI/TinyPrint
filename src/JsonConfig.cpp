@@ -97,8 +97,11 @@ int JsonConfig::saveConfigFile(const char* filename)
 	FILE *file;
 	file = fopen(filename,"w");
 	char* conf = getConfig();
+	/* Lock to avoid freeing of conf string during file writing.*/
+	m_json_mutex.lock();
 	fprintf(file,"%s", conf );
-	free(conf);
+	m_json_mutex.unlock();
+	//free(conf);//conf will cleared automaticly, now.
 	fclose(file);
 	return 0;
 }
@@ -224,6 +227,20 @@ cJSON* JsonConfig::jsonStateField(const char* id,
 	cJSON_AddStringToObject(df, "type", "stateField");
 	cJSON_AddStringToObject(df, "id", id);
 	cJSON_AddNumberToObject(df, "val", val );
+	cJSON_AddStringToObject(df, "format", format);
+	cJSON_AddStringToObject(df, "parse", parse);
+
+	return df;
+}
+
+cJSON* JsonConfig::jsonStateField(const char* id,
+		std::string val,
+		const char* format , const char* parse
+		){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "stateField");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddStringToObject(df, "val", val.c_str());
 	cJSON_AddStringToObject(df, "format", format);
 	cJSON_AddStringToObject(df, "parse", parse);
 

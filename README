@@ -2,6 +2,10 @@ Control software for the DLP based 3D printer 'B9Creator'.
 
 Installation: See INSTALL
 
+Changelog:
+ 1. Dec. 2012: Update supported specification to DLP3DPAPI 1.1
+   and Firmware 1.0.6.
+
 Start and example usage on Raspberry PI:
 
 	If the compiling went successful, the build directory contains

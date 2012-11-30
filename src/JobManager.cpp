@@ -276,7 +276,7 @@ void JobManager::run(){
 			case INIT:
 				{
 					/* Set release cycle time.
-					 * This is called 'Breath Time' in DPL3DAPI. 
+					 * This is called 'Breath Time' in DLP3DPAPI. 
 					 * */
 					std::ostringstream cmd_cycle;
 					cmd_cycle << "D" << (int)(1000*m_b9CreatorSettings.m_printProp.m_releaseCycleTime);
@@ -284,7 +284,7 @@ void JobManager::run(){
 					q.add_command(cmd_cycleStr);
 
 					/* Set settle cycle time. Default is 0.
-					 * Require DLP3DAPI version >= 1.1. 
+					 * Require DLP3DPAPI version >= 1.1. 
 					 * */
 					std::ostringstream cmd_settle;
 					cmd_settle << "E" << (int)(1000*m_b9CreatorSettings.m_printProp.m_settleTime);
@@ -293,7 +293,7 @@ void JobManager::run(){
 
 					/* Set raise and lower speed of z-axis
 					 * Values in Percent. 0% = Lowest Speed.
-					 * Require DLP3DAPI version >= 1.1. 
+					 * Require DLP3DPAPI version >= 1.1. 
 					 * */
 					std::ostringstream cmd_lower,cmd_raise;
 					cmd_raise << "K" << m_b9CreatorSettings.m_zAxisRaiseSpeed;
@@ -305,7 +305,7 @@ void JobManager::run(){
 
 					/* Set opening and cloing speed of shutter
 					 * Values in Percent. 0% = Lowest Speed.
-					 * Require DLP3DAPI version >= 1.1. 
+					 * Require DLP3DPAPI version >= 1.1. 
 					 * */
 					std::ostringstream cmd_open,cmd_close;
 					cmd_open << "W" << m_b9CreatorSettings.m_shutterOpenSpeed;

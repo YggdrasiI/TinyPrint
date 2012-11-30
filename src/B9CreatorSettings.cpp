@@ -26,6 +26,7 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_zHeight(-1),
 	m_zHeightLimit(100000000),
 	m_zHome(-1),
+	m_zOffset(0),
 	m_comBaudrate(115200),
 	m_queues(),
 	m_host(),
@@ -35,6 +36,11 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_shutterEquipped(false),
 	m_lampHours(-1),
 	m_b9jDir(),
+	m_firmwareVersion("unknown"),
+	m_printerModel("unknown"),
+	m_projectorXResolution(0),
+	m_projectorYResolution(0),
+	m_projectorPixelSize(0),
 	m_readyForNextCycle(false),
 	m_printProp(),
 //	m_jobState(IDLE),
@@ -130,6 +136,12 @@ cJSON *B9CreatorSettings::genJson()
 //	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"state","token") );//moved to JobManager
 	cJSON_AddItemToArray(html, jsonStateField("displayStatus",m_display,"token","token") );
 
+	cJSON_AddItemToArray(html, jsonStateField("firmwareVersion",m_firmwareVersion,"","") );
+	cJSON_AddItemToArray(html, jsonStateField("printerModel",m_printerModel,"","") );
+	cJSON_AddItemToArray(html, jsonStateField("lampHours",m_lampHours,"","") );
+	cJSON_AddItemToArray(html, jsonStateField("projectorXResolution",m_projectorXResolution,"","") );
+	cJSON_AddItemToArray(html, jsonStateField("projectorYResolution",m_projectorYResolution,"","") );
+
 	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
 	cJSON_AddItemToArray(html, jsonCheckbox("flipSprites",m_flipSprites) );
 
@@ -145,6 +157,8 @@ void B9CreatorSettings::loadDefaults()
 	m_b9jDir = "job_files";
 	m_comPort = "/dev/ttyACM0";
 	m_comBaudrate = 115200;
+	m_firmwareVersion = "unknown";
+	m_printerModel = "unknown";
 	m_gridColor[0] = 200; m_gridColor[1] = 0; m_gridColor[2] = 0;
 	m_shutterEquipped = false;
 	m_projectorEquipped= false;
@@ -164,6 +178,7 @@ void B9CreatorSettings::loadDefaults()
 	m_resetStatus = 1;
 	m_zHeight = -1;
 	m_zHome = -1;
+	m_zOffset = 0;
 	m_printProp.m_breathTime = 2.0;
 	m_printProp.m_settleTime = 0.0;
 	m_printProp.m_releaseCycleTime = 1.75;

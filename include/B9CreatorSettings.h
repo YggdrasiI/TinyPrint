@@ -122,12 +122,21 @@ class B9CreatorSettings: public JsonConfig{
 		int m_zHeight;// height in PU
 		int m_zHeightLimit;
 		int m_zHome;// height in PU
+		int m_zOffset; //difference between expected home and found home position in PU.
 		PrintProperties m_printProp;
 
 		std::string m_host;
 		std::string m_port;
 		std::string m_comPort;
 		std::string m_b9jDir;
+		std::string m_firmwareVersion;
+		std::string m_printerModel;
+		int m_projectorXResolution;// Width of beamer resolution
+		int m_projectorYResolution;// Height of beamer resolution
+		/* Size of projected pixel in micron.
+		 * The variable is redundant,  but part of DLP3DPAPI 1.1
+		 * specification. */
+		int m_projectorPixelSize;
 		int m_comBaudrate;
 		bool m_gridShow; //show grid
 		bool m_display; //display used

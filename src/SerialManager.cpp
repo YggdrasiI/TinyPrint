@@ -85,10 +85,16 @@ void SerialManager::update(string str){
 			break;
 		case 'D':
 			{
+				int xres(0);
+				sscanf(str.c_str(),"%*c %d ",&xres);
+				if( 0 <= xres ) m_b9CreatorSettings.m_projectorXResolution = xres;
 			}
 			break;
 		case 'E':
 			{
+				int yres(0);
+				sscanf(str.c_str(),"%*c %d ",&yres);
+				if( 0 <= yres ) m_b9CreatorSettings.m_projectorYResolution = yres;
 			}
 			break;
 		case 'F': // Layer finished
@@ -102,14 +108,21 @@ void SerialManager::update(string str){
 			break;
 		case 'H':
 			{
+				int pixelSize(0);
+				sscanf(str.c_str(),"%*c %d ",&pixelSize);
+				if( 0 <= pixelSize ) m_b9CreatorSettings.m_projectorPixelSize = pixelSize;
 			}
 			break;
 		case 'I':	// PU info. Unit: 1/100 mm
 			{
 				int pu(0);
 				sscanf(str.c_str(),"%*c %d ",&pu);
-				//hm, should be the same value as m_PU....
+				/* Should be the same value as m_PU and
+				 * will ignored
+				 */
+#ifdef VERBOSE
 				std::cout << "PU check: " << m_b9CreatorSettings.m_PU << " " << pu << std::endl;
+#endif
 			}
 			break;
 		case 'J':	// Shutter equipped info.
@@ -150,6 +163,8 @@ void SerialManager::update(string str){
 			break;
 		case 'Q':
 			{
+				std::cout << "Printer send abort message due to lost comm with host." <<
+					std::endl << "This error will be ignored by TinyPrint" << std::endl;
 			}
 			break;
 		case 'R':
@@ -171,18 +186,28 @@ void SerialManager::update(string str){
 			break;
 		case 'U':
 			{
+				int errorNum(-1);
+				sscanf(str.c_str(),"%*c %d ",&errorNum);
+				std::cout << "Printer send hardware fault number " << errorNum << "." <<
+					std::endl << "This error will be ignored by TinyPrint" << std::endl;
 			}
 			break;
 		case 'V': //Version
 			{
+				m_b9CreatorSettings.m_firmwareVersion = str.substr(1);
 			}
 			break;
 		case 'W':
 			{
+				m_b9CreatorSettings.m_printerModel = str.substr(1);
 			}
 			break;
 		case 'X':
 			{
+				int zOffset(0);
+				sscanf(str.c_str(),"%*c %d ",&zOffset);
+				VPRINT("zAxis Offset: %i \n", zOffset);
+				m_b9CreatorSettings.m_zOffset = zOffset;
 			}
 			break;
 		case 'Y': // current home position
