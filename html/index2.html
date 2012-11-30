@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>TinyPrint - More Settings</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<style type="text/css">
+</style>
+<script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
+<script type="text/javascript" src="jquery.mousewheel.min.js"></script>
+<script type="text/javascript" src="json2.min.js"></script>
+<script type="text/javascript" src="b9creator_script.js"></script>
+<script type="text/javascript">
+	json_b9creator = null;
+	refreshIntervall = null;
+
+	/* This function checks the existance of a json struct
+		 in the parent window and use this values if possible.
+		 This reduce the loading calls of 'settings'.
+	 */
+	function refresh2(update){
+		if( window.opener !== null && !window.opener.closed &&
+				typeof(window.opener.json_b9creator) === "object" ){
+			json_b9creator = window.opener.json_b9creator;
+			if(update) update_fields(json_b9creator);
+			else create_fields(json_b9creator);
+
+		}else{
+			send("settings","",
+					function(data){
+					json_b9creator = JSON.parse(data);//change global var
+					if(update) update_fields(json_b9creator);
+					else create_fields(json_b9creator);
+					}
+			);
+		}
+	}
+
+/* Moreover, check opener.json_b9creator existens on creation, too. */
+$(function(){
+		refresh2(false);
+		refreshIntervall = window.setInterval("refresh2(true)", 1000);
+		});
+
+</script>
+</head>
+<body>
+	<div class="containerL" style="min-width:90%;" >
+		<h1>More settings</h1>
+		<input type="button" onclick="refresh2(true)" value="Test" />
+		<div class="prop" id="stepsPerRevolution">Steps per revolution: </div>
+		<div class="prop" id="overcureTime">Overcure Time: </div>
+	</div>
+</body>

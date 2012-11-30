@@ -992,3 +992,7 @@ function deepCopy(p,c) {
 	return c;
 }
 
+
+function openWindow(url){
+	var w = window.open('index2.html');
+}
