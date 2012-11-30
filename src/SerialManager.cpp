@@ -162,7 +162,7 @@ void SerialManager::update(string str){
 				std::cout << "Set silde val" << std::endl;
 				int s(0);
 				sscanf(str.c_str(),"%*c %d ",&s);
-				m_b9CreatorSettings.m_vatOpen = s;
+				m_b9CreatorSettings.m_shutterOpen = s;
 			}
 			break;
 		case 'T':

@@ -25,6 +25,7 @@ class JobFile;
 /* Wrapper struct for some properties. */
 struct PrintProperties{
 		double m_breathTime;
+		double m_settleTime;
 		double m_releaseCycleTime;
 		double m_exposureTime;
 		double m_exposureTimeAL;
@@ -111,7 +112,11 @@ class B9CreatorSettings: public JsonConfig{
 
 	public:
 		int m_PU;
-		int m_vatOpen; //in percent
+		int m_shutterOpen; //in percent
+		int m_shutterOpenSpeed; //in percent
+		int m_shutterCloseSpeed; //in percent
+		int m_zAxisRaiseSpeed; //in percent
+		int m_zAxisLowerSpeed; //in percent
 		int m_projectorStatus;
 		int m_resetStatus;
 		int m_zHeight;// height in PU
