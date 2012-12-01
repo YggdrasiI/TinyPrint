@@ -36,6 +36,20 @@
 		}
 	}
 
+function setComments(button){
+	jButton = $(button);
+	/* prop(...) is undefinied in first call */
+	if( jButton.prop("commentsOn") != 0 ){
+		sendCmd('T1');
+		jButton.prop("commentsOn",0);
+		jButton.val("Disable Printer\n\rVerbose Comments");
+	}else{
+		sendCmd('T0');
+		jButton.prop("commentsOn",1);
+		jButton.val("Enable Printer\n\rVerbose Comments");
+	}
+}
+
 /* Moreover, check opener.json_b9creator existens on creation, too. */
 $(function(){
 		refresh2(false);
@@ -56,5 +70,10 @@ $(function(){
 		<div class="prop" id="shutterCloseSpeed" title="Note: 0% is slowest possible speed, but not 'Off'. ">Shutter Close Speed (%): </div>
 		<div class="prop" id="zAxisRaiseSpeed" title="Note: 0% is slowest possible speed, but not 'Off'. ">Z-Axis Raise Speed (%): </div>
 		<div class="prop" id="zAxisLowerSpeed" title="Note: 0% is slowest possible speed, but not 'Off'. ">Z-Axis Lower Speed (%): </div>
+	</div>
+	<div>
+		<input id="buttonPrinterComments" type="button"
+		onclick="setComments(this)" value="Enable Printer
+Verbose Comments" />
 	</div>
 </body>
