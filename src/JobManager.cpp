@@ -35,7 +35,7 @@ JobManager::JobManager(B9CreatorSettings &b9CreatorSettings, DisplayManager &dis
 	m_tCuring(m_tTimer),
 	m_tCloseSlider(m_tTimer),
 	m_tProjectImage(m_tTimer),
-	m_tBreath(m_tTimer),
+	m_tSettle(m_tTimer),
 	m_tFWait(m_tTimer),
 	m_tRWait(m_tTimer),
 	m_force_preload(false)
@@ -156,6 +156,8 @@ int JobManager::pauseJob(){
 int JobManager::resumeJob(){
 	if( m_state != PAUSE ) return -1;
 
+	updateCycleSettings(m_b9CreatorSettings.m_zHeight);
+
 	Messages &q = m_b9CreatorSettings.m_queues;
 	// Analyse m_pauseInState to fix some timing
 	switch( m_pauseInState ){
@@ -167,7 +169,7 @@ int JobManager::resumeJob(){
 				return -1;
 			}
 			break;
-		case BREATH:
+		case SETTLE:
 			{
 				// Open shutter
 				if( m_b9CreatorSettings.m_shutterEquipped ){
@@ -175,9 +177,9 @@ int JobManager::resumeJob(){
 					q.add_command(cmd_open);
 					m_b9CreatorSettings.m_queues.add_command(cmd_open);
 				}
-				VPRINT("Repeat breath for layer %i.\n",
+				VPRINT("Repeat settle for layer %i.\n",
 						m_b9CreatorSettings.m_printProp.m_currentLayer );
-				gettimeofday( &m_tBreath.begin, NULL );
+				gettimeofday( &m_tSettle.begin, NULL );
 			}
 			break;
 		case CURING:
@@ -275,45 +277,6 @@ void JobManager::run(){
 				break;
 			case INIT:
 				{
-					/* Set release cycle time.
-					 * This is called 'Breath Time' in DLP3DPAPI. 
-					 * */
-					std::ostringstream cmd_cycle;
-					cmd_cycle << "D" << (int)(1000*m_b9CreatorSettings.m_printProp.m_releaseCycleTime);
-					std::string cmd_cycleStr(cmd_cycle.str());
-					q.add_command(cmd_cycleStr);
-
-					/* Set settle cycle time. Default is 0.
-					 * Require DLP3DPAPI version >= 1.1. 
-					 * */
-					std::ostringstream cmd_settle;
-					cmd_settle << "E" << (int)(1000*m_b9CreatorSettings.m_printProp.m_settleTime);
-					std::string cmd_settleStr(cmd_settle.str());
-					q.add_command(cmd_settleStr);
-
-					/* Set raise and lower speed of z-axis
-					 * Values in Percent. 0% = Lowest Speed.
-					 * Require DLP3DPAPI version >= 1.1. 
-					 * */
-					std::ostringstream cmd_lower,cmd_raise;
-					cmd_raise << "K" << m_b9CreatorSettings.m_zAxisRaiseSpeed;
-					cmd_lower << "L" << m_b9CreatorSettings.m_zAxisLowerSpeed;
-					std::string cmd_raiseStr(cmd_raise.str());
-					std::string cmd_lowerStr(cmd_lower.str());
-					m_b9CreatorSettings.m_queues.add_command(cmd_raiseStr);
-					m_b9CreatorSettings.m_queues.add_command(cmd_lowerStr);
-
-					/* Set opening and cloing speed of shutter
-					 * Values in Percent. 0% = Lowest Speed.
-					 * Require DLP3DPAPI version >= 1.1. 
-					 * */
-					std::ostringstream cmd_open,cmd_close;
-					cmd_open << "W" << m_b9CreatorSettings.m_shutterOpenSpeed;
-					cmd_close << "X" << m_b9CreatorSettings.m_shutterCloseSpeed;
-					std::string cmd_openStr(cmd_open.str());
-					std::string cmd_closeStr(cmd_close.str());
-					m_b9CreatorSettings.m_queues.add_command(cmd_openStr);
-					m_b9CreatorSettings.m_queues.add_command(cmd_closeStr);
 
 					/* Update machine data ('A' covers 'I' command.) */
 					std::string cmd_info("A");
@@ -336,6 +299,24 @@ void JobManager::run(){
 				break;
 			case FIRST_LAYER:
 				{
+					/* Check if current layer>0 and switch to
+					 * NEXT_LAYER for this case.
+					 * This allows the continue of old print on 
+					 * a given layer 
+					 * */
+					PrintProperties &p = m_b9CreatorSettings.m_printProp;
+					if( p.m_currentLayer > 0 ){
+						/* Set current Height to previous layer height.
+						 * This could be problematic if we use different
+						 * layer thikness. */
+						m_b9CreatorSettings.m_zHeight = 
+							100*( (p.m_currentLayer-1)*p.m_zResolution )/m_b9CreatorSettings.m_PU;
+						m_state = NEXT_LAYER;
+						break;
+					}
+
+					updateCycleSettings(0);
+
 					std::string cmd_base("B0");
 					q.add_command(cmd_base);
 
@@ -365,7 +346,7 @@ void JobManager::run(){
 					}
 					if( m_b9CreatorSettings.m_zHeight == 0 ){
 						m_force_preload = true;
-						m_state = WAIT_ON_F_MESS; // or BREATH
+						m_state = WAIT_ON_F_MESS; // or SETTLE
 					}else{
 						RUNPRINT("Wait till base position reached...\n");
 					}
@@ -405,6 +386,9 @@ void JobManager::run(){
 						break;
 					}
 
+					// Update timeouts and speeds.
+					updateCycleSettings(zHeight2);
+						
 					// Update height.
 					// Do not update value manually, if printer is connected.
 					// Wait on message on serial channel.
@@ -428,10 +412,6 @@ void JobManager::run(){
 					m_state = WAIT_ON_F_MESS;
 				}
 				break;
-				/*		case LAST_LAYER:
-							{
-							}
-							break;*/
 			case WAIT_ON_F_MESS:
 				{
 					RUNPRINT("Wait on 'F' message...\n");
@@ -447,13 +427,15 @@ void JobManager::run(){
 						// unset the ready flag
 						r = false;
 
-						gettimeofday( &m_tBreath.begin, NULL );
-						m_tBreath.diff = m_b9CreatorSettings.m_printProp.m_breathTime*1000000;
+						CycleProperties &cp = m_b9CreatorSettings.m_printProp.getCurrentProps(
+								m_b9CreatorSettings.m_zHeight );
+						gettimeofday( &m_tSettle.begin, NULL );
+						m_tSettle.diff = cp.m_settleTime*1000000;
 
-						RUNPRINT("Begin breath for layer %i.\n",
+						RUNPRINT("Begin settling for layer %i.\n",
 								m_b9CreatorSettings.m_printProp.m_currentLayer);
 						m_force_preload = true;
-						m_state = BREATH;
+						m_state = SETTLE;
 					}else
 					if( m_tFWait.timePassed() ){
 						std::string msg("(Job) Wait to long on 'F' signal of printer. Printer connection lost?");
@@ -470,10 +452,10 @@ void JobManager::run(){
 					}
 				}
 				break;
-			case BREATH:
+			case SETTLE:
 				{
-					RUNPRINT("Breathing...\n");
-					if( m_tBreath.timePassed() ){
+					RUNPRINT("Settling...\n");
+					if( m_tSettle.timePassed() ){
 						int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
 						gettimeofday( &m_tCuring.begin, NULL );
@@ -920,11 +902,13 @@ bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Respon
 				 * */
 				bool newstate( m_timingState != m_state );
 				PrintProperties &p = m_b9CreatorSettings.m_printProp;
+				CycleProperties &c0 = p.m_cycleProps[0];
+				CycleProperties &c1 = p.m_cycleProps[1];
 
 				int runTime = (p.m_nmbrOfLayers - p.m_currentLayer) * (
 						p.m_exposureTime +
-						p.m_releaseCycleTime +
-						p.m_breathTime +
+						c1.m_breathTime + 
+						c1.m_settleTime +
 						p.m_overcureTime );
 				// Conside exposure time of attached layers
 				if( p.m_currentLayer < p.m_nmbrOfAttachedLayers ){
@@ -972,5 +956,56 @@ bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Respon
 			break;
 	}
 	return false;
+}
+
+void JobManager::updateCycleSettings(int heightInPU){
+	CycleProperties &cp = m_b9CreatorSettings.m_printProp.getCurrentProps( heightInPU );
+	Messages &q = m_b9CreatorSettings.m_queues;
+			
+	/* Set breath time.
+	 * This is called 'Breath Time' in DLP3DPAPI. 
+	 * */
+	std::ostringstream cmd_breath;
+	cmd_breath << "D" << (int)(1000*cp.m_breathTime);
+	std::string cmd_breathStr(cmd_breath.str());
+	q.add_command(cmd_breathStr);
+
+	/* Set settle cycle time. Default is 0.
+	 * Require DLP3DPAPI version >= 1.1. 
+	 * */
+	std::ostringstream cmd_settle;
+	cmd_settle << "E" << (int)(1000*cp.m_settleTime);
+	std::string cmd_settleStr(cmd_settle.str());
+	q.add_command(cmd_settleStr);
+
+	/* Set raise and lower speed of z-axis
+	 * Values in Percent. 0% = Lowest Speed.
+	 * Require DLP3DPAPI version >= 1.1. 
+	 * */
+	std::ostringstream cmd_lower,cmd_raise;
+	cmd_raise << "K" << cp.m_zAxisRaiseSpeed;
+	cmd_lower << "L" << cp.m_zAxisLowerSpeed;
+	std::string cmd_raiseStr(cmd_raise.str());
+	std::string cmd_lowerStr(cmd_lower.str());
+	m_b9CreatorSettings.m_queues.add_command(cmd_raiseStr);
+	m_b9CreatorSettings.m_queues.add_command(cmd_lowerStr);
+
+	/* Set opening and cloing speed of shutter
+	 * Values in Percent. 0% = Lowest Speed.
+	 * Require DLP3DPAPI version >= 1.1. 
+	 * */
+	std::ostringstream cmd_open,cmd_close;
+	cmd_open << "W" << cp.m_shutterOpenSpeed;
+	cmd_close << "X" << cp.m_shutterCloseSpeed;
+	std::string cmd_openStr(cmd_open.str());
+	std::string cmd_closeStr(cmd_close.str());
+	m_b9CreatorSettings.m_queues.add_command(cmd_openStr);
+	m_b9CreatorSettings.m_queues.add_command(cmd_closeStr);
+
+	/* Set overlift ?! */
+	std::ostringstream cmd_overlift;
+	cmd_overlift << "J" << cp.m_overlift;
+	std::string cmd_overliftStr(cmd_overlift.str());
+	q.add_command(cmd_overliftStr);
 }
 

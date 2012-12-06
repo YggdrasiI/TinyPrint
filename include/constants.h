@@ -76,8 +76,9 @@ enum JobState {
 	FIRST_LAYER=1<<1,
 	NEXT_LAYER=1<<2,
 	OVERCURING=1<<3, 
-	BREATH=1<<4,
-	WAIT_ON_F_MESS=1<<5,
+	//BREATH=1<<4,
+	SETTLE=1<<4,
+	WAIT_ON_F_MESS=1<<5, //thats the breath state.
 	WAIT_ON_R_MESS=1<<6,
 	IDLE=1<<7,
 	PAUSE=1<<8,

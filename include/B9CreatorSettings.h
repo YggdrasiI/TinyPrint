@@ -22,14 +22,27 @@
 
 class JobFile;
 
-/* Wrapper struct for some properties. */
-struct PrintProperties{
+/* Wrapper struct for cycle settings. 
+ * This will used to disticnt the values for 
+ * the initial layers and all others.
+ * */
+struct CycleProperties{
 		double m_breathTime;
 		double m_settleTime;
-		double m_releaseCycleTime;
+
+		int m_shutterOpenSpeed; //in percent
+		int m_shutterCloseSpeed; //in percent
+		int m_zAxisRaiseSpeed; //in percent
+		int m_zAxisLowerSpeed; //in percent
+		int m_overlift; //in PU.
+};
+
+/* Wrapper struct for some properties. */
+struct PrintProperties{
 		double m_exposureTime;
 		double m_exposureTimeAL;
 		double m_overcureTime;
+		//double m_releaseCycleTime;
 		int m_nmbrOfAttachedLayers;
 		int m_currentLayer;
 		int m_nmbrOfLayers; //chaged after file loading
@@ -38,8 +51,17 @@ struct PrintProperties{
 												if printing is running */
 		int m_zResolution; // in μm.
 		int m_xyResolution; // in μm.
-};
 
+		CycleProperties m_cycleProps[2]; /* Saves values for initial and normal cycles */
+		int m_initialCutoff; // in PU.
+
+		/* Return cycle props for current layer */
+		CycleProperties &getCurrentProps(int heightInPU){
+			std::cout << "Cutoff: " << m_initialCutoff << " Height: " << heightInPU << std::endl;
+			if( heightInPU > m_initialCutoff ) return m_cycleProps[1];
+			else return m_cycleProps[0];
+		}
+};
 
 
 /* Helper functions */
@@ -113,10 +135,6 @@ class B9CreatorSettings: public JsonConfig{
 	public:
 		int m_PU;
 		int m_shutterOpen; //in percent
-		int m_shutterOpenSpeed; //in percent
-		int m_shutterCloseSpeed; //in percent
-		int m_zAxisRaiseSpeed; //in percent
-		int m_zAxisLowerSpeed; //in percent
 		int m_projectorStatus;
 		int m_resetStatus;
 		int m_zHeight;// height in PU
@@ -137,6 +155,8 @@ class B9CreatorSettings: public JsonConfig{
 		 * The variable is redundant,  but part of DLP3DPAPI 1.1
 		 * specification. */
 		int m_projectorPixelSize;
+		int m_hardDown; // in PU
+		int m_upToFlush; // in PU
 		int m_comBaudrate;
 		bool m_gridShow; //show grid
 		bool m_display; //display used

@@ -14,8 +14,8 @@ TOKENS = {
 		2 : "FIRST_LAYER",
 		4 : "NEXT_LAYER",
 		8 : "OVERCURING",
-		16 : "BREATH",
-		32 : "WAIT_ON_F_MESS",
+		16 : "SETTLE",
+		32 : "BREATH",
 		64 : "WAIT_ON_R_MESS",
 		128 : "IDLE",
 		256 : "PAUSE",
@@ -297,6 +297,7 @@ function create_doubleField(obj, pnode){
 		if(check_doubleField(o, this.value)){
 			inputfield.prop("prevvalue", this.value);
 			o.val = parse(o,this.value);
+			alert(this.value+"\n"+o.val);
 			send_setting();
 		}else{
 			//reset value.
@@ -401,7 +402,9 @@ function update_doubleField(obj){
 }
 
 function check_doubleField(o, val){
+	foo = val;
 	val = parse(o,val);
+	alert("check:\n"+foo+"\n"+val);
 
 	var i = parseFloat(val);
 	if( ! isFinite(i) ) return false;
@@ -793,15 +796,20 @@ function parse_percent(o,s){
 
 /* millimeter, similar to percent. */
 function format_mm(o,val){
+	return format_mm2(o,val)+"mm";
+}
+
+/* without 'mm' */
+function format_mm(o,val){
 	//var p = (typeof val === "string"?parseInt(val)*1000:val*1000);
-	var p = (typeof val === "string"?parseInt(val)/100:val/100);
+	var p = (typeof val === "string"?parseInt(val)/1000:val/1000);
 	var p = Math.round(p*100)/100;
-	return p+"mm";
+	return p;
 }
 
 function parse_mm(s){
 	//return parseFloat(s)/1000;
-	return parseFloat(s)*100;
+	return parseFloat(s)*1000;
 }
 
 /* Parse seconds into hh:mm:ss format */

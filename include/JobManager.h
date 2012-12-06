@@ -102,7 +102,7 @@ class JobManager {
 		Timer &m_tCuring;
 		Timer &m_tCloseSlider;
 		Timer &m_tProjectImage;
-		Timer &m_tBreath;
+		Timer &m_tSettle;
 		Timer &m_tFWait;
 		Timer &m_tRWait;
 		//int m_showedLayer; //save last displayed layer number.
@@ -146,11 +146,16 @@ class JobManager {
 		/* call getSlice for Jobfile. This call fill the
 		 * generated image into the intern cache.
 		 * The image generation is not threaded. Thus, it
-		 * should call in idle states like 'BREATH', 'WAIT_*'.
+		 * should call in idle states like 'SETTLE', 'WAIT_*'.
 		 * */
 		void preload(int slice, SliceType type=RAW);
 
 		void show(int slice, SliceType type=RAW);
+
+		/* Set Vat moving speed, table moving speed,
+		 * breath time and settle time. 
+		 * */
+		void updateCycleSettings(int heightInPU);
 };
 
 /* wrapper function for job thread.*/

@@ -18,11 +18,8 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_display(false),
 //	m_redraw(false),
 	m_shutterOpen(-100),
-	m_shutterOpenSpeed(100),
-	m_shutterCloseSpeed(100),
-	m_zAxisRaiseSpeed(100),
-	m_zAxisLowerSpeed(100),
-	m_projectorStatus(2), m_resetStatus(1),
+	m_projectorStatus(2),
+	m_resetStatus(1),
 	m_zHeight(-1),
 	m_zHeightLimit(100000000),
 	m_zHome(-1),
@@ -41,6 +38,8 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_projectorXResolution(0),
 	m_projectorYResolution(0),
 	m_projectorPixelSize(0),
+	m_hardDown(0),
+	m_upToFlush(0),
 	m_readyForNextCycle(false),
 	m_printProp(),
 //	m_jobState(IDLE),
@@ -53,9 +52,6 @@ B9CreatorSettings::B9CreatorSettings() :
 	//m_PU = 100 * 254 / (m_spr * m_tpi) ;
 	m_PU = 10000 * 254 / (m_spr * m_tpi) ;
 
-	m_printProp.m_breathTime = 2.0;
-	m_printProp.m_settleTime = 0.0;
-	m_printProp.m_releaseCycleTime = 1.75;
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
@@ -65,6 +61,25 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp.m_lockTimes = false;
 	m_printProp.m_zResolution = 50;
 	m_printProp.m_xyResolution = 100;
+	m_printProp.m_initialCutoff = 0;
+
+	CycleProperties &c0 = m_printProp.m_cycleProps[0];
+	c0.m_breathTime = 1.75;
+	c0.m_settleTime = 2.0;
+	c0.m_shutterOpenSpeed = 25;
+	c0.m_shutterCloseSpeed = 100;
+	c0.m_zAxisRaiseSpeed = 85;
+	c0.m_zAxisLowerSpeed = 85;
+	c0.m_overlift = 0.0;
+
+	CycleProperties &c1 = m_printProp.m_cycleProps[1];
+	c1.m_breathTime = 1.75;
+	c1.m_settleTime = 2.0;
+	c1.m_shutterOpenSpeed = 100;
+	c1.m_shutterCloseSpeed = 100;
+	c1.m_zAxisRaiseSpeed = 85;
+	c1.m_zAxisLowerSpeed = 85;
+	c1.m_overlift = 0.0;
 };
 
 B9CreatorSettings::~B9CreatorSettings(){
@@ -112,9 +127,8 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("threadPerInch",m_tpi,1,100,10,1) );
 	cJSON_AddItemToArray(html, jsonCheckbox("gridShow",m_gridShow) );
 
-	cJSON_AddItemToArray(html, jsonDoubleField("breathTime",m_printProp.m_breathTime,0.1,300,0.2,0 ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("settleTime",m_printProp.m_settleTime,0.1,300,0.2,0 ) );
-	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,0.2, 0/*m_printProp.m_lockTimes*/ ) );
+	cJSON_AddItemToArray(html, jsonStateField("shutterOpen",m_shutterOpen,"percent","percent") );//in Percent
+//	cJSON_AddItemToArray(html, jsonDoubleField("releaseCycleTime",m_printProp.m_releaseCycleTime,0.1,300,0.2, 0/*m_printProp.m_lockTimes*/ ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTime",m_printProp.m_exposureTime,0.1,300,0.2,0 ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,0.2,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,1,m_printProp.m_lockTimes ) );
@@ -124,15 +138,31 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
 				min(m_printProp.m_currentLayer,m_printProp.m_nmbrOfLayers-1),0,m_printProp.m_nmbrOfLayers-1,1,m_printProp.m_lockTimes) );
 
-	cJSON_AddItemToArray(html, jsonStateField("shutterOpen",m_shutterOpen,"percent","percent") );//in Percent
-	cJSON_AddItemToArray(html, jsonIntField("shutterOpenSpeed",m_shutterOpenSpeed,0,100,5, 0) );
-	cJSON_AddItemToArray(html, jsonIntField("shutterCloseSpeed",m_shutterCloseSpeed,0,100,5, 0) );
-	cJSON_AddItemToArray(html, jsonIntField("zAxisRaiseSpeed",m_zAxisRaiseSpeed,0,100,5, 0) );
-	cJSON_AddItemToArray(html, jsonIntField("zAxisLowerSpeed",m_zAxisLowerSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonDoubleField("initialCutoff_mm",m_printProp.m_initialCutoff*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("hardDown_mm",  m_hardDown*m_PU/100.0, 0,100,0.1,0,"mm2","mm") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("upToFlush_mm",m_upToFlush*m_PU/100.0, 0,100,0.1,0,"mm2","mm") ); 
+
+	CycleProperties &c0 = m_printProp.m_cycleProps[0];
+	cJSON_AddItemToArray(html, jsonDoubleField("breathTime0",c0.m_breathTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("settleTime0",c0.m_settleTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonIntField("shutterOpenSpeed0",c0.m_shutterOpenSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("shutterCloseSpeed0",c0.m_shutterCloseSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("zAxisRaiseSpeed0",c0.m_zAxisRaiseSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("zAxisLowerSpeed0",c0.m_zAxisLowerSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonDoubleField("overlift_mm0",c0.m_overlift*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
+
+	CycleProperties &c1 = m_printProp.m_cycleProps[1];
+	cJSON_AddItemToArray(html, jsonDoubleField("breathTime1",c1.m_breathTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("settleTime1",c1.m_settleTime,0.1,300,0.2,0 ) );
+	cJSON_AddItemToArray(html, jsonIntField("shutterOpenSpeed1",c1.m_shutterOpenSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("shutterCloseSpeed1",c1.m_shutterCloseSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("zAxisRaiseSpeed1",c1.m_zAxisRaiseSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonIntField("zAxisLowerSpeed1",c1.m_zAxisLowerSpeed,0,100,5, 0) );
+	cJSON_AddItemToArray(html, jsonDoubleField("overlift_mm1",c1.m_overlift*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
 
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
-	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/1000.0,"mm","mm") ); // height in mm.
+	cJSON_AddItemToArray(html, jsonStateField("zHeight_mm",m_zHeight*m_PU/100.0,"mm","mm") ); // height in mm.
 //	cJSON_AddItemToArray(html, jsonStateField("jobState",m_jobState,"state","token") );//moved to JobManager
 	cJSON_AddItemToArray(html, jsonStateField("displayStatus",m_display,"token","token") );
 
@@ -141,6 +171,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("lampHours",m_lampHours,"","") );
 	cJSON_AddItemToArray(html, jsonStateField("projectorXResolution",m_projectorXResolution,"","") );
 	cJSON_AddItemToArray(html, jsonStateField("projectorYResolution",m_projectorYResolution,"","") );
+	cJSON_AddItemToArray(html, jsonStateField("projectorPixelSize",m_projectorPixelSize,"","") );
 
 	cJSON_AddItemToArray(html, jsonFilesField("files",m_files) );
 	cJSON_AddItemToArray(html, jsonCheckbox("flipSprites",m_flipSprites) );
@@ -159,6 +190,11 @@ void B9CreatorSettings::loadDefaults()
 	m_comBaudrate = 115200;
 	m_firmwareVersion = "unknown";
 	m_printerModel = "unknown";
+	m_projectorXResolution = 0;
+	m_projectorYResolution = 0;
+	m_projectorPixelSize = 0;
+	m_hardDown = 0;
+	m_upToFlush = 0;
 	m_gridColor[0] = 200; m_gridColor[1] = 0; m_gridColor[2] = 0;
 	m_shutterEquipped = false;
 	m_projectorEquipped= false;
@@ -170,18 +206,32 @@ void B9CreatorSettings::loadDefaults()
 	m_tpi = 20;
 	m_gridShow = true;
 	m_shutterOpen = -100;
-	m_shutterOpenSpeed = 100;
-	m_shutterCloseSpeed = 100;
-	m_zAxisRaiseSpeed = 100;
-	m_zAxisLowerSpeed = 100;
+	m_printProp.m_initialCutoff = 0;
+
+	CycleProperties &c0 = m_printProp.m_cycleProps[0];
+	c0.m_breathTime = 1.75;
+	c0.m_settleTime = 2.0;
+	c0.m_shutterOpenSpeed = 25;
+	c0.m_shutterCloseSpeed = 100;
+	c0.m_zAxisRaiseSpeed = 85;
+	c0.m_zAxisLowerSpeed = 85;
+	c0.m_overlift = 0.0;
+
+	CycleProperties &c1 = m_printProp.m_cycleProps[1];
+	c1.m_breathTime = 1.75;
+	c1.m_settleTime = 2.0;
+	c1.m_shutterOpenSpeed = 100;
+	c1.m_shutterCloseSpeed = 100;
+	c1.m_zAxisRaiseSpeed = 85;
+	c1.m_zAxisLowerSpeed = 85;
+	c1.m_overlift = 0.0;
+
 	m_projectorStatus = 2;
 	m_resetStatus = 1;
 	m_zHeight = -1;
 	m_zHome = -1;
 	m_zOffset = 0;
-	m_printProp.m_breathTime = 2.0;
-	m_printProp.m_settleTime = 0.0;
-	m_printProp.m_releaseCycleTime = 1.75;
+//	m_printProp.m_releaseCycleTime = 1.75;
 	m_printProp.m_exposureTime = 12;
 	m_printProp.m_exposureTimeAL = 40;
 	m_printProp.m_nmbrOfAttachedLayers = 4;
@@ -222,9 +272,9 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if(false && (changes & ALL) ){
 			//This values are set up on other placed and should not read
 			//from json structs. I added the lines just for your information.
-			double tmp = m_zHeight*m_PU/1000.0;
+			double tmp = m_zHeight*m_PU/100.0;
 			if( updateState(nhtml,ohtml,"zHeight_mm",&tmp) ){
-				m_zHeight = tmp*1000.0/m_PU;
+				m_zHeight = tmp*100.0/m_PU;
 				changes|=YES;
 			}
 			if( updateState(nhtml,ohtml,"shutterOpen",&m_shutterOpen) ) changes|=YES;
@@ -251,63 +301,56 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"gridShow",&m_gridShow) ){
 			changes|=REDRAW;
 		}
-
-		if( JsonConfig::update(nhtml,ohtml,"breathTime",&m_printProp.m_breathTime) ) changes|=YES;
+		
 		if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"overcureTime",&m_printProp.m_overcureTime) ) changes|=YES;
-		if( JsonConfig::update(nhtml,ohtml,"releaseCycleTime",&m_printProp.m_releaseCycleTime) ){
+
+		double tmpmm;
+		tmpmm = m_printProp.m_initialCutoff*m_PU/100.0;
+		if( JsonConfig::update(nhtml,ohtml,"initialCutoff_mm",&tmpmm) ){
 			changes|=YES;
-#ifdef VERBOSE
-			std::cout << "Update release cycle time to " << m_printProp.m_releaseCycleTime << std::endl;
-#endif
-			std::ostringstream cmd_cycle;
-			cmd_cycle << "D" << (int)(1000*m_printProp.m_releaseCycleTime);
-			std::string cmd_cycleStr(cmd_cycle.str()); 
-			m_queues.add_command(cmd_cycleStr);	
+			m_printProp.m_initialCutoff = tmpmm*100.0/m_PU;
+			std::cout << "cutoff debug: " << m_PU << ", " << tmpmm << ", " << m_printProp.m_initialCutoff << std::endl ;
+		}
+		tmpmm = m_hardDown*m_PU/100.0;
+		if( JsonConfig::update(nhtml,ohtml,"hardDown_mm",&tmpmm) ){
+			changes|=YES;
+			m_hardDown = tmpmm*100.0/m_PU;
+		}
+		tmpmm = m_upToFlush*m_PU/100.0;
+		if( JsonConfig::update(nhtml,ohtml,"upToFlush_mm",&tmpmm) ){
+			changes|=YES;
+			m_upToFlush = tmpmm*100.0/m_PU;
 		}
 
-		if( JsonConfig::update(nhtml,ohtml,"settleTime",&m_printProp.m_settleTime) ){
+		CycleProperties &c0 = m_printProp.m_cycleProps[0];
+		if( JsonConfig::update(nhtml,ohtml,"breathTime0",&c0.m_breathTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"settleTime0",&c0.m_settleTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"shutterOpenSpeed0",&c0.m_shutterOpenSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"shutterCloseSpeed0",&c0.m_shutterCloseSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"zAxisRaiseSpeed0",&c0.m_zAxisRaiseSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"zAxisLowerSpeed0",&c0.m_zAxisLowerSpeed) ) changes|=YES;
+
+		double oltmp0 = c0.m_overlift*m_PU/100.0;
+		if( JsonConfig::update(nhtml,ohtml,"overlift_mm0",&oltmp0) ){
 			changes|=YES;
-#ifdef VERBOSE
-			std::cout << "Update settle time to " << m_printProp.m_settleTime << std::endl;
-#endif
-			std::ostringstream cmd_settle;
-			cmd_settle << "E" << (int)(1000*m_printProp.m_settleTime);
-			std::string cmd_settleStr(cmd_settle.str());
-			m_queues.add_command(cmd_settleStr);
+			c0.m_overlift = oltmp0*100.0/m_PU;
 		}
 
-		if( JsonConfig::update(nhtml,ohtml,"shutterOpenSpeed",&m_shutterOpenSpeed) ){
+		CycleProperties &c1 = m_printProp.m_cycleProps[1];
+		if( JsonConfig::update(nhtml,ohtml,"breathTime1",&c1.m_breathTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"settleTime1",&c1.m_settleTime) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"shutterOpenSpeed1",&c1.m_shutterOpenSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"shutterCloseSpeed1",&c1.m_shutterCloseSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"zAxisRaiseSpeed1",&c1.m_zAxisRaiseSpeed) ) changes|=YES;
+		if( JsonConfig::update(nhtml,ohtml,"zAxisLowerSpeed1",&c1.m_zAxisLowerSpeed) ) changes|=YES;
+
+		double oltmp1 = c1.m_overlift*m_PU/100.0;
+		if( JsonConfig::update(nhtml,ohtml,"overlift_mm1",&oltmp1) ){
 			changes|=YES;
-			std::ostringstream cmd_open;
-			cmd_open << "W" << m_shutterOpenSpeed;
-			std::string cmd_openStr(cmd_open.str());
-			m_queues.add_command(cmd_openStr);
+			c1.m_overlift = oltmp1*100.0/m_PU;
 		}
 
-		if( JsonConfig::update(nhtml,ohtml,"shutterCloseSpeed",&m_shutterCloseSpeed) ){
-			changes|=YES;
-			std::ostringstream cmd_close;
-			cmd_close << "X" << m_shutterCloseSpeed;
-			std::string cmd_closeStr(cmd_close.str());
-			m_queues.add_command(cmd_closeStr);
-		}
-
-		if( JsonConfig::update(nhtml,ohtml,"zAxisRaiseSpeed",&m_zAxisRaiseSpeed) ){
-			changes|=YES;
-			std::ostringstream cmd_raise;
-			cmd_raise << "K" << m_zAxisRaiseSpeed;
-			std::string cmd_raiseStr(cmd_raise.str());
-			m_queues.add_command(cmd_raiseStr);
-		}
-
-		if( JsonConfig::update(nhtml,ohtml,"zAxisLowerSpeed",&m_zAxisLowerSpeed) ){
-			changes|=YES;
-			std::ostringstream cmd_lower;
-			cmd_lower << "L" << m_zAxisLowerSpeed;
-			std::string cmd_lowerStr(cmd_lower.str());
-			m_queues.add_command(cmd_lowerStr);
-		}
 
 		if(! m_printProp.m_lockTimes ){
 			if( JsonConfig::update(nhtml,ohtml,"exposureTimeAL",&m_printProp.m_exposureTimeAL) ) changes|=YES;
