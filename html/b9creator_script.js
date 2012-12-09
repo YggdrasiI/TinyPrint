@@ -93,7 +93,7 @@ function cu_fields(obj,prefix){
 
 
 function create_intField(obj, pnode){
-	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	var description = "Id: "+obj.id+", Min: "+format(obj,obj.min)+", Max: "+format(obj,obj.max);
 	//var description = description + " Diff: "+obj.diff;
 	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
@@ -251,9 +251,9 @@ function update_intField(obj){
  * Checks if val
  * */
 function check_intField(o, val){
-	val = parse(o,val);
-
-	var i = parseInt(val);
+	//var i = parseInt(parse(o,val));
+	var i = parse(o,val);
+	//var i = parseInt(val);
 	if( ! isFinite(i) ) return false;
 	if( i < o.min ) return false;
 	if( i > o.max ) return false;
@@ -263,7 +263,7 @@ function check_intField(o, val){
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 function create_doubleField(obj, pnode){
-	var description = "Id: "+obj.id+", Min: "+obj.min+", Max: "+obj.max;
+	var description = "Id: "+obj.id+", Min: "+format(obj,obj.min)+", Max: "+format(obj,obj.max);
 	//var description = description + " Diff: "+obj.diff;
 	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
@@ -297,7 +297,7 @@ function create_doubleField(obj, pnode){
 		if(check_doubleField(o, this.value)){
 			inputfield.prop("prevvalue", this.value);
 			o.val = parse(o,this.value);
-			alert(this.value+"\n"+o.val);
+			//alert(this.value+"\n"+o.val);
 			send_setting();
 		}else{
 			//reset value.
@@ -402,11 +402,9 @@ function update_doubleField(obj){
 }
 
 function check_doubleField(o, val){
-	foo = val;
-	val = parse(o,val);
-	alert("check:\n"+foo+"\n"+val);
+	var i = parse(o,val);
 
-	var i = parseFloat(val);
+	//var i = parseFloat(val);
 	if( ! isFinite(i) ) return false;
 	if( i < o.min ) return false;
 	if( i > o.max ) return false;
@@ -417,7 +415,7 @@ function check_doubleField(o, val){
 
 /* Simple label field */
 function create_stateField(obj, pnode){
-	var description = "Id: "+obj.id+" Val: "+obj.val;
+	var description = "Id: "+obj.id+" Val: "+format(obj,obj.val);
 	var ret = $("<div title='"+description+"' alt='"+description+"'>");
 	ret.addClass("json_input");
 
@@ -734,7 +732,7 @@ function resetPrinter(){
  * */
 /*identities */
 function format_(o,val){ return ""+val; }
-function parse_(o,s){ p=parseFloat(s); return isNaN(p)?s:p; }
+function parse_(s){ p=parseFloat(s); return isNaN(p)?s:p; }
 
 /* Use format_token to generate string */
 function format_token(o,val){
@@ -800,7 +798,7 @@ function format_mm(o,val){
 }
 
 /* without 'mm' */
-function format_mm(o,val){
+function format_mm2(o,val){
 	//var p = (typeof val === "string"?parseInt(val)*1000:val*1000);
 	var p = (typeof val === "string"?parseInt(val)/1000:val/1000);
 	var p = Math.round(p*100)/100;
@@ -810,6 +808,24 @@ function format_mm(o,val){
 function parse_mm(s){
 	//return parseFloat(s)/1000;
 	return parseFloat(s)*1000;
+}
+
+/* Convert PU values into mm
+ * 1PU = 0.00635mm = 6350 nm
+ * xPU = x * (PU/mm) * mm = x * 635/1E5 * mm = x * 6350 * nm
+ * */
+function format_pu(o,val){
+	var PU = 6350;//in nm
+	var p = (typeof val === "string"?parseFloat(val)*PU:val*PU);
+	p = Math.round(p/1000.0);//in μm
+	return Math.round(p)/1000.0; //in mm.
+}
+
+/* Convert mm value into PU. */
+function parse_pu(s){
+	var PU = 6350;
+	p = parseFloat(s)*1E6;//in nm
+	return Math.round( p/PU );
 }
 
 /* Parse seconds into hh:mm:ss format */
@@ -974,8 +990,9 @@ function format(o,val){
 }
 
 function parse(o,s){
-	if( typeof window["parse_"+o.parse] === "function" )
-		return (window["parse_"+o.parse])(o,s);
+	if( typeof window["parse_"+o.parse] === "function" ){
+		return (window["parse_"+o.parse])(s);
+	}
 	return s;
 }
 

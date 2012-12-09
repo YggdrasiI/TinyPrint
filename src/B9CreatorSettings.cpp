@@ -138,9 +138,12 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
 				min(m_printProp.m_currentLayer,m_printProp.m_nmbrOfLayers-1),0,m_printProp.m_nmbrOfLayers-1,1,m_printProp.m_lockTimes) );
 
-	cJSON_AddItemToArray(html, jsonDoubleField("initialCutoff_mm",m_printProp.m_initialCutoff*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
-	cJSON_AddItemToArray(html, jsonDoubleField("hardDown_mm",  m_hardDown*m_PU/100.0, 0,100,0.1,0,"mm2","mm") ); 
-	cJSON_AddItemToArray(html, jsonDoubleField("upToFlush_mm",m_upToFlush*m_PU/100.0, 0,100,0.1,0,"mm2","mm") ); 
+double maxMmInPU = 100.0*1E5/m_PU; //100mm
+double diffMmInPU =  1.0*1E5/m_PU; //  1mm
+
+	cJSON_AddItemToArray(html, jsonDoubleField("initialCutoff_pu",m_printProp.m_initialCutoff,0,maxMmInPU,diffMmInPU,0,"pu","pu") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("hardDown_pu",  m_hardDown, 0,maxMmInPU,diffMmInPU,0,"pu","pu") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("upToFlush_pu",m_upToFlush, 0,maxMmInPU,diffMmInPU,0,"pu","pu") ); 
 
 	CycleProperties &c0 = m_printProp.m_cycleProps[0];
 	cJSON_AddItemToArray(html, jsonDoubleField("breathTime0",c0.m_breathTime,0.1,300,0.2,0 ) );
@@ -149,7 +152,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("shutterCloseSpeed0",c0.m_shutterCloseSpeed,0,100,5, 0) );
 	cJSON_AddItemToArray(html, jsonIntField("zAxisRaiseSpeed0",c0.m_zAxisRaiseSpeed,0,100,5, 0) );
 	cJSON_AddItemToArray(html, jsonIntField("zAxisLowerSpeed0",c0.m_zAxisLowerSpeed,0,100,5, 0) );
-	cJSON_AddItemToArray(html, jsonDoubleField("overlift_mm0",c0.m_overlift*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("overlift_pu0",c0.m_overlift,0,maxMmInPU,diffMmInPU,0,"pu","pu") ); 
 
 	CycleProperties &c1 = m_printProp.m_cycleProps[1];
 	cJSON_AddItemToArray(html, jsonDoubleField("breathTime1",c1.m_breathTime,0.1,300,0.2,0 ) );
@@ -158,7 +161,7 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonIntField("shutterCloseSpeed1",c1.m_shutterCloseSpeed,0,100,5, 0) );
 	cJSON_AddItemToArray(html, jsonIntField("zAxisRaiseSpeed1",c1.m_zAxisRaiseSpeed,0,100,5, 0) );
 	cJSON_AddItemToArray(html, jsonIntField("zAxisLowerSpeed1",c1.m_zAxisLowerSpeed,0,100,5, 0) );
-	cJSON_AddItemToArray(html, jsonDoubleField("overlift_mm1",c1.m_overlift*m_PU/100.0,0,100,0.1,0,"mm2","mm") ); 
+	cJSON_AddItemToArray(html, jsonDoubleField("overlift_pu1",c1.m_overlift,0,maxMmInPU,diffMmInPU,0,"pu","pu") ); 
 
 	cJSON_AddItemToArray(html, jsonStateField("projectorStatus",m_projectorStatus,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("resetStatus",m_resetStatus,"token","token") );
@@ -305,22 +308,15 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::update(nhtml,ohtml,"exposureTime",&m_printProp.m_exposureTime) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"overcureTime",&m_printProp.m_overcureTime) ) changes|=YES;
 
-		double tmpmm;
-		tmpmm = m_printProp.m_initialCutoff*m_PU/100.0;
-		if( JsonConfig::update(nhtml,ohtml,"initialCutoff_mm",&tmpmm) ){
+		if( JsonConfig::update(nhtml,ohtml,"initialCutoff_pu",&(m_printProp.m_initialCutoff) ) ){
 			changes|=YES;
-			m_printProp.m_initialCutoff = tmpmm*100.0/m_PU;
-			std::cout << "cutoff debug: " << m_PU << ", " << tmpmm << ", " << m_printProp.m_initialCutoff << std::endl ;
+			std::cout << "cutoff debug: " << m_PU << ", " << m_printProp.m_initialCutoff << std::endl ;
 		}
-		tmpmm = m_hardDown*m_PU/100.0;
-		if( JsonConfig::update(nhtml,ohtml,"hardDown_mm",&tmpmm) ){
+		if( JsonConfig::update(nhtml,ohtml,"hardDown_pu",&m_hardDown) ){
 			changes|=YES;
-			m_hardDown = tmpmm*100.0/m_PU;
 		}
-		tmpmm = m_upToFlush*m_PU/100.0;
-		if( JsonConfig::update(nhtml,ohtml,"upToFlush_mm",&tmpmm) ){
+		if( JsonConfig::update(nhtml,ohtml,"upToFlush_pu",&m_upToFlush) ){
 			changes|=YES;
-			m_upToFlush = tmpmm*100.0/m_PU;
 		}
 
 		CycleProperties &c0 = m_printProp.m_cycleProps[0];
@@ -331,10 +327,8 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::update(nhtml,ohtml,"zAxisRaiseSpeed0",&c0.m_zAxisRaiseSpeed) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"zAxisLowerSpeed0",&c0.m_zAxisLowerSpeed) ) changes|=YES;
 
-		double oltmp0 = c0.m_overlift*m_PU/100.0;
-		if( JsonConfig::update(nhtml,ohtml,"overlift_mm0",&oltmp0) ){
+		if( JsonConfig::update(nhtml,ohtml,"overlift_pu0",&(c0.m_overlift) ) ){
 			changes|=YES;
-			c0.m_overlift = oltmp0*100.0/m_PU;
 		}
 
 		CycleProperties &c1 = m_printProp.m_cycleProps[1];
@@ -345,10 +339,8 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::update(nhtml,ohtml,"zAxisRaiseSpeed1",&c1.m_zAxisRaiseSpeed) ) changes|=YES;
 		if( JsonConfig::update(nhtml,ohtml,"zAxisLowerSpeed1",&c1.m_zAxisLowerSpeed) ) changes|=YES;
 
-		double oltmp1 = c1.m_overlift*m_PU/100.0;
-		if( JsonConfig::update(nhtml,ohtml,"overlift_mm1",&oltmp1) ){
+		if( JsonConfig::update(nhtml,ohtml,"overlift_pu1",&(c1.m_overlift) ) ){
 			changes|=YES;
-			c1.m_overlift = oltmp1*100.0/m_PU;
 		}
 
 
