@@ -59,8 +59,8 @@ B9CreatorSettings::B9CreatorSettings() :
 	m_printProp.m_currentLayer = 0;
 	m_printProp.m_nmbrOfLayers = 10;
 	m_printProp.m_lockTimes = false;
-	m_printProp.m_zResolution = 50;
-	m_printProp.m_xyResolution = 100;
+	m_printProp.m_zResolution = 50.0;
+	m_printProp.m_xyResolution = 100.0;
 	m_printProp.m_initialCutoff = 0;
 
 	CycleProperties &c0 = m_printProp.m_cycleProps[0];
@@ -133,8 +133,8 @@ cJSON *B9CreatorSettings::genJson()
 	cJSON_AddItemToArray(html, jsonDoubleField("exposureTimeAL",m_printProp.m_exposureTimeAL,0.1,300,0.2,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonIntField("nmbrOfAttachedLayers",m_printProp.m_nmbrOfAttachedLayers,0,40,1,m_printProp.m_lockTimes ) );
 	cJSON_AddItemToArray(html, jsonDoubleField("overcureTime",m_printProp.m_overcureTime,0.0,100,0.2,0 ) );
-	cJSON_AddItemToArray(html, jsonIntField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
-	cJSON_AddItemToArray(html, jsonIntField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
+	cJSON_AddItemToArray(html, jsonDoubleField("zResolution",m_printProp.m_zResolution,25,200,10,m_printProp.m_lockTimes ) );
+	cJSON_AddItemToArray(html, jsonDoubleField("xyResolution",m_printProp.m_xyResolution,25,200,10, 1) );
 	cJSON_AddItemToArray(html, jsonIntField("currentLayer",
 				min(m_printProp.m_currentLayer,m_printProp.m_nmbrOfLayers-1),0,m_printProp.m_nmbrOfLayers-1,1,m_printProp.m_lockTimes) );
 
@@ -241,8 +241,8 @@ void B9CreatorSettings::loadDefaults()
 	m_printProp.m_overcureTime = 2;
 	m_printProp.m_currentLayer = 0;
 	m_printProp.m_nmbrOfLayers = 10;
-	m_printProp.m_zResolution = 50;
-	m_printProp.m_xyResolution = 100;
+	m_printProp.m_zResolution = 50.0;
+	m_printProp.m_xyResolution = 100.0;
 	m_printProp.m_lockTimes = false;
 //	m_jobState = IDLE;
 	m_flipSprites = true;
@@ -659,8 +659,9 @@ int B9CreatorSettings::loadJob(const std::string filename){
 			std::cout << "Load " << path << std::endl;
 			jf = new JobFileB9J(path.c_str() );
 			//update resolution with file values
-			int xy = ((JobFileB9J*)jf)->getXYResolution();
-			int z = ((JobFileB9J*)jf)->getZResolution();
+			double xy = ((JobFileB9J*)jf)->getXYResolution();
+			double z = ((JobFileB9J*)jf)->getZResolution();
+			std::cout << "ZResolution of B9J File: " << z << std::endl;
 			if(xy > 0 ) m_printProp.m_xyResolution = xy;
 			if(z > 0 ) m_printProp.m_zResolution = z;
 #else

@@ -49,8 +49,8 @@ struct PrintProperties{
 		bool m_lockTimes; /*flag to set some fields 'readable' 
 												on the web page 
 												if printing is running */
-		int m_zResolution; // in μm.
-		int m_xyResolution; // in μm.
+		double m_zResolution; // in μm.
+		double m_xyResolution; // in μm.
 
 		CycleProperties m_cycleProps[2]; /* Saves values for initial and normal cycles */
 		int m_initialCutoff; // in PU.
