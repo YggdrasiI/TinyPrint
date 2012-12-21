@@ -356,7 +356,7 @@ void JobManager::run(){
 				{
 					int &zHeight = m_b9CreatorSettings.m_zHeight; //Reference!
 					int zHeightLimit = m_b9CreatorSettings.m_zHeightLimit;
-					int zRes = m_b9CreatorSettings.m_printProp.m_zResolution;
+					double zRes = m_b9CreatorSettings.m_printProp.m_zResolution;
 					int pu = m_b9CreatorSettings.m_PU;
 					int l = m_b9CreatorSettings.m_printProp.m_currentLayer;
 
@@ -959,53 +959,70 @@ bool JobManager::getJobTimings(Onion::Request *preq, int actionid, Onion::Respon
 }
 
 void JobManager::updateCycleSettings(int heightInPU){
+
 	CycleProperties &cp = m_b9CreatorSettings.m_printProp.getCurrentProps( heightInPU );
 	Messages &q = m_b9CreatorSettings.m_queues;
-			
+	
+	/* Collect all commands into 
+		one stream to handle them together.
+		(this is just a workaround for the slow serial communication of single messages)
+	*/
+	std::ostringstream cmds;
+
 	/* Set breath time.
 	 * This is called 'Breath Time' in DLP3DPAPI. 
 	 * */
-	std::ostringstream cmd_breath;
-	cmd_breath << "D" << (int)(1000*cp.m_breathTime);
-	std::string cmd_breathStr(cmd_breath.str());
-	q.add_command(cmd_breathStr);
+	//std::ostringstream cmd_breath;
+	//cmd_breath << "D" << (int)(1000*cp.m_breathTime);
+	//std::string cmd_breathStr(cmd_breath.str());
+	//q.add_command(cmd_breathStr);
+	cmds << "D" << (int)(1000*cp.m_breathTime) << '\n';
 
 	/* Set settle cycle time. Default is 0.
 	 * Require DLP3DPAPI version >= 1.1. 
 	 * */
-	std::ostringstream cmd_settle;
-	cmd_settle << "E" << (int)(1000*cp.m_settleTime);
-	std::string cmd_settleStr(cmd_settle.str());
-	q.add_command(cmd_settleStr);
+	//std::ostringstream cmd_settle;
+	//cmd_settle << "E" << (int)(1000*cp.m_settleTime);
+	//std::string cmd_settleStr(cmd_settle.str());
+	//q.add_command(cmd_settleStr);
+	cmds << "E" << (int)(1000*cp.m_settleTime) << '\n';
 
 	/* Set raise and lower speed of z-axis
 	 * Values in Percent. 0% = Lowest Speed.
 	 * Require DLP3DPAPI version >= 1.1. 
 	 * */
-	std::ostringstream cmd_lower,cmd_raise;
-	cmd_raise << "K" << cp.m_zAxisRaiseSpeed;
-	cmd_lower << "L" << cp.m_zAxisLowerSpeed;
-	std::string cmd_raiseStr(cmd_raise.str());
-	std::string cmd_lowerStr(cmd_lower.str());
-	m_b9CreatorSettings.m_queues.add_command(cmd_raiseStr);
-	m_b9CreatorSettings.m_queues.add_command(cmd_lowerStr);
+	//std::ostringstream cmd_lower,cmd_raise;
+	//cmd_raise << "K" << cp.m_zAxisRaiseSpeed;
+	//cmd_lower << "L" << cp.m_zAxisLowerSpeed;
+	//std::string cmd_raiseStr(cmd_raise.str());
+	//std::string cmd_lowerStr(cmd_lower.str());
+	//m_b9CreatorSettings.m_queues.add_command(cmd_raiseStr);
+	//m_b9CreatorSettings.m_queues.add_command(cmd_lowerStr);
+	cmds << "K" << cp.m_zAxisRaiseSpeed << '\n';
+	cmds << "L" << cp.m_zAxisLowerSpeed << '\n';
 
 	/* Set opening and cloing speed of shutter
 	 * Values in Percent. 0% = Lowest Speed.
 	 * Require DLP3DPAPI version >= 1.1. 
 	 * */
-	std::ostringstream cmd_open,cmd_close;
-	cmd_open << "W" << cp.m_shutterOpenSpeed;
-	cmd_close << "X" << cp.m_shutterCloseSpeed;
-	std::string cmd_openStr(cmd_open.str());
-	std::string cmd_closeStr(cmd_close.str());
-	m_b9CreatorSettings.m_queues.add_command(cmd_openStr);
-	m_b9CreatorSettings.m_queues.add_command(cmd_closeStr);
+	//std::ostringstream cmd_open,cmd_close;
+	//cmd_open << "W" << cp.m_shutterOpenSpeed;
+	//cmd_close << "X" << cp.m_shutterCloseSpeed;
+	//std::string cmd_openStr(cmd_open.str());
+	//std::string cmd_closeStr(cmd_close.str());
+	//m_b9CreatorSettings.m_queues.add_command(cmd_openStr);
+	//m_b9CreatorSettings.m_queues.add_command(cmd_closeStr);
+	cmds << "W" << cp.m_shutterOpenSpeed << '\n';
+	cmds << "X" << cp.m_shutterCloseSpeed << '\n';
 
 	/* Set overlift ?! */
-	std::ostringstream cmd_overlift;
-	cmd_overlift << "J" << cp.m_overlift;
-	std::string cmd_overliftStr(cmd_overlift.str());
-	q.add_command(cmd_overliftStr);
+	//std::ostringstream cmd_overlift;
+	//cmd_overlift << "J" << cp.m_overlift;
+	//std::string cmd_overliftStr(cmd_overlift.str());
+	//m_b9CreatorSettings.m_queues.add_command(cmd_overliftStr);
+	cmds << "J" << cp.m_overlift << '\n';
+
+	std::string cmdsStr(cmds.str());
+	m_b9CreatorSettings.m_queues.add_command(cmdsStr);
 }
 
