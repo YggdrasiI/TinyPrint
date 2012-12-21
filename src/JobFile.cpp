@@ -56,7 +56,8 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 				 * at the border will left.
 				 *
 				 */
-				int blurwidth = 9;
+				//int blurwidth = 9;
+				int blurwidth = 15;
 				int bwbw = blurwidth*blurwidth;
 				uchar mins = 0.7*255;
 				uchar maxs = 1*255;
@@ -67,7 +68,8 @@ cv::Mat JobFile::getSlice(int layer, SliceType type){
 					else if( a > maxs ) colmap[a] = 0;
 					else{
 						//map linear from [maxs,mins] on [0,255].
-						colmap[a] = 255* sqrt(sqrt( (float)((maxs-a))/(maxs-mins)));
+						colmap[a] = 255* sqrt( (float)((maxs-a))/(maxs-mins));
+						//colmap[a] = 255* sqrt(sqrt( (float)((maxs-a))/(maxs-mins)));
 					}
 				}
 
