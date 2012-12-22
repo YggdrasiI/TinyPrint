@@ -387,7 +387,7 @@ void JobManager::run(){
 					}
 
 					// Update timeouts and speeds.
-					updateCycleSettings(zHeight2);
+					//updateCycleSettings(zHeight2);
 						
 					// Update height.
 					// Do not update value manually, if printer is connected.
@@ -402,6 +402,7 @@ void JobManager::run(){
 					q.add_command( cmd_nextStr );
 					RUNPRINT("Next layer state. Send N%i for next layer.\n", zHeight2 );
 
+					updateCycleSettings(zHeight2);
 					//hm, should I wait on release cycle here?!
 
 					//wait on shutter opening.
