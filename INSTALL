@@ -66,3 +66,6 @@ Configuration and Compiling:
 		cmake -DCMAKE_BUILD_TYPE=Release ..
 		make
 
+Note for Raspberry Pi users: If the grid is blue set the FLIP_COLORS option:
+		cmake -DCMAKE_BUILD_TYPE=Release -DFLIP_COLORS=1 ..
+		This change the internal color byte order.
