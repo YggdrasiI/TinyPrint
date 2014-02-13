@@ -3,6 +3,7 @@ Control software for the DLP based 3D printer 'B9Creator'.
 Installation: See INSTALL
 
 Changelog:
+13. Feb. 2012: Update Readme to respect newer firmware on Raspberry Pi.
  1. Dec. 2012: Update supported specification to DLP3DPAPI 1.1
    and Firmware 1.0.7.
 
@@ -17,7 +18,7 @@ Start and example usage on Raspberry PI:
 	Some example settings are already included in bin/start.sh. 
 
   Open a SSH connection and go into the build directory of
-	TinyPrint. Call 'bin/start.sh pi32' one-time
+	TinyPrint. Call 'bin/start.sh pi' one-time
 	to generate the configuration file 'b9CreatorSettings.json'.
 	Quit the first run with Ctrl+C.
 	Open the configuration file and  replace the value of 'comPort'

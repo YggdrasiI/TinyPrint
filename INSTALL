@@ -44,9 +44,17 @@ vii) QT4 is optional and will just required for b9j file support
 viii) For Raspberry Pi:
   Installation of fbset 
     sudo apt-get install fbset
-  Add the following lines to your /boot/config.txt to increase some video memory buffer.
-    framebuffer_width=1024
-    framebuffer_height=768
+  Add the following lines to your /boot/config.txt 
+    framebuffer_depth=32
+    framebuffer_ignore_alpha=1
+    framebuffer_swap=1
+
+		Optional: Force resolution to guarantee minmal size of video memory buffer.
+		#framebuffer_width=1280
+		#framebuffer_height=720
+
+	Note: The framebuffer_swap option require a newer (2014) firmware, see
+	http://www.raspberrypi.org/forum/viewtopic.php?f=67&t=22802
 
 
 ----------------------------------------------------------------
@@ -66,6 +74,8 @@ Configuration and Compiling:
 		cmake -DCMAKE_BUILD_TYPE=Release ..
 		make
 
-Note for Raspberry Pi users: If the grid is blue set the FLIP_COLORS option:
+Note for Raspberry Pi users: If the red grid lines will be displayed blue
+	set the FLIP_COLORS option:
 		cmake -DCMAKE_BUILD_TYPE=Release -DFLIP_COLORS=1 ..
-		This change the internal color byte order.
+	This change the internal color byte order. Newer firmware versions
+	made this option obsolete.
