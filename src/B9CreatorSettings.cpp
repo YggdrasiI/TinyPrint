@@ -258,7 +258,7 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 
 	lock();
 
-	/*load values outside of the html node. This valus should only
+	/*load values outside of the html node. This values should only
 	* read from config files.
 	*/
 	if( changes & CONFIG ){
@@ -273,8 +273,8 @@ int B9CreatorSettings::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 	if( nhtml != NULL){
 
 		if(false && (changes & ALL) ){
-			//This values are set up on other placed and should not read
-			//from json structs. I added the lines just for your information.
+			//This values are set up internal and should not read
+			//from json structs. I added the lines just for a complete overview. 
 			double tmp = m_zHeight*m_PU/100.0;
 			if( updateState(nhtml,ohtml,"zHeight_mm",&tmp) ){
 				m_zHeight = tmp*100.0/m_PU;

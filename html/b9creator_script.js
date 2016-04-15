@@ -889,7 +889,7 @@ function send(url,val, handler){
 	$.post(url, val, function(data){
 		//alert("Get reply\n"+data);
 		if( data == "reload" ){
-			alert("Reload Page");
+			//alert("Reload Page");
 			window.location.reload();
 		}else{
 			//reparse data

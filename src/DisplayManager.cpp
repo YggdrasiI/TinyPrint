@@ -164,7 +164,7 @@ void DisplayManager::add(cv::Mat &cvimg, cv::Point &topLeftCorner ){
 		//flip image vertical
 
 		MatIterator_<uchar> dst_it = sprite->cvmat.begin<uchar>();
-		for( int r = cvimg.rows-1 ; r>=0; --r ){
+		for( int r = cvimg.rows-1 ; r>=0; --r ){ //<== TODO: Remove redundant loop?! 
 			cv::Mat row = cvimg.row(r);
 			MatConstIterator_<VT> it1 = row.begin<VT>(),
 				it1_end = row.end<VT>();
