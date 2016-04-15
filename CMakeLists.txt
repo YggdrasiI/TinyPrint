@@ -6,7 +6,7 @@ automatically activated if Qt4 was found." OFF)
 
 set(EXTRA_C_FLAGS "${PG_FLAGS}")
 set(EXTRA_C_FLAGS_DEBUG "")
-set(EXTRA_CXX_FLAGS "${PG_FLAGS}")
+set(EXTRA_CXX_FLAGS "${PG_FLAGS} -std=gnu++11")
 set(EXTRA_CXX_FLAGS_DEBUG "")
 
 ## required and optional packages
@@ -24,10 +24,12 @@ set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
-find_package(Boost 
-	COMPONENTS signals system filesystem iostreams regex
-	REQUIRED)
+find_package(Boost COMPONENTS system filesystem iostreams regex REQUIRED)
+#find_package(Boost COMPONENTS signals2 REQUIRED) # This is just a header
 #message(STATUS "Boost libs: ${Boost_LIBRARIES}" )
+# If the FindBoost.cmake script cound not find all libraries: 
+# Check if the files are only available in the architecture dependant subdirectories
+# like /usr/lib/i386. It could be sufficient to link them into /usr/lib...
 
 set(Directfb_LIBRARY_DIR /usr/lib )
 set(Directfb_LIBS directfb )

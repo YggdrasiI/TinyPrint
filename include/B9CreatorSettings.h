@@ -6,11 +6,9 @@
 #include <cstring>
 #include <queue>
 
-#include <onion/onion.hpp>
-#include <onion/response.hpp>
-#include <onion/request.hpp>
+#include "OnionServer.h"
 
-#include <boost/signal.hpp>
+#include <boost/signals2/signal.hpp>
 #include <boost/regex.hpp> 
 //#include <boost/bind.hpp>
 
@@ -199,7 +197,7 @@ class B9CreatorSettings: public JsonConfig{
 		int updateMaxLayer();
 
 		/* Update signal. Will send at the end of update(...) */
-		boost::signal<void (int changes)> updateSettings;
+		boost::signals2::signal<void (int changes)> updateSettings;
 
 		int loadJob(const std::string filename);
 		int unloadJob(const int index);

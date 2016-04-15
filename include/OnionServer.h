@@ -22,7 +22,7 @@
 //#include <onion/mime.h>
 //#include <onion/extras/png.h>
 
-#include <boost/signal.hpp>
+#include <boost/signals2/signal.hpp>
 //#include <boost/bind.hpp>
 
 #include "JsonConfig.h"
@@ -38,7 +38,6 @@ static void* start_myonion_server(void* arg){
 }
 
 // Signal return value combiner. 
-// See http://www.boost.org/doc/libs/1_52_0/doc/html/signals/tutorial.html#id3284993
 template<typename T>
 struct maximum
 {
@@ -97,12 +96,12 @@ class OnionServer{
 		 *	Every signal handler gain access to
 		 *	- the raw request req,
 		 *	- the get param 'actionid' and,
-		 *	- rhe response data res
-		 * Signal returns false, if no signall handler wrote into res.
+		 *	- the response data res
+		 * Signal returns false, if no signal handler wrote into res.
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/
-		//boost::signal<void (onion_request *req,int actionid, std::string &reply)> updateSignal;
-		boost::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ), maximum<bool> > updateSignal;
+		boost::signals2::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ),
+			maximum<bool> > updateSignal;
 
 		/* Update signal handler of this class.*/
 		bool updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);

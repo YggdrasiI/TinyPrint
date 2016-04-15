@@ -21,17 +21,15 @@ libboost-signals-dev libboost-iostreams-dev libboost-system-dev libboost-filesys
 libdirectfb-dev \
 librsvg2-dev libcairo2-dev
 
-vi) This lib has to be installed manually.
-  Nov 2012: Now, the c++ branch is used! You can switch
-	  the branch with 	'git checkout -b cpp origin/cpp'.
-	I.e.:
+vi) This lib has to be installed manually. The following lines
+    would compile and install the libary into TinyPrint/lib/onion
 		cd TinyPrint
+    cd 3rdparty
 		git clone https://github.com/davidmoreno/onion.git
 		cd onion
-		git checkout -b cpp origin/cpp
 		mkdir build
 		cd build
-		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../lib/onion ..
+		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 ..
 		make
 		make install
 

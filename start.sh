@@ -1,5 +1,5 @@
 #!/bin/bash
-# Proper directfb settings depend 
+# Proper directfb settings depends
 # on your system. This script add
 # working settings on my systems.
 # You should modify this on your

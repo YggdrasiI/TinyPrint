@@ -25,7 +25,6 @@ set(server_SRCS
 	index_html.c
 	b9creator_settings_js.c
 	)
-
 # create sourcefile from html template
 add_custom_command(
 	OUTPUT index_html.c
@@ -33,13 +32,24 @@ add_custom_command(
 	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/index.html ${CMAKE_CURRENT_BINARY_DIR}/index_html.c
 	DEPENDS ${CMAKE_SOURCE_DIR}/html/index.html
 	)
+
+# Bugfix otemplate/ b9creator_settings_js
+# Newer versions of onion/bin/otemplate escaping characters. Revert this by replacing
+# function call. This will be obsolente if otemplate gets a flag to handle this directly...
 add_custom_command(
 	OUTPUT b9creator_settings_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js ${CMAKE_CURRENT_BINARY_DIR}/b9creator_settings_js.c
+  COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js ${CMAKE_CURRENT_BINARY_DIR}/b9creator_settings_js.c &&
+  echo "FIX otemplate output" && 
+  sed -i.tmp -e "s/onion_response_write_html_safe/onion_response_write0/g" ${CMAKE_CURRENT_BINARY_DIR}/b9creator_settings_js.c 
 	DEPENDS ${CMAKE_SOURCE_DIR}/html/b9creator_settings.js
 	)
 
 add_library (server SHARED ${server_SRCS})
+target_link_libraries(server 
+  pthread
+  png
+  )
+
 ## end http server
 
 
@@ -71,7 +81,7 @@ target_link_libraries(main server
 	${Onion_LIBS}
 	${Cairo_LIBS}
 	${Rsvg_LIBS}
-	${GTK2_LIBARIES}
+	${GTK2_LIBRARIES}
 	${Boost_LIBRARIES}
 	)
 
