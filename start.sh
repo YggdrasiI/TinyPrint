@@ -9,13 +9,13 @@
 # will skipped. 
 
 case "$1" in
+	#pi16) 
+	#	# Setting for raspberry pi with
+	#	# rasbian os.
+	#	sudo fbset -a -depth 16 
+	#	sudo bin/main --display --dfb:mode=1024x768 --dfb:pixelformat=RGB16
+	#	;;
 	pi) 
-		# Setting for raspberry pi with
-		# rasbian os.
-		sudo fbset -a -depth 16 
-		sudo bin/main --display --dfb:mode=1024x768 --dfb:pixelformat=RGB16
-		;;
-	pi32) 
 		# Setting for raspberry pi with
 		# rasbian os.
 		sudo fbset -a -depth 32

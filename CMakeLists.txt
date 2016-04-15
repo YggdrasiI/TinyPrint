@@ -1,6 +1,6 @@
 project(B9CreatorLinux)
 cmake_minimum_required(VERSION 2.6)
-option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry PI)" OFF)
+option(FLIP_COLORS "Flip byte order of colors in DirectFB images. (For Raspberry Pi, obsolete on latest firmware)" OFF)
 option(B9J_SUPPORT "Enable loading of b9j filetype. Require Qt4 library. Option will 
 automatically activated if Qt4 was found." OFF)
 
