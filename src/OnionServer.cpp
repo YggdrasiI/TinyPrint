@@ -316,9 +316,9 @@ onion_connection_status OnionServer::getB9CreatorSettingsWrapped(
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
 OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
-	m_onion( O_ONE_LOOP),
+	//m_onion( O_ONE_LOOP),
 	//m_onion( O_THREADED),//never shutdown server
-	//m_onion( O_THREADED|O_DETACH_LISTEN ),
+	m_onion( O_THREADED|O_DETACH_LISTEN|O_NO_SIGTERM ),
 	//m_onion( O_ONE_LOOP|O_DETACH_LISTEN ),
 	m_url(m_onion),
 	m_mimedict(),
@@ -411,16 +411,17 @@ int OnionServer::start_server() {
 	m_url.add<OnionServer>(m_urls[11], this, &OnionServer::search_file );
 
 	//start loop as thread  (O_DETACH_LISTEN flag is set.)
-	//m_onion.listen();//loop
-	//return 0;
-	return pthread_create( &m_pthread, NULL, &start_myonion_server, &m_onion);
+	m_onion.listen();//loop
+	return 0;
+	//return pthread_create( &m_pthread, NULL, &start_myonion_server, &m_onion);
 }
 
 int OnionServer::stop_server()
 {
 	m_onion.listenStop();
-	int i = pthread_join( m_pthread, NULL);//wait till loop ends
-	return i;
+  return 0;
+	//int i = pthread_join( m_pthread, NULL);//wait till loop ends
+	//return i;
 }
 
 /* return value marks, if reply string contains data which should

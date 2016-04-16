@@ -25,14 +25,14 @@
 static bool die(false);
 
 static void end_main(int _){
+  std::cout << "Stop program..." << std::endl;
 	die = true;
 }
 
 int main(int argc, char **argv) {
-	//signal(SIGINT,end_main);//segfault...
-	//signal(SIGTERM,end_main);
+	signal(SIGINT,end_main);
+	signal(SIGTERM,end_main);
 
-	//bool die(false);
 	int k(0);
 
 	//Create arguments for DisplayManager.
@@ -90,8 +90,6 @@ int main(int argc, char **argv) {
 		b9CreatorSettings.m_display = true;
 	}
 
-	//jobManager.loadJob("puzzle.svg");
-
 	/* Locale needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
@@ -114,29 +112,26 @@ int main(int argc, char **argv) {
 		//give other threads some time to react.
 		usleep(100);
 
-		//char k = cvWaitKey(10);
+		//char k = cvWaitKey(10); //OpenCV Window approach
 		k = 0; usleep(100);
 		if( k == 27 ){
 			printf("End main loop\n");
 			die = true;
 			break;
 		}
-		if( b9CreatorSettings.m_die ) die = true;
 
-		/*
-		usleep(4000000);
-		die = true;
-		b9CreatorSettings.m_die = true;
-		*/
+		if( b9CreatorSettings.m_die ) die = true;
 	}
 
 	/* Clean up objects */
 	onion.stop_server();
-	for(int i=0;i<1;++i){
+
+	/*for(int i=0;i<1;++i){
 		std::cout << "Wait..." << std::endl;
 		sleep(1);
-	}
+	}*/
 
+  // Give other threads time to close.
 	usleep(10000);
 
 	return EXIT_SUCCESS;
