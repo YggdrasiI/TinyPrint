@@ -91,8 +91,7 @@ onion_connection_status OnionServer::getJobFolder(
 	std::string &folder = m_b9CreatorSettings.m_b9jDir;
 	std::ostringstream json_reply;
 
-	fs::path full_path( fs::initial_path<fs::path>() );
-	full_path = fs::system_complete( fs::path( folder ) );
+	fs::path full_path = fs::system_complete( fs::path( folder ) );
 
 	unsigned long file_count = 0;
 
@@ -358,6 +357,17 @@ OnionServer::OnionServer(B9CreatorSettings &b9CreatorSettings ):
 		m_mimedict.add( m_mimes[4], m_mimes[5], 0);
 		m_mimedict.add( m_mimes[6], m_mimes[7], 0);
 
+#ifndef WIN32
+		/* boost:filesystem require proper locale settings.*/
+		try
+		{
+			boost::filesystem::path::codecvt(); // Raises runtime error if current locale is invalid.
+		} catch(std::runtime_error &e)
+		{
+			VPRINT("Locale settings produces runtime error. Enable LC_ALL=C as fallback.");
+			setenv("LC_ALL", "C", 1); // Force C locale
+		}
+#endif
 
 		//add default signal handler.
 		updateSignal.connect(

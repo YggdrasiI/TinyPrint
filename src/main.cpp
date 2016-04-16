@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
 	//jobManager.loadJob("puzzle.svg");
 
-	/* Local needs to be set to avoid errors with printf + float values.
+	/* Locale needs to be set to avoid errors with printf + float values.
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
 
